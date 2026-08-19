@@ -54,7 +54,7 @@ fun SearchResultsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(results) { service ->
-                    ResidentialServiceCard(
+                    ResidentialServiceCardProfessional(
                         service = service,
                         quantity = residentialViewModel.getItemQuantity(service.id),
                         onAdd = { residentialViewModel.addToCart(service) },

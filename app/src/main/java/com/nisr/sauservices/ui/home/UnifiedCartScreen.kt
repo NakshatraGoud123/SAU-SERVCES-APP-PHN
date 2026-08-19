@@ -1,26 +1,31 @@
 package com.nisr.sauservices.ui.home
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.PinkPrimary
+import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,10 +76,38 @@ fun UnifiedCartScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Unified Cart", fontWeight = FontWeight.Bold) },
+                title = { 
+                    Column {
+                        Text("My Cart", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
+                        if (!isEmpty) {
+                            val totalItemsCount = resItems.size + businessItems.size + lifestyleItems.size + 
+                                            techItems.size + mensItems.size + womensItems.size + 
+                                            healthItems.size + foodItems.size + dbCartItems.size + eduItems.size
+                            Text("$totalItemsCount Items in your basket", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (!isEmpty) {
+                        TextButton(onClick = {
+                            residentialViewModel.clearCart()
+                            businessViewModel.clearCart()
+                            lifestyleViewModel.clearCart()
+                            techViewModel.clearCart()
+                            mensGroomingViewModel.clearCart()
+                            womensBeautyViewModel.clearCart()
+                            healthcareViewModel.clearCart()
+                            foodCartViewModel.clearCart()
+                            educationViewModel.clearCart()
+                            homeCartViewModel.clearHomeCart()
+                        }) {
+                            Text("Clear", color = ErrorRed)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -84,169 +117,291 @@ fun UnifiedCartScreen(
             if (!isEmpty) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 8.dp,
-                    color = Color.White
+                    shadowElevation = 16.dp,
+                    color = Color.White,
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp).navigationBarsPadding()) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total Amount", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            Text("₹$grandTotal", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = PinkPrimary)
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { 
-                                if (dbCartItems.any { it.unit != "Booking" && it.category != "Residential" }) {
-                                    navController.navigate(Screen.HomeEssentialsCheckout.route)
-                                } else {
-                                    navController.navigate(Screen.ResidentialBookingDetails.route)
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
-                        ) {
-                            val buttonText = if (dbCartItems.any { it.unit != "Booking" && it.category != "Residential" }) "Checkout Essentials" else "Proceed to Checkout"
-                            Text(buttonText, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Column(modifier = Modifier.padding(20.dp).navigationBarsPadding()) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Column {
+                                Text("Total Amount", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                                Text("₹$grandTotal", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = PinkPrimary)
+                            }
+                            Button(
+                                onClick = { 
+                                    if (dbCartItems.any { it.unit != "Booking" && it.category != "Residential" }) {
+                                        navController.navigate(Screen.HomeEssentialsCheckout.route)
+                                    } else {
+                                        navController.navigate(Screen.ResidentialBookingDetails.route)
+                                    }
+                                },
+                                modifier = Modifier.height(56.dp).widthIn(min = 180.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                            ) {
+                                Text("Checkout", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Spacer(Modifier.width(8.dp))
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, modifier = Modifier.size(18.dp))
+                            }
                         }
                     }
                 }
             }
         },
-        containerColor = Color.White
+        containerColor = Color(0xFFF9FAFB)
     ) { padding ->
         if (isEmpty) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(64.dp), tint = Color.LightGray)
-                    Text("Your cart is empty", color = Color.Gray)
-                }
-            }
+            EmptyCartContent(padding, navController)
         } else {
             LazyColumn(
                 modifier = Modifier.padding(padding).fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Combine in-memory Residential and DB Residential
-                val combinedResItems = dbCartItems.filter { it.category == "Residential" }
-                if (resItems.isNotEmpty() || combinedResItems.isNotEmpty()) {
-                    item { Text("Residential Services", fontWeight = FontWeight.Bold, color = PinkPrimary) }
+                // Service Bookings Group
+                val bookingItems = dbCartItems.filter { it.unit == "Booking" && it.category != "Residential" }
+                if (bookingItems.isNotEmpty()) {
+                    item { CartCategoryHeader("Service Bookings", Icons.Default.Event) }
+                    items(bookingItems) { item ->
+                        CartItemRow(
+                            name = "${item.itemName} (${item.date} ${item.time})",
+                            price = item.price.toInt(),
+                            quantity = item.quantity,
+                            category = "Service",
+                            onIncrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) },
+                            onDecrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) },
+                            onDelete = { homeCartViewModel.updateQuantity(item.itemId, 0) }
+                        )
+                    }
+                }
+
+                // Residential Services Group
+                val dbResItems = dbCartItems.filter { it.category == "Residential" }
+                if (resItems.isNotEmpty() || dbResItems.isNotEmpty()) {
+                    item { CartCategoryHeader("Residential Services", Icons.Default.HomeRepairService) }
                     items(resItems) { item ->
-                        CartItemRow(item.service.name, item.service.price.toInt(), item.quantity, 
-                            { residentialViewModel.updateQty(item.service.id, true) }, 
-                            { residentialViewModel.updateQty(item.service.id, false) })
+                        CartItemRow(
+                            name = item.service.name,
+                            price = item.service.price.toInt(),
+                            quantity = item.quantity,
+                            category = "Residential",
+                            onIncrease = { residentialViewModel.updateQty(item.service.id, true) },
+                            onDecrease = { residentialViewModel.updateQty(item.service.id, false) },
+                            onDelete = { residentialViewModel.updateQty(item.service.id, false) }
+                        )
                     }
-                    items(combinedResItems) { item ->
-                        CartItemRow(item.itemName, item.price.toInt(), item.quantity, 
-                            { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) }, 
-                            { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) })
+                    items(dbResItems) { item ->
+                        CartItemRow(
+                            name = item.itemName,
+                            price = item.price.toInt(),
+                            quantity = item.quantity,
+                            category = "Residential",
+                            onIncrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) },
+                            onDecrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) },
+                            onDelete = { homeCartViewModel.updateQuantity(item.itemId, 0) }
+                        )
                     }
                 }
 
+                // Essential Supplies Group
+                val supplyItems = dbCartItems.filter { it.unit != "Booking" && it.category != "Residential" }
+                if (supplyItems.isNotEmpty()) {
+                    item { CartCategoryHeader("Essential Supplies", Icons.Default.Inventory2) }
+                    items(supplyItems) { item ->
+                        CartItemRow(
+                            name = item.itemName,
+                            price = item.price.toInt(),
+                            quantity = item.quantity,
+                            category = "Essential",
+                            onIncrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) },
+                            onDecrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) },
+                            onDelete = { homeCartViewModel.updateQuantity(item.itemId, 0) }
+                        )
+                    }
+                }
+
+                // Food & Beverages Group
                 if (foodItems.isNotEmpty()) {
-                    item { Text("Food & Beverages", fontWeight = FontWeight.Bold, color = PinkPrimary) }
+                    item { CartCategoryHeader("Food & Beverages", Icons.Default.Fastfood) }
                     items(foodItems) { item ->
-                        CartItemRow(item.name, item.price, item.quantity, 
-                            { foodCartViewModel.increaseQty(item.id) }, 
-                            { foodCartViewModel.decreaseQty(item.id) })
+                        CartItemRow(
+                            name = item.name,
+                            price = item.price,
+                            quantity = item.quantity,
+                            category = "Food",
+                            onIncrease = { foodCartViewModel.increaseQty(item.id) },
+                            onDecrease = { foodCartViewModel.decreaseQty(item.id) },
+                            onDelete = { foodCartViewModel.removeItem(item.id) }
+                        )
                     }
                 }
 
+                // Education Services Group
                 if (eduItems.isNotEmpty()) {
-                    item { Text("Education Services", fontWeight = FontWeight.Bold, color = PinkPrimary) }
+                    item { CartCategoryHeader("Education", Icons.Default.School) }
                     items(eduItems) { item ->
-                        CartItemRow(item.name, item.price, item.quantity, 
-                            { educationViewModel.increaseQty(item.id) }, 
-                            { educationViewModel.decreaseQty(item.id) })
+                        CartItemRow(
+                            name = item.name,
+                            price = item.price,
+                            quantity = item.quantity,
+                            category = "Education",
+                            onIncrease = { educationViewModel.increaseQty(item.id) },
+                            onDecrease = { educationViewModel.decreaseQty(item.id) },
+                            onDelete = { educationViewModel.removeItem(item.id) }
+                        )
                     }
                 }
 
-                if (dbCartItems.isNotEmpty()) {
-                    val supplyItems = dbCartItems.filter { it.unit != "Booking" && it.category != "Residential" }
-                    val bookingItems = dbCartItems.filter { it.unit == "Booking" && it.category != "Residential" }
-
-                    if (supplyItems.isNotEmpty()) {
-                        item { Text("Essential Supplies", fontWeight = FontWeight.Bold, color = PinkPrimary) }
-                        items(supplyItems) { item ->
-                            CartItemRow(item.itemName, item.price.toInt(), item.quantity, 
-                                { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) }, 
-                                { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) })
-                        }
-                    }
-
-                    if (bookingItems.isNotEmpty()) {
-                        item { Text("Service Bookings", fontWeight = FontWeight.Bold, color = PinkPrimary) }
-                        items(bookingItems) { item ->
-                            CartItemRow("${item.itemName} (${item.date} ${item.time})", item.price.toInt(), item.quantity, 
-                                { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) }, 
-                                { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) })
-                        }
-                    }
-                }
-
-                if (businessItems.isNotEmpty()) {
-                    item { Text("Business Services", fontWeight = FontWeight.Bold, color = PinkPrimary) }
+                // Professional Services Group (Business, Lifestyle, Tech, Grooming)
+                if (businessItems.isNotEmpty() || lifestyleItems.isNotEmpty() || techItems.isNotEmpty() || mensItems.isNotEmpty() || womensItems.isNotEmpty() || healthItems.isNotEmpty()) {
+                    item { CartCategoryHeader("Other Services", Icons.Default.BusinessCenter) }
+                    
                     items(businessItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, 
-                            { businessViewModel.increaseQty(item.id) }, 
-                            { businessViewModel.decreaseQty(item.id) })
+                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Business", { businessViewModel.increaseQty(item.id) }, { businessViewModel.decreaseQty(item.id) }, { businessViewModel.removeFromCart(item.id) })
                     }
-                }
-
-                if (lifestyleItems.isNotEmpty()) {
-                    item { Text("Lifestyle Services", fontWeight = FontWeight.Bold, color = PinkPrimary) }
                     items(lifestyleItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, 
-                            { lifestyleViewModel.increaseQty(item.id) }, 
-                            { lifestyleViewModel.decreaseQty(item.id) })
+                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Lifestyle", { lifestyleViewModel.increaseQty(item.id) }, { lifestyleViewModel.decreaseQty(item.id) }, { lifestyleViewModel.removeFromCart(item.id) })
                     }
-                }
-
-                if (techItems.isNotEmpty()) {
-                    item { Text("Tech Services", fontWeight = FontWeight.Bold, color = PinkPrimary) }
                     items(techItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, 
-                            { techViewModel.increaseQty(item.id) }, 
-                            { techViewModel.decreaseQty(item.id) })
+                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Tech", { techViewModel.increaseQty(item.id) }, { techViewModel.decreaseQty(item.id) }, { techViewModel.removeFromCart(item.id) })
                     }
-                }
-
-                if (mensItems.isNotEmpty()) {
-                    item { Text("Mens Grooming", fontWeight = FontWeight.Bold, color = PinkPrimary) }
                     items(mensItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, 
-                            { mensGroomingViewModel.increaseQty(item.id) }, 
-                            { mensGroomingViewModel.decreaseQty(item.id) })
+                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Grooming", { mensGroomingViewModel.increaseQty(item.id) }, { mensGroomingViewModel.decreaseQty(item.id) }, { mensGroomingViewModel.removeFromCart(item.id) })
                     }
-                }
-
-                if (womensItems.isNotEmpty()) {
-                    item { Text("Womens Beauty", fontWeight = FontWeight.Bold, color = PinkPrimary) }
                     items(womensItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, 
-                            { womensBeautyViewModel.updateQty(item.id, true) }, 
-                            { womensBeautyViewModel.updateQty(item.id, false) })
+                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Beauty", { womensBeautyViewModel.updateQty(item.id, true) }, { womensBeautyViewModel.updateQty(item.id, false) }, { womensBeautyViewModel.removeFromCart(item.id) })
                     }
-                }
-
-                if (healthItems.isNotEmpty()) {
-                    item { Text("Healthcare & Pharmacy", fontWeight = FontWeight.Bold, color = PinkPrimary) }
                     items(healthItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, 
-                            { healthcareViewModel.updateQty(item.id, true) }, 
-                            { healthcareViewModel.updateQty(item.id, false) })
+                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Healthcare", { healthcareViewModel.updateQty(item.id, true) }, { healthcareViewModel.updateQty(item.id, false) }, { healthcareViewModel.removeFromCart(item.id) })
                     }
                 }
 
+                // Summary Section
                 item {
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Subtotal", fontWeight = FontWeight.Medium)
-                        Text("₹$subtotal")
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color.White)
+                            .padding(20.dp)
+                    ) {
+                        Text("Bill Summary", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = Color.Black)
+                        Spacer(Modifier.height(16.dp))
+                        
+                        BillRow("Item Subtotal", "₹$subtotal")
+                        BillRow("Delivery/Service Fee", "₹$deliveryFee")
+                        
+                        HorizontalDivider(Modifier.padding(vertical = 16.dp), color = Color(0xFFF3F4F6))
+                        
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Grand Total", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+                            Text("₹$grandTotal", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = PinkPrimary)
+                        }
                     }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Service/Delivery Fee", color = Color.Gray)
-                        Text("₹$deliveryFee", color = Color.Gray)
+                }
+
+                // Trust Badge
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Outlined.Shield, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("100% Safe & Secure Payments", fontSize = 12.sp, color = Color.Gray)
+                    }
+                    Spacer(Modifier.height(80.dp)) // Padding for bottom bar
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CartCategoryHeader(title: String, icon: ImageVector) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+    ) {
+        Icon(icon, null, tint = PinkPrimary, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(title, fontWeight = FontWeight.Bold, color = PinkPrimary, fontSize = 14.sp)
+    }
+}
+
+@Composable
+fun CartItemRow(
+    name: String, 
+    price: Int, 
+    quantity: Int, 
+    category: String,
+    onIncrease: () -> Unit, 
+    onDecrease: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp), 
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Placeholder for Image or Icon based on category
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(PinkPrimary.copy(alpha = 0.05f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = when(category) {
+                        "Food" -> Icons.Default.Fastfood
+                        "Residential" -> Icons.Default.Build
+                        "Essential" -> Icons.Default.ShoppingBasket
+                        "Service" -> Icons.Default.CalendarToday
+                        "Education" -> Icons.Default.School
+                        else -> Icons.Default.AutoFixHigh
+                    },
+                    contentDescription = null,
+                    tint = PinkPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(Modifier.width(16.dp))
+
+            Column(Modifier.weight(1f)) {
+                Text(name, fontWeight = FontWeight.Bold, color = Color.Black, maxLines = 2, fontSize = 15.sp)
+                Text("₹$price", color = PinkPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically, 
+                    modifier = Modifier
+                        .border(1.dp, Color(0xFFE5E7EB), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 4.dp)
+                ) {
+                    IconButton(onClick = { if (quantity > 1) onDecrease() else onDelete() }, modifier = Modifier.size(32.dp)) { 
+                        Icon(if (quantity > 1) Icons.Default.Remove else Icons.Default.Delete, null, tint = if (quantity > 1) Color.Black else ErrorRed, modifier = Modifier.size(18.dp)) 
+                    }
+                    Text(
+                        quantity.toString(), 
+                        fontWeight = FontWeight.ExtraBold, 
+                        color = Color.Black,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) { 
+                        Icon(Icons.Default.Add, null, tint = Color.Black, modifier = Modifier.size(18.dp)) 
                     }
                 }
             }
@@ -255,21 +410,53 @@ fun UnifiedCartScreen(
 }
 
 @Composable
-fun CartItemRow(name: String, price: Int, quantity: Int, onIncrease: () -> Unit, onDecrease: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFBFBFB)),
-        shape = RoundedCornerShape(12.dp)
+fun BillRow(label: String, value: String, isDiscount: Boolean = false) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), 
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(name, fontWeight = FontWeight.Bold, color = Color.Black)
-                Text("₹$price", color = PinkPrimary, fontWeight = FontWeight.SemiBold)
+        Text(label, color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = value, 
+            color = if (isDiscount) SuccessGreen else Color.Black, 
+            fontWeight = if (isDiscount) FontWeight.Bold else FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+fun EmptyCartContent(padding: PaddingValues, navController: NavController) {
+    Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Surface(
+                modifier = Modifier.size(120.dp),
+                shape = RoundedCornerShape(60.dp),
+                color = PinkPrimary.copy(alpha = 0.05f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(48.dp), tint = PinkPrimary)
+                }
             }
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(PinkPrimary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))) {
-                IconButton(onClick = onDecrease) { Icon(Icons.Default.Remove, null, tint = PinkPrimary) }
-                Text(quantity.toString(), fontWeight = FontWeight.Bold, color = PinkPrimary)
-                IconButton(onClick = onIncrease) { Icon(Icons.Default.Add, null, tint = PinkPrimary) }
+            Spacer(Modifier.height(24.dp))
+            Text("Your Cart is Empty", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Looks like you haven't added anything to your cart yet.",
+                textAlign = TextAlign.Center,
+                color = Color.Gray,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(Modifier.height(32.dp))
+            Button(
+                onClick = { navController.navigate(Screen.Home.route) },
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
+                modifier = Modifier.fillMaxWidth().height(56.dp)
+            ) {
+                Text("Start Shopping", fontWeight = FontWeight.Bold)
             }
         }
     }

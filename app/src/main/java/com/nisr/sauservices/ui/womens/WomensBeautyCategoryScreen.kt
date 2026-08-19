@@ -6,9 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,53 +22,56 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.theme.PinkPrimary
 
-data class BeautyCategory(val name: String, val icon: String, val color: Color)
+data class BeautyCategory(val name: String, val icon: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WomensBeautyCategoryScreen(navController: NavController) {
     val categories = listOf(
-        BeautyCategory("Hair Services", "💇‍♀️", Color(0xFFFFE4E1)),
-        BeautyCategory("Facial & Cleanup", "💆‍♀️", Color(0xFFFFF0F5)),
-        BeautyCategory("Waxing", "🍯", Color(0xFFFFF5EE)),
-        BeautyCategory("Threading & Face", "🧵", Color(0xFFF0FFF0)),
-        BeautyCategory("Manicure & Pedicure", "💅", Color(0xFFF5F5DC)),
-        BeautyCategory("Makeup & Styling", "💄", Color(0xFFE6E6FA)),
-        BeautyCategory("Spa & Massage", "🧖‍♀️", Color(0xFFF0FFFF)),
-        BeautyCategory("Bridal & Premium", "👰", Color(0xFFFFFACD))
+        BeautyCategory("Hair Services", "💇‍♀️"),
+        BeautyCategory("Facial & Cleanup", "💆‍♀️"),
+        BeautyCategory("Waxing", "🍯"),
+        BeautyCategory("Threading & Face", "🧵"),
+        BeautyCategory("Manicure & Pedicure", "💅"),
+        BeautyCategory("Makeup & Styling", "💄"),
+        BeautyCategory("Spa & Massage", "🧖‍♀️"),
+        BeautyCategory("Bridal & Premium", "👰")
     )
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Women's Beauty", fontWeight = FontWeight.Bold, color = Color(0xFF880E4F)) },
+            TopAppBar(
+                title = { Text("Women's Beauty", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF880E4F))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color(0xFFFFFBFD)
+        containerColor = Color(0xFFF9FAFB)
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp)) {
+        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             Text(
                 "Select a Category",
-                fontSize = 20.sp,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color.DarkGray,
-                modifier = Modifier.padding(bottom = 20.dp)
+                color = Color.Black,
+                modifier = Modifier.padding(16.dp)
             )
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxSize()
             ) {
                 items(categories) { category ->
-                    BeautyCategoryCard(category) {
+                    BeautyCategoryCardProfessional(category) {
                         navController.navigate(Screen.WomensBeautySubcategories.createRoute(category.name))
                     }
                 }
@@ -77,29 +81,29 @@ fun WomensBeautyCategoryScreen(navController: NavController) {
 }
 
 @Composable
-fun BeautyCategoryCard(category: BeautyCategory, onClick: () -> Unit) {
+fun BeautyCategoryCardProfessional(category: BeautyCategory, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(140.dp)
+            .height(150.dp)
             .clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = category.color),
-        elevation = CardDefaults.cardElevation(2.dp)
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
+            Surface(
+                modifier = Modifier.size(64.dp),
+                shape = CircleShape,
+                color = PinkPrimary.copy(alpha = 0.05f)
             ) {
-                Text(category.icon, fontSize = 28.sp)
+                Box(contentAlignment = Alignment.Center) {
+                    Text(category.icon, fontSize = 32.sp)
+                }
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(
@@ -107,7 +111,8 @@ fun BeautyCategoryCard(category: BeautyCategory, onClick: () -> Unit) {
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                color = Color(0xFF4A148C)
+                color = Color.Black,
+                lineHeight = 18.sp
             )
         }
     }

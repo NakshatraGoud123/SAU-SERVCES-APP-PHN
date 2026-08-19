@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.data.local.SessionManager
 import com.nisr.sauservices.ui.home.*
 import com.nisr.sauservices.ui.education.EducationBottomSheet
@@ -52,6 +53,7 @@ fun CustomerHomeScreen(
             
             CategoriesGrid(
                 navController = navController,
+                onHomeEssentialsClick = { navController.navigate(Screen.HomeEssentialsMain.route) },
                 onEducationClick = { showEduSheet = true },
                 onBusinessClick = { showBizSheet = true },
                 onLifestyleClick = { showLifeSheet = true },

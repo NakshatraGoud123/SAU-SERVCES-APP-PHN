@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.supabase.auth)
     implementation(libs.supabase.realtime)
     implementation(libs.supabase.storage)
+    implementation(libs.supabase.functions)
     
     // Ktor
     implementation(platform(libs.ktor.bom))

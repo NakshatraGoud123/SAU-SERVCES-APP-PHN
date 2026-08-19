@@ -3,6 +3,7 @@ package com.nisr.sauservices.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nisr.sauservices.data.model.CartModel
+import com.nisr.sauservices.data.model.toSafeUuid
 import com.nisr.sauservices.data.model.OrderModel
 import com.nisr.sauservices.data.model.HomeProduct
 import com.nisr.sauservices.data.repository.SupabaseRepository
@@ -39,32 +40,48 @@ class CartViewModel : ViewModel() {
         date: String? = null,
         time: String? = null,
         quantity: Int = 1,
+        onResult: (Result<Unit>) -> Unit = {}
     ) {
         viewModelScope.launch {
-            val userId = repository.getCurrentUserId() ?: return@launch
-            val item = CartModel(
-                userId = userId,
-                itemName = name,
-                price = price,
-                category = category,
-                subcategory = subcategory,
-                unit = unit,
-                productId = productId,
-                date = date,
-                time = time,
-                quantity = quantity,
-                totalPrice = price * quantity,
-            )
-            cartRepository.addToCart(item)
+            val userId = repository.getCurrentUserId() ?: run {
+                onResult(Result.failure(Exception("User not logged in")))
+                return@launch
+            }
+
+            val existingItem = _dbCartItems.value.find {
+                it.productId == productId.toSafeUuid() && it.date == date && it.time == time
+            }
+
+            val result = if (existingItem != null) {
+                cartRepository.updateQuantity(existingItem.itemId, existingItem.quantity + quantity)
+            } else {
+                val item = CartModel(
+                    userId = userId,
+                    itemName = name,
+                    price = price,
+                    category = category,
+                    subcategory = subcategory,
+                    unit = unit,
+                    productId = productId.toSafeUuid(),
+                    date = date,
+                    time = time,
+                    quantity = quantity,
+                    totalPrice = price * quantity,
+                )
+                cartRepository.addToCart(item)
+            }
+            onResult(result)
         }
     }
 
     fun getHomeItemQuantity(productId: String): Int {
-        return _dbCartItems.value.find { it.productId == productId }?.quantity ?: 0
+        val safeId = productId.toSafeUuid()
+        return _dbCartItems.value.find { it.productId == safeId }?.quantity ?: 0
     }
 
     fun addHomeProduct(product: HomeProduct) {
-        _dbCartItems.value.find { it.productId == product.id }?.let { existingItem ->
+        val safeId = product.id.toSafeUuid()
+        _dbCartItems.value.find { it.productId == safeId }?.let { existingItem ->
             updateQuantity(existingItem.itemId, existingItem.quantity + 1)
         } ?: run {
             addItemToCart(
@@ -79,7 +96,8 @@ class CartViewModel : ViewModel() {
     }
 
     fun removeHomeProduct(productId: String) {
-        _dbCartItems.value.find { it.productId == productId }?.let { existingItem ->
+        val safeId = productId.toSafeUuid()
+        _dbCartItems.value.find { it.productId == safeId }?.let { existingItem ->
             if (existingItem.quantity > 1) {
                 updateQuantity(existingItem.itemId, existingItem.quantity - 1)
             } else {

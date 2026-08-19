@@ -2,6 +2,16 @@ package com.nisr.sauservices.data.model
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import java.util.UUID
+
+fun String.toSafeUuid(): String {
+    return try {
+        UUID.fromString(this)
+        this
+    } catch (e: Exception) {
+        UUID.nameUUIDFromBytes(this.toByteArray()).toString()
+    }
+}
 
 @Serializable
 data class CartModel(

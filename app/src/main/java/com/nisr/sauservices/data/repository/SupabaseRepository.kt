@@ -2,6 +2,7 @@ package com.nisr.sauservices.data.repository
 
 import com.nisr.sauservices.data.api.SupabaseClient
 import com.nisr.sauservices.data.model.*
+import com.nisr.sauservices.data.model.toSafeUuid
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
@@ -133,7 +134,8 @@ class SupabaseRepository {
 
     suspend fun bookService(booking: BookingModel): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val inserted = postgrest["bookings"].insert(booking) {
+            val safeBooking = booking.copy(serviceId = booking.serviceId.toSafeUuid())
+            val inserted = postgrest["bookings"].insert(safeBooking) {
                 select()
             }.decodeSingle<BookingModel>()
             Result.success(inserted.id)

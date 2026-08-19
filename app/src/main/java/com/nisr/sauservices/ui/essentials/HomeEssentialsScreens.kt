@@ -1,7 +1,12 @@
 package com.nisr.sauservices.ui.essentials
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -9,9 +14,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Search
@@ -20,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,6 +37,7 @@ import androidx.navigation.NavController
 import com.nisr.sauservices.data.model.HomeCategory
 import com.nisr.sauservices.data.model.HomeEssentialsData
 import com.nisr.sauservices.data.model.HomeProduct
+import com.nisr.sauservices.data.model.toSafeUuid
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 import com.nisr.sauservices.ui.theme.LightPink
@@ -113,19 +122,22 @@ fun HomeEssentialsMainScreen(navController: NavController, cartViewModel: CartVi
 
     Scaffold(
         topBar = {
-            Column(modifier = Modifier.background(Color.White)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+            TopAppBar(
+                title = { 
                     Column {
-                        Text("Home Essentials", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = PinkPrimary)
+                        Text("Home Essentials", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(14.dp))
-                            Text(" Select Location", fontSize = 12.sp, color = Color.Gray)
+                            Icon(Icons.Outlined.LocationOn, null, tint = Color.Gray, modifier = Modifier.size(12.dp))
+                            Text(" Hyderabad, India", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                         }
                     }
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
                     IconButton(onClick = { navController.navigate(Screen.Cart.route) }) {
                         BadgedBox(badge = {
                             if (totalCount > 0) {
@@ -134,34 +146,46 @@ fun HomeEssentialsMainScreen(navController: NavController, cartViewModel: CartVi
                                 }
                             }
                         }) {
-                            Icon(Icons.Default.ShoppingCart, contentDescription = "Cart", tint = Color.Black)
+                            Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
                         }
                     }
-                }
-                
-                OutlinedTextField(
-                    value = "",
-                    onValueChange = {},
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    placeholder = { Text("Search groceries, meat, dairy...", fontSize = 14.sp) },
-                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(unfocusedContainerColor = Color(0xFFF5F5F5), focusedContainerColor = Color(0xFFF5F5F5), unfocusedBorderColor = Color.Transparent)
-                )
-            }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
         },
-        containerColor = Color.White
+        containerColor = Color(0xFFF9FAFB)
     ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(padding)
-        ) {
-            items(HomeEssentialsData.categories) { category ->
-                HomeCategoryCard(category) {
-                    navController.navigate(Screen.HomeEssentialsCategory.createRoute(category.id))
+        Column(modifier = Modifier.padding(padding)) {
+            // Search Bar
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White,
+                shadowElevation = 1.dp
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Outlined.Search, null, tint = Color.Gray)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Search groceries, dairy...", color = Color.Gray, fontSize = 14.sp)
+                }
+            }
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(HomeEssentialsData.categories) { category ->
+                    HomeCategoryCardProfessional(category) {
+                        navController.navigate(Screen.HomeEssentialsCategory.createRoute(category.id))
+                    }
                 }
             }
         }
@@ -169,23 +193,34 @@ fun HomeEssentialsMainScreen(navController: NavController, cartViewModel: CartVi
 }
 
 @Composable
-fun HomeCategoryCard(category: HomeCategory, onClick: () -> Unit) {
+fun HomeCategoryCardProfessional(category: HomeCategory, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().height(160.dp).clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFBFBFB)),
-        elevation = CardDefaults.cardElevation(2.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(category.icon, fontSize = 48.sp)
+            Surface(
+                modifier = Modifier.size(70.dp),
+                shape = CircleShape,
+                color = PinkPrimary.copy(alpha = 0.05f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(category.icon, fontSize = 36.sp)
+                }
+            }
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = category.name,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 color = Color.Black
@@ -203,15 +238,16 @@ fun HomeEssentialsCategoryScreen(navController: NavController, categoryId: Strin
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(category?.name ?: "Categories", fontWeight = FontWeight.Bold) },
+                title = { Text(category?.name ?: "Categories", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color.White
+        containerColor = Color(0xFFF9FAFB)
     ) { padding ->
         LazyColumn(
             modifier = Modifier.padding(padding).fillMaxSize(),
@@ -223,15 +259,16 @@ fun HomeEssentialsCategoryScreen(navController: NavController, categoryId: Strin
                     modifier = Modifier.fillMaxWidth().clickable {
                         navController.navigate(Screen.HomeEssentialsItems.createRoute(sub.id))
                     },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8))
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(1.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(sub.name, fontSize = 18.sp, fontWeight = FontWeight.Medium)
-                        Icon(Icons.Default.KeyboardArrowRight, contentDescription = null)
+                        Text(sub.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Icon(Icons.Default.ChevronRight, null, tint = PinkPrimary)
                     }
                 }
             }
@@ -250,10 +287,10 @@ fun HomeEssentialsItemsScreen(navController: NavController, subcategoryId: Strin
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(subcategory?.name ?: "Items", fontWeight = FontWeight.Bold) },
+                title = { Text(subcategory?.name ?: "Items", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -268,10 +305,33 @@ fun HomeEssentialsItemsScreen(navController: NavController, subcategoryId: Strin
                             Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color.White
+        containerColor = Color(0xFFF9FAFB),
+        bottomBar = {
+            if (totalCount > 0) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shadowElevation = 8.dp,
+                    color = Color.White
+                ) {
+                    Button(
+                        onClick = { navController.navigate(Screen.Cart.route) },
+                        modifier = Modifier.padding(16.dp).fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
+                    ) {
+                        val totalPrice = dbCartItems.sumOf { it.totalPrice }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("$totalCount Items | ₹$totalPrice", fontWeight = FontWeight.Bold)
+                            Text("View Cart", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
     ) { padding ->
         LazyColumn(
             modifier = Modifier.padding(padding).fillMaxSize(),
@@ -279,7 +339,7 @@ fun HomeEssentialsItemsScreen(navController: NavController, subcategoryId: Strin
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(products) { product ->
-                HomeProductCard(
+                HomeProductCardProfessional(
                     product = product,
                     quantity = cartViewModel.getHomeItemQuantity(product.id),
                     onIncrease = { cartViewModel.addHomeProduct(product) },
@@ -291,7 +351,7 @@ fun HomeEssentialsItemsScreen(navController: NavController, subcategoryId: Strin
 }
 
 @Composable
-fun HomeProductCard(
+fun HomeProductCardProfessional(
     product: HomeProduct,
     quantity: Int,
     onIncrease: () -> Unit,
@@ -299,45 +359,67 @@ fun HomeProductCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF5F5F5)),
+                modifier = Modifier
+                    .size(90.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(PinkPrimary.copy(alpha = 0.05f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.ShoppingBasket, contentDescription = null, tint = PinkPrimary.copy(alpha = 0.3f), modifier = Modifier.size(32.dp))
+                Icon(
+                    Icons.Default.ShoppingBasket, 
+                    contentDescription = null, 
+                    tint = PinkPrimary.copy(alpha = 0.4f), 
+                    modifier = Modifier.size(36.dp)
+                )
             }
+            
             Spacer(modifier = Modifier.width(16.dp))
+            
             Column(modifier = Modifier.weight(1f)) {
-                Text(product.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text("₹${product.price} / ${product.unit}", color = PinkPrimary, fontWeight = FontWeight.ExtraBold)
+                Text(product.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                Text(product.unit, color = Color.Gray, fontSize = 13.sp)
+                Spacer(Modifier.height(4.dp))
+                Text("₹${product.price}", color = PinkPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
             }
             
             if (quantity == 0) {
-                Button(
+                OutlinedButton(
                     onClick = onIncrease,
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PinkPrimary),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PinkPrimary),
+                    modifier = Modifier.height(40.dp)
                 ) {
-                    Text("ADD")
+                    Text("ADD", fontWeight = FontWeight.Bold)
                 }
             } else {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.background(PinkPrimary, RoundedCornerShape(8.dp)).padding(horizontal = 4.dp)
+                    modifier = Modifier
+                        .background(PinkPrimary, RoundedCornerShape(12.dp))
+                        .height(40.dp)
+                        .padding(horizontal = 4.dp)
                 ) {
                     IconButton(onClick = onDecrease, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Remove, contentDescription = null, tint = Color.White)
+                        Icon(Icons.Default.Remove, null, tint = Color.White, modifier = Modifier.size(18.dp))
                     }
-                    Text(quantity.toString(), color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
+                    Text(
+                        quantity.toString(), 
+                        color = Color.White, 
+                        fontWeight = FontWeight.Bold, 
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
                     IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
+                        Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -424,7 +506,7 @@ fun HomeEssentialsCartScreen(navController: NavController, cartViewModel: CartVi
                                 Text(item.quantity.toString(), fontWeight = FontWeight.Bold)
                                 IconButton(onClick = { 
                                     if (item.productId.isNotEmpty()) {
-                                        val prod = HomeEssentialsData.products.find { it.id == item.productId }
+                                        val prod = HomeEssentialsData.products.find { it.id.toSafeUuid() == item.productId }
                                         prod?.let { cartViewModel.addHomeProduct(it) }
                                     } else {
                                         cartViewModel.updateQuantity(item.itemId, item.quantity + 1)
