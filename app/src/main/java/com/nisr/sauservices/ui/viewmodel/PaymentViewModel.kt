@@ -101,24 +101,34 @@ class PaymentViewModel : ViewModel() {
         paymentError = null
         currentBookingData = BookingData(bookingId, customerId, partnerId, amount, onSuccess)
 
-        val checkout = Checkout()
-        // TODO: Replace with your actual Razorpay Key ID
-        checkout.setKeyID("rzp_test_YOUR_KEY_HERE") 
+        viewModelScope.launch {
+            val orderResult = razorpayRepository.createRazorpayOrder(amount)
+            
+            orderResult.onSuccess { orderId ->
+                val checkout = Checkout()
+                // TODO: Replace with your actual Razorpay Key ID
+                checkout.setKeyID("rzp_test_YOUR_KEY_HERE") 
 
-        try {
-            val options = JSONObject()
-            options.put("name", "SAU SERVICES")
-            options.put("description", "Booking Payment")
-            options.put("theme.color", "#00E5FF")
-            options.put("currency", "INR")
-            options.put("amount", (amount * 100).toInt()) // Amount in paise
-            options.put("prefill.email", customerEmail)
-            options.put("prefill.contact", customerContact)
+                try {
+                    val options = JSONObject()
+                    options.put("name", "SAU SERVICES")
+                    options.put("description", "Booking Payment")
+                    options.put("theme.color", "#00E5FF")
+                    options.put("currency", "INR")
+                    options.put("order_id", orderId) // VERY IMPORTANT: Use the order_id from backend
+                    options.put("amount", (amount * 100).toInt()) // Amount in paise
+                    options.put("prefill.email", customerEmail)
+                    options.put("prefill.contact", customerContact)
 
-            checkout.open(activity, options)
-        } catch (e: Exception) {
-            isLoading = false
-            paymentError = "Error starting Razorpay: ${e.message}"
+                    checkout.open(activity, options)
+                } catch (e: Exception) {
+                    isLoading = false
+                    paymentError = "Error starting Razorpay: ${e.message}"
+                }
+            }.onFailure {
+                isLoading = false
+                paymentError = "Failed to create order on server: ${it.message}"
+            }
         }
     }
 

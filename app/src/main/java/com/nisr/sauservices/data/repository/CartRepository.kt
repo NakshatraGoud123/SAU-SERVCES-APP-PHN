@@ -4,12 +4,17 @@ import com.nisr.sauservices.data.api.SupabaseClient
 import com.nisr.sauservices.data.model.BookingModel
 import com.nisr.sauservices.data.model.CartModel
 import com.nisr.sauservices.data.model.OrderModel
+import com.nisr.sauservices.data.model.toSafeUuid
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
@@ -25,7 +30,7 @@ class CartRepository {
         val userId = getUserId() ?: return Result.failure(Exception("User not logged in"))
         val insertData = com.nisr.sauservices.data.model.CartItemInsert(
             userId = userId,
-            productId = item.productId,
+            productId = item.productId.toSafeUuid(),
             itemName = item.itemName,
             price = item.price,
             unit = item.unit,
@@ -71,17 +76,27 @@ class CartRepository {
         Result.failure(e)
     }
 
-    @OptIn(SupabaseExperimental::class)
+    @OptIn(SupabaseExperimental::class, ExperimentalCoroutinesApi::class)
     fun getCartItems(): Flow<List<CartModel>> {
-        val userId = getUserId() ?: return kotlinx.coroutines.flow.flowOf(emptyList())
-        return postgrest["cart_items"]
-            .selectAsFlow(
-                primaryKey = CartModel::itemId,
-                filter = io.github.jan.supabase.postgrest.query.filter.FilterOperation("user_id", io.github.jan.supabase.postgrest.query.filter.FilterOperator.EQ, userId),
-            )
-            .map { list: List<CartModel> ->
-                list.filter { it.itemId.isNotEmpty() }
+        return auth.sessionStatus.flatMapLatest { status ->
+            val userId = if (status is SessionStatus.Authenticated) status.session.user?.id else null
+            if (userId == null) {
+                flowOf(emptyList())
+            } else {
+                postgrest["cart_items"]
+                    .selectAsFlow(
+                        primaryKey = CartModel::itemId,
+                        filter = io.github.jan.supabase.postgrest.query.filter.FilterOperation(
+                            "user_id",
+                            io.github.jan.supabase.postgrest.query.filter.FilterOperator.EQ,
+                            userId
+                        ),
+                    )
+                    .map { list: List<CartModel> ->
+                        list.filter { it.itemId.isNotEmpty() }
+                    }
             }
+        }
     }
 
     suspend fun removeItem(itemId: String) {
@@ -127,7 +142,7 @@ class CartRepository {
             order.items.filter { it.unit == "Booking" }.forEach { cartItem ->
                 val bookingData = BookingModel(
                     userId = userId,
-                    serviceId = cartItem.productId,
+                    serviceId = cartItem.productId.toSafeUuid(),
                     serviceName = cartItem.itemName,
                     scheduleDate = cartItem.date ?: "",
                     scheduleTime = cartItem.time ?: "",

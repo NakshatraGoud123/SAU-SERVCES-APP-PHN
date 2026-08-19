@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MedicalServices
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,57 +24,93 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.theme.PinkPrimary
 
-data class HealthCategory(val name: String, val icon: String, val color: Color)
+data class HealthCategory(val name: String, val icon: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthcareCategoryScreen(navController: NavController) {
     val categories = listOf(
-        HealthCategory("Lab Tests & Diagnostics", "🔬", Color(0xFFE3F2FD)),
-        HealthCategory("Doctor Consultation", "👨‍⚕️", Color(0xFFE8F5E9)),
-        HealthCategory("Pharmacy & Medicines", "💊", Color(0xFFFFF3E0)),
-        HealthCategory("Home Healthcare Services", "🏠", Color(0xFFF3E5F5))
+        HealthCategory("Lab Tests & Diagnostics", "🔬"),
+        HealthCategory("Doctor Consultation", "👨‍⚕️"),
+        HealthCategory("Pharmacy & Medicines", "💊"),
+        HealthCategory("Home Healthcare Services", "🏠")
     )
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Healthcare & Pharmacy", fontWeight = FontWeight.Bold, color = Color(0xFF1976D2)) },
+            TopAppBar(
+                title = { Text("Healthcare & Pharmacy", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color(0xFF1976D2))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color(0xFFF8FBFF)
+        containerColor = Color(0xFFF9FAFB)
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp)) {
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+            // Search Bar
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1976D2))
+                color = Color.White,
+                shadowElevation = 1.dp
             ) {
-                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Healthcare", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                        Text("Medicines, lab tests & doctor care at your doorstep", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
-                    }
-                    Icon(Icons.Default.MedicalServices, contentDescription = null, tint = Color.White, modifier = Modifier.size(48.dp))
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Outlined.Search, null, tint = Color.Gray)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Search medicines, tests...", color = Color.Gray, fontSize = 14.sp)
                 }
             }
 
-            Text("What are you looking for?", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray, modifier = Modifier.padding(bottom = 16.dp))
+            // Hero Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = PinkPrimary),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Row(modifier = Modifier.padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Healthcare", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+                        Text("Medicines & care at your doorstep", color = Color.White.copy(alpha = 0.9f), fontSize = 13.sp)
+                    }
+                    Box(modifier = Modifier.size(56.dp).background(Color.White.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.MedicalServices, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Text(
+                "What are you looking for?", 
+                style = MaterialTheme.typography.titleMedium, 
+                fontWeight = FontWeight.Bold, 
+                color = Color.Black, 
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+            )
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxSize()
             ) {
                 items(categories) { category ->
-                    HealthCategoryCard(category) {
+                    HealthCategoryCardProfessional(category) {
                         navController.navigate(Screen.HealthcareSubcategories.createRoute(category.name))
                     }
                 }
@@ -82,11 +120,11 @@ fun HealthcareCategoryScreen(navController: NavController) {
 }
 
 @Composable
-fun HealthCategoryCard(category: HealthCategory, onClick: () -> Unit) {
+fun HealthCategoryCardProfessional(category: HealthCategory, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().height(140.dp).clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = category.color),
+        modifier = Modifier.fillMaxWidth().height(150.dp).clickable { onClick() },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
@@ -94,14 +132,24 @@ fun HealthCategoryCard(category: HealthCategory, onClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Box(
-                modifier = Modifier.size(50.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.6f)),
-                contentAlignment = Alignment.Center
+            Surface(
+                modifier = Modifier.size(64.dp),
+                shape = CircleShape,
+                color = PinkPrimary.copy(alpha = 0.05f)
             ) {
-                Text(category.icon, fontSize = 28.sp)
+                Box(contentAlignment = Alignment.Center) {
+                    Text(category.icon, fontSize = 32.sp)
+                }
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text(category.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = Color(0xFF0D47A1))
+            Text(
+                category.name, 
+                fontSize = 14.sp, 
+                fontWeight = FontWeight.Bold, 
+                textAlign = TextAlign.Center, 
+                color = Color.Black,
+                lineHeight = 18.sp
+            )
         }
     }
 }

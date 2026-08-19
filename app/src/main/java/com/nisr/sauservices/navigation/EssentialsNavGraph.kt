@@ -35,7 +35,7 @@ fun NavGraphBuilder.essentialsNavGraph(
     }
 
     composable(Routes.ESSENTIALS_CART) {
-        HomeEssentialsCartScreen(navController, cartViewModel)
+         HomeEssentialsCartScreen(navController, cartViewModel)
     }
 
     composable(Routes.ESSENTIALS_CHECKOUT) {

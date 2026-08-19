@@ -13,15 +13,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -33,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.data.api.SupabaseClient
 import com.nisr.sauservices.data.model.*
+import com.nisr.sauservices.data.model.toSafeUuid
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.PinkPrimary
 import com.nisr.sauservices.ui.viewmodel.*
@@ -46,7 +50,7 @@ fun ResidentialCategoryScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Residential Services", fontWeight = FontWeight.Bold) },
+                title = { Text("Residential Services", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -55,17 +59,17 @@ fun ResidentialCategoryScreen(navController: NavController) {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color.White
+        containerColor = Color(0xFFF9FAFB)
     ) { padding ->
         LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
+            columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.padding(padding)
         ) {
             items(ResidentialData.categories) { category ->
-                ResidentialCategoryItem(category) {
+                ResidentialCategoryCardProfessional(category) {
                     navController.navigate(Screen.ResidentialSubcategories.createRoute(category.id))
                 }
             }
@@ -74,24 +78,38 @@ fun ResidentialCategoryScreen(navController: NavController) {
 }
 
 @Composable
-fun ResidentialCategoryItem(category: ResidentialCategory, onClick: () -> Unit) {
+fun ResidentialCategoryCardProfessional(category: ResidentialCategory, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1f)
+            .height(160.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF0F5)),
-        elevation = CardDefaults.cardElevation(0.dp)
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(8.dp),
+            modifier = Modifier.fillMaxSize().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(category.icon, contentDescription = null, tint = PinkPrimary, modifier = Modifier.size(32.dp))
-            Spacer(Modifier.height(8.dp))
-            Text(category.name, fontSize = 12.sp, textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, color = Color.Black)
+            Surface(
+                modifier = Modifier.size(60.dp),
+                shape = CircleShape,
+                color = PinkPrimary.copy(alpha = 0.05f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(category.icon, contentDescription = null, tint = PinkPrimary, modifier = Modifier.size(30.dp))
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                category.name, 
+                fontSize = 15.sp, 
+                textAlign = TextAlign.Center, 
+                fontWeight = FontWeight.Bold, 
+                color = Color.Black
+            )
         }
     }
 }
@@ -105,7 +123,7 @@ fun ResidentialSubcategoryScreen(navController: NavController, categoryId: Strin
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(category?.name ?: "Subcategories", fontWeight = FontWeight.Bold) },
+                title = { Text(category?.name ?: "Subcategories", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -114,10 +132,10 @@ fun ResidentialSubcategoryScreen(navController: NavController, categoryId: Strin
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color.White
+        containerColor = Color(0xFFF9FAFB)
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.padding(padding),
+            modifier = Modifier.padding(padding).fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -126,16 +144,16 @@ fun ResidentialSubcategoryScreen(navController: NavController, categoryId: Strin
                     modifier = Modifier.fillMaxWidth().clickable {
                         navController.navigate(Screen.ResidentialServiceList.createRoute(categoryId, sub.id))
                     },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8F8)),
-                    elevation = CardDefaults.cardElevation(0.0.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(1.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(20.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(sub.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                        Text(sub.name, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color.Black)
                         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = PinkPrimary)
                     }
                 }
@@ -160,7 +178,7 @@ fun ResidentialServiceListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(sub?.name ?: "Services", fontWeight = FontWeight.Bold) },
+                title = { Text(sub?.name ?: "Services", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -169,27 +187,28 @@ fun ResidentialServiceListScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color.White,
+        containerColor = Color(0xFFF9FAFB),
         bottomBar = {
             val totalCount = dbCartItems.sumOf { it.quantity }
             if (totalCount > 0) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 8.dp,
-                    color = Color.White
+                    shadowElevation = 16.dp,
+                    color = Color.White,
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ) {
                     Button(
                         onClick = { navController.navigate(Screen.Cart.route) },
-                        modifier = Modifier.padding(16.dp).fillMaxWidth().height(56.dp),
+                        modifier = Modifier.padding(20.dp).fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
                     ) {
+                        val totalPrice = dbCartItems.sumOf { it.totalPrice }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val totalPrice = dbCartItems.sumOf { it.totalPrice }
                             Text("$totalCount Items | ₹$totalPrice", fontWeight = FontWeight.Bold)
                             Text("View Cart", fontWeight = FontWeight.Bold)
                         }
@@ -199,15 +218,15 @@ fun ResidentialServiceListScreen(
         }
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.padding(padding),
+            modifier = Modifier.padding(padding).fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(services) { service ->
-                val cartItem = dbCartItems.find { it.productId == service.id }
+                val cartItem = dbCartItems.find { it.productId == service.id.toSafeUuid() }
                 val quantity = cartItem?.quantity ?: 0
                 
-                ResidentialServiceCard(
+                ResidentialServiceCardProfessional(
                     service = service,
                     quantity = quantity,
                     onAdd = { 
@@ -233,36 +252,59 @@ fun ResidentialServiceListScreen(
 }
 
 @Composable
-fun ResidentialServiceCard(service: ResidentialServiceItem, quantity: Int, onAdd: () -> Unit, onIncrease: () -> Unit, onDecrease: () -> Unit) {
+fun ResidentialServiceCardProfessional(service: ResidentialServiceItem, quantity: Int, onAdd: () -> Unit, onIncrease: () -> Unit, onDecrease: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(PinkPrimary.copy(alpha = 0.05f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Build, 
+                    contentDescription = null, 
+                    tint = PinkPrimary.copy(alpha = 0.4f), 
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            
+            Spacer(Modifier.width(16.dp))
+            
             Column(modifier = Modifier.weight(1f)) {
                 Text(service.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
-                Text("₹${service.price}", fontWeight = FontWeight.ExtraBold, color = PinkPrimary, fontSize = 14.sp)
-                Text("${service.durationMinutes} mins", fontSize = 12.sp, color = Color.Gray)
+                Text("${service.durationMinutes} mins", fontSize = 13.sp, color = Color.Gray)
+                Spacer(Modifier.height(4.dp))
+                Text("₹${service.price}", fontWeight = FontWeight.ExtraBold, color = PinkPrimary, fontSize = 16.sp)
             }
+            
             if (quantity == 0) {
                 OutlinedButton(
                     onClick = onAdd, 
-                    shape = RoundedCornerShape(8.dp), 
+                    shape = RoundedCornerShape(12.dp), 
                     border = BorderStroke(1.dp, PinkPrimary),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PinkPrimary)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = PinkPrimary),
+                    modifier = Modifier.height(40.dp)
                 ) {
                     Text("ADD", fontWeight = FontWeight.Bold)
                 }
             } else {
                 Row(
                     verticalAlignment = Alignment.CenterVertically, 
-                    modifier = Modifier.background(PinkPrimary, RoundedCornerShape(8.dp))
+                    modifier = Modifier
+                        .background(PinkPrimary, RoundedCornerShape(12.dp))
+                        .height(40.dp)
+                        .padding(horizontal = 4.dp)
                 ) {
-                    IconButton(onClick = onDecrease, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Remove, contentDescription = null, tint = Color.White) }
+                    IconButton(onClick = onDecrease, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Remove, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) }
                     Text(quantity.toString(), color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
-                    IconButton(onClick = onIncrease, modifier = Modifier.size(36.dp)) { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) }
+                    IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) }
                 }
             }
         }
@@ -282,67 +324,99 @@ fun ResidentialBookingDetailsScreen(navController: NavController, viewModel: Res
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Booking Details", fontWeight = FontWeight.Bold) },
+                title = { Text("Booking Details", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color.White
+        containerColor = Color(0xFFF9FAFB)
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp).verticalScroll(rememberScrollState())) {
-            OutlinedTextField(
-                value = address, 
-                onValueChange = { address = it; viewModel.setAddress(it) }, 
-                label = { Text("Address") }, 
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PinkPrimary, focusedLabelColor = PinkPrimary),
-                shape = RoundedCornerShape(12.dp)
-            )
-            Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = phone, 
-                onValueChange = { phone = it; viewModel.setPhone(it) }, 
-                label = { Text("Phone") }, 
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PinkPrimary, focusedLabelColor = PinkPrimary),
-                shape = RoundedCornerShape(12.dp)
-            )
-            Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = date, 
-                onValueChange = { date = it; viewModel.setDate(it) }, 
-                label = { Text("Date (DD/MM/YYYY)") }, 
-                modifier = Modifier.fillMaxWidth(),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PinkPrimary, focusedLabelColor = PinkPrimary),
-                shape = RoundedCornerShape(12.dp)
-            )
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.padding(24.dp)) {
+                    Text("Service Location", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = address, 
+                        onValueChange = { address = it; viewModel.setAddress(it) }, 
+                        label = { Text("Full Address") }, 
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PinkPrimary, focusedLabelColor = PinkPrimary),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = phone, 
+                        onValueChange = { phone = it; viewModel.setPhone(it) }, 
+                        label = { Text("Contact Number") }, 
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PinkPrimary, focusedLabelColor = PinkPrimary),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            }
+            
             Spacer(Modifier.height(24.dp))
-            Text("Select Time Slot", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Spacer(Modifier.height(8.dp))
-            Column(Modifier.selectableGroup()) {
-                slots.forEach { slot ->
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .selectable(selected = selectedSlot == slot, onClick = { selectedSlot = slot; viewModel.setTimeSlot(slot) }, role = Role.RadioButton)
-                            .padding(vertical = 8.dp), 
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = selectedSlot == slot, 
-                            onClick = null,
-                            colors = RadioButtonDefaults.colors(selectedColor = PinkPrimary)
-                        )
-                        Text(slot, modifier = Modifier.padding(start = 12.dp), fontSize = 15.sp)
+
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.padding(24.dp)) {
+                    Text("Schedule Service", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = date, 
+                        onValueChange = { date = it; viewModel.setDate(it) }, 
+                        label = { Text("Preferred Date (DD/MM/YYYY)") }, 
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PinkPrimary, focusedLabelColor = PinkPrimary),
+                        shape = RoundedCornerShape(12.dp),
+                        trailingIcon = { Icon(Icons.Default.CalendarToday, null, tint = PinkPrimary) }
+                    )
+                    Spacer(Modifier.height(24.dp))
+                    Text("Preferred Time Slot", fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    Spacer(Modifier.height(12.dp))
+                    Column(Modifier.selectableGroup()) {
+                        slots.forEach { slot ->
+                            Row(
+                                Modifier.fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .selectable(selected = selectedSlot == slot, onClick = { selectedSlot = slot; viewModel.setTimeSlot(slot) }, role = Role.RadioButton)
+                                    .padding(vertical = 4.dp), 
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedSlot == slot, 
+                                    onClick = null,
+                                    colors = RadioButtonDefaults.colors(selectedColor = PinkPrimary)
+                                )
+                                Text(slot, modifier = Modifier.padding(start = 12.dp), fontSize = 15.sp, fontWeight = if(selectedSlot == slot) FontWeight.Bold else FontWeight.Normal)
+                            }
+                        }
                     }
                 }
             }
+            
             Spacer(Modifier.height(32.dp))
             Button(
                 onClick = { if(address.isNotBlank() && phone.isNotBlank()) navController.navigate(Screen.ResidentialPayment.route) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
-            ) { Text("Proceed to Payment", fontWeight = FontWeight.Bold, fontSize = 16.sp) }
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+            ) { 
+                Text("Proceed to Payment", fontWeight = FontWeight.Bold, fontSize = 16.sp) 
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.Default.ArrowForward, null, modifier = Modifier.size(18.dp))
+            }
         }
     }
 }
@@ -361,15 +435,15 @@ fun ResidentialPaymentScreen(navController: NavController, viewModel: Residentia
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Payment Methods", fontWeight = FontWeight.Bold) },
+                title = { Text("Payment Methods", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
-        containerColor = Color.White
+        containerColor = Color(0xFFF9FAFB)
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp)) {
-            Text("Select Payment Option", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text("Select Payment Option", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
             Spacer(Modifier.height(16.dp))
             Column(Modifier.selectableGroup()) {
                 options.forEach { option ->
@@ -382,11 +456,12 @@ fun ResidentialPaymentScreen(navController: NavController, viewModel: Residentia
                                 onClick = { selectedOption = option.name; viewModel.setPaymentMethod(option.name) }, 
                                 role = Role.RadioButton
                             ),
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (selectedOption == option.name) PinkPrimary.copy(alpha = 0.05f) else Color(0xFFF8F8F8),
-                        border = if (selectedOption == option.name) BorderStroke(1.dp, PinkPrimary) else null
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (selectedOption == option.name) PinkPrimary.copy(alpha = 0.05f) else Color.White,
+                        border = if (selectedOption == option.name) BorderStroke(1.dp, PinkPrimary) else null,
+                        shadowElevation = if (selectedOption == option.name) 0.dp else 1.dp
                     ) {
-                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icon(option.icon, contentDescription = null, tint = if (selectedOption == option.name) PinkPrimary else Color.Gray)
                             Spacer(Modifier.width(16.dp))
                             Text(text = option.name, modifier = Modifier.weight(1f), fontWeight = if (selectedOption == option.name) FontWeight.Bold else FontWeight.Medium)
@@ -403,181 +478,14 @@ fun ResidentialPaymentScreen(navController: NavController, viewModel: Residentia
             Button(
                 onClick = { navController.navigate(Screen.ResidentialOrderSummary.route) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Text("Proceed to Summary", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.Default.ArrowForward, null, modifier = Modifier.size(18.dp))
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ResidentialOrderSummaryScreen(
-    navController: NavController,
-    viewModel: ResidentialViewModel,
-    bookingsViewModel: BookingsViewModel,
-    businessViewModel: BusinessViewModel,
-    lifestyleViewModel: LifestyleViewModel,
-    techViewModel: TechServicesViewModel,
-    mensGroomingViewModel: MensGroomingViewModel,
-    womensBeautyViewModel: WomensBeautyViewModel,
-    healthcareViewModel: HealthcareViewModel,
-    foodCartViewModel: FoodCartViewModel,
-    homeCartViewModel: CartViewModel,
-    educationViewModel: EducationCartViewModel
-) {
-    val bookingInfo = viewModel.bookingDetails.value
-    val dbCartItems by homeCartViewModel.dbCartItems.collectAsState()
-    val context = LocalContext.current
-    
-    val resItems = viewModel.cartItems
-    val bizItems = businessViewModel.cartItems
-    val lifeItems = lifestyleViewModel.cartItems
-    val tItems = techViewModel.cartItems
-    val mItems = mensGroomingViewModel.cartItems
-    val wItems = womensBeautyViewModel.cartItems
-    val hItems = healthcareViewModel.cartItems
-    val fItems = foodCartViewModel.cartItems
-    val eItems = educationViewModel.cartItems
-
-    val allCartModels = remember(resItems, bizItems, lifeItems, tItems, mItems, wItems, hItems, fItems, dbCartItems, eItems) {
-        val list = mutableListOf<CartModel>()
-        resItems.forEach { list.add(CartModel(itemName = it.service.name, price = it.service.price, quantity = it.quantity, totalPrice = it.service.price * it.quantity, category = "Residential")) }
-        bizItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Business")) }
-        lifeItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Lifestyle")) }
-        tItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Tech")) }
-        mItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Mens")) }
-        wItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Womens")) }
-        hItems.forEach { list.add(CartModel(itemName = it.name, price = it.price, quantity = it.quantity, totalPrice = it.price * it.quantity, category = "Healthcare")) }
-        fItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = (it.price * it.quantity).toDouble(), category = "Food")) }
-        eItems.forEach { list.add(CartModel(itemName = it.name, price = it.price.toDouble(), quantity = it.quantity, totalPrice = (it.price * it.quantity).toDouble(), category = "Education")) }
-        list.addAll(dbCartItems)
-        list
-    }
-
-    val total = allCartModels.sumOf { it.totalPrice }
-    val bookingResult by bookingsViewModel.bookingResult.collectAsState()
-    var lastOrderId by remember { mutableStateOf("") }
-
-    LaunchedEffect(bookingResult) {
-        bookingResult?.let {
-            if (it.isSuccess) {
-                lastOrderId = it.getOrNull() ?: ""
-                val userId = SupabaseClient.client.auth.currentUserOrNull()?.id ?: ""
-                
-                // Navigate to Payment Method Screen
-                navController.navigate(Screen.PaymentMethod.createRoute(
-                    bookingId = lastOrderId,
-                    customerId = userId,
-                    partnerId = "partner_pending", // Will be assigned by backend
-                    amount = total
-                )) {
-                    popUpTo(Screen.ResidentialOrderSummary.route) { inclusive = true }
-                }
-                
-                viewModel.clearCart()
-                businessViewModel.clearCart()
-                lifestyleViewModel.clearCart()
-                techViewModel.clearCart()
-                mensGroomingViewModel.clearCart()
-                womensBeautyViewModel.clearCart()
-                healthcareViewModel.clearCart()
-                foodCartViewModel.clearCart()
-                educationViewModel.clearCart()
-                homeCartViewModel.clearHomeCart()
-                bookingsViewModel.resetResult()
-            } else {
-                Toast.makeText(context, "Order failed: ${it.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
-                bookingsViewModel.resetResult()
-            }
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Order Summary", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        containerColor = Color.White
-    ) { padding ->
-        Column(Modifier.padding(padding).padding(16.dp)) {
-            Card(
-                Modifier.fillMaxWidth(), 
-                colors = CardDefaults.cardColors(containerColor = PinkPrimary.copy(alpha = 0.05f)),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.LocationOn, null, tint = PinkPrimary, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Service Address", fontWeight = FontWeight.Bold)
-                    }
-                    Text(bookingInfo.address, modifier = Modifier.padding(start = 28.dp), color = Color.DarkGray)
-                    
-                    Spacer(Modifier.height(16.dp))
-                    
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Event, null, tint = PinkPrimary, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Date & Time", fontWeight = FontWeight.Bold)
-                    }
-                    Text("${bookingInfo.date} | ${bookingInfo.timeSlot}", modifier = Modifier.padding(start = 28.dp), color = Color.DarkGray)
-                    
-                    Spacer(Modifier.height(16.dp))
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Payment, null, tint = PinkPrimary, modifier = Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Payment Method", fontWeight = FontWeight.Bold)
-                    }
-                    Text(bookingInfo.paymentMethod, modifier = Modifier.padding(start = 28.dp), color = Color.DarkGray)
-                }
-            }
-            
-            Spacer(Modifier.height(24.dp))
-            Text("Selected Items/Services", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Spacer(Modifier.height(8.dp))
-            
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(allCartModels) { item ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("${item.itemName} x ${item.quantity}", color = Color.DarkGray, modifier = Modifier.weight(1f))
-                        Text("₹${item.totalPrice}", fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-            
-            HorizontalDivider(Modifier.padding(vertical = 16.dp), color = Color.LightGray.copy(alpha = 0.5f))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Total Amount", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-                Text("₹${total}", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = PinkPrimary)
-            }
-            Spacer(Modifier.height(24.dp))
-            Button(
-                onClick = {
-                    val firstName = allCartModels.firstOrNull()?.itemName ?: "Service"
-                    bookingsViewModel.placeUnifiedOrder(
-                        serviceName = if (allCartModels.size > 1) "$firstName + ${allCartModels.size - 1} items" else firstName,
-                        category = allCartModels.firstOrNull()?.category ?: "General",
-                        subcategory = "",
-                        date = bookingInfo.date,
-                        time = bookingInfo.timeSlot,
-                        amount = total,
-                        paymentMethod = bookingInfo.paymentMethod,
-                        address = bookingInfo.address,
-                        items = allCartModels
-                    )
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
-                enabled = allCartModels.isNotEmpty()
-            ) { Text("Confirm Booking / Order", fontWeight = FontWeight.Bold, fontSize = 18.sp) }
         }
     }
 }

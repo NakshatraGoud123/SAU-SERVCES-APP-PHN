@@ -2,6 +2,7 @@ package com.nisr.sauservices.data.model
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Transient
 
 @Serializable
 data class OperationResult(
@@ -75,7 +76,7 @@ data class OrderModel(
     @SerialName("delivery_partner_id") val deliveryPartnerId: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("timestamp") val timestamp: Long = System.currentTimeMillis(),
-    @SerialName("customer_location") val customerLocation: LiveLocation = LiveLocation(),
+    @Transient @SerialName("customer_location") val customerLocation: LiveLocation = LiveLocation(),
     
     // Additional fields for Unified Order/Booking view
     @SerialName("service_name") val serviceName: String = "",
