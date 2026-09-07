@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.food
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,13 +16,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.nisr.sauservices.ui.theme.PinkPrimary
+import com.nisr.sauservices.ui.theme.*
+import com.nisr.sauservices.ui.Screen
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -59,22 +60,23 @@ fun FoodTypeScreen(navController: NavController, subcategory: String) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(decodedSubcategory, fontWeight = FontWeight.Bold) },
+                title = { Text(decodedSubcategory, color = LuxuryTextPrimary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = LuxuryTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxuryBackground)
             )
         },
-        containerColor = Color(0xFFF8F9FA)
+        containerColor = LuxuryBackground
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             Text(
                 text = "Select Type",
                 modifier = Modifier.padding(16.dp),
                 style = MaterialTheme.typography.titleMedium,
+                color = LuxuryTextSecondary,
                 fontWeight = FontWeight.Bold
             )
 
@@ -87,7 +89,7 @@ fun FoodTypeScreen(navController: NavController, subcategory: String) {
                 items(types) { type ->
                     FoodTypeCard(type) {
                         val encoded = URLEncoder.encode(type, "UTF-8")
-                        navController.navigate("FOODS_items/$encoded")
+                        navController.navigate(Screen.FoodItems(encoded))
                     }
                 }
             }
@@ -102,8 +104,8 @@ fun FoodTypeCard(name: String, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        colors = CardDefaults.cardColors(containerColor = LuxuryCard),
+        border = BorderStroke(1.dp, LuxuryBorder)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -114,14 +116,15 @@ fun FoodTypeCard(name: String, onClick: () -> Unit) {
                 modifier = Modifier
                     .size(56.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(PinkPrimary.copy(alpha = 0.1f)),
+                    .background(LuxuryGold.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Outlined.Fastfood, contentDescription = null, tint = PinkPrimary, modifier = Modifier.size(30.dp))
+                Icon(Icons.Outlined.Fastfood, contentDescription = null, tint = LuxuryGold, modifier = Modifier.size(30.dp))
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = name,
+                color = LuxuryTextPrimary,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,

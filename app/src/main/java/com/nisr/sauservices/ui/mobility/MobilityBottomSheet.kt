@@ -78,7 +78,7 @@ fun MobilityBottomSheet(navController: NavController, onDismiss: () -> Unit) {
                     MobilityServiceCard(service) {
                         onDismiss()
                         // Logic to navigate to mobility booking with selected type
-                        navController.navigate(Screen.MobilityMain.route)
+                        navController.navigate(Screen.MobilityMain)
                     }
                 }
             }

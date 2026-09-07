@@ -11,14 +11,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.PinkPrimary
+import com.nisr.sauservices.ui.theme.*
+import com.nisr.sauservices.ui.components.*
 
 @Composable
 fun BookingSuccessScreen(
@@ -28,7 +28,7 @@ fun BookingSuccessScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(LuxuryBackground)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -37,14 +37,14 @@ fun BookingSuccessScreen(
             modifier = Modifier
                 .size(100.dp)
                 .clip(CircleShape)
-                .background(PinkPrimary.copy(alpha = 0.1f)),
+                .background(LuxuryGold.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.Default.Check,
                 contentDescription = null,
                 modifier = Modifier.size(60.dp),
-                tint = PinkPrimary
+                tint = LuxuryGold
             )
         }
 
@@ -54,7 +54,7 @@ fun BookingSuccessScreen(
             text = "Booking Successful!",
             fontSize = 26.sp,
             fontWeight = FontWeight.ExtraBold,
-            color = Color.Black,
+            color = LuxuryTextPrimary,
             textAlign = TextAlign.Center
         )
 
@@ -63,43 +63,38 @@ fun BookingSuccessScreen(
         Text(
             text = message,
             fontSize = 16.sp,
-            color = Color.Gray,
+            color = LuxuryTextSecondary,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 8.dp)
         )
 
         Spacer(modifier = Modifier.height(48.dp))
 
-        Button(
+        LuxuryButton(
+            text = "Back to Home",
             onClick = {
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.Home.route) { inclusive = true }
+                navController.navigate(Screen.Home) {
+                    popUpTo<Screen.Home> { inclusive = true }
                 }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
-        ) {
-            Text("Back to Home", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        }
+            }
+        )
         
         Spacer(modifier = Modifier.height(16.dp))
         
         OutlinedButton(
             onClick = {
-                navController.navigate(Screen.Bookings.route) {
-                    popUpTo(Screen.Home.route) { inclusive = false }
+                navController.navigate(Screen.Bookings) {
+                    popUpTo<Screen.Home> { inclusive = false }
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(12.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, PinkPrimary)
+            border = androidx.compose.foundation.BorderStroke(1.dp, LuxuryGold),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = LuxuryGold)
         ) {
-            Text("View My Bookings", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = PinkPrimary)
+            Text("View My Bookings", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
     }
 }

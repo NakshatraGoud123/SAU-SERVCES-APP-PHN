@@ -1,8 +1,10 @@
 package com.nisr.sauservices
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -15,13 +17,21 @@ import com.nisr.sauservices.ui.payment.PaymentResultBus
 import com.nisr.sauservices.ui.theme.AppTheme
 import com.razorpay.PaymentData
 import com.razorpay.PaymentResultWithDataListener
+import dagger.hilt.android.AndroidEntryPoint
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
+        enableEdgeToEdge()
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
+        
         super.onCreate(savedInstanceState)
 
         // Supabase Connection Test
@@ -34,6 +44,11 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
             LaunchedEffect(Unit) {
                 try {
                     val user = client.auth.currentSessionOrNull()?.user
+                    val sessionManager = com.nisr.sauservices.data.local.SessionManager(this@MainActivity)
+                    
+                    if (user != null && !sessionManager.isLoggedIn()) {
+                        sessionManager.saveLoginState(true)
+                    }
 
                     Log.d(
                         "SUPABASE_TEST",

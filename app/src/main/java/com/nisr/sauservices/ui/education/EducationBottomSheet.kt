@@ -76,7 +76,7 @@ fun EducationBottomSheet(navController: NavController, onDismiss: () -> Unit) {
                 items(categories) { category ->
                     EduCategoryCard(category) {
                         onDismiss()
-                        navController.navigate(Screen.EducationSubCategory.createRoute(category.name))
+                        navController.navigate(Screen.EducationSubcategories(category.name))
                     }
                 }
             }

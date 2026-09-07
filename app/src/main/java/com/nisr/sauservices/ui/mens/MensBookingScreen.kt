@@ -48,7 +48,7 @@ fun MensBookingScreen(navController: NavController, viewModel: MensGroomingViewM
                         viewModel.selectedTime.value.isNotEmpty() &&
                         viewModel.customerAddress.value.isNotEmpty() &&
                         viewModel.phoneNumber.value.isNotEmpty()) {
-                        navController.navigate(Screen.MensCheckout.route)
+                        navController.navigate(Screen.MensCheckout)
                     }
                 },
                 modifier = Modifier

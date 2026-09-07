@@ -72,7 +72,7 @@ fun WomensBeautyCategoryScreen(navController: NavController) {
             ) {
                 items(categories) { category ->
                     BeautyCategoryCardProfessional(category) {
-                        navController.navigate(Screen.WomensBeautySubcategories.createRoute(category.name))
+                        navController.navigate(Screen.WomensBeautySubcategories(category.name))
                     }
                 }
             }

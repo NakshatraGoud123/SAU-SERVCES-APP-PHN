@@ -1,6 +1,5 @@
 package com.nisr.sauservices.ui.lifestyle
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -16,9 +15,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontFamily
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.PinkPrimary
+import com.nisr.sauservices.ui.components.*
+import com.nisr.sauservices.ui.theme.*
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -37,27 +38,18 @@ fun LifestyleSubCategoryScreen(navController: NavController, category: String) {
         else -> emptyList()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(decodedCategory, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        containerColor = Color(0xFFF7F7F7)
+    LuxuryScaffold(
+        title = decodedCategory,
+        onBackClick = { navController.popBackStack() }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             Text(
-                text = "Select Sub-Category",
+                text = "Select Premium Service",
                 modifier = Modifier.padding(16.dp),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = PinkPrimary
+                color = LuxuryGold,
+                fontFamily = FontFamily.Serif
             )
 
             LazyVerticalGrid(
@@ -67,20 +59,15 @@ fun LifestyleSubCategoryScreen(navController: NavController, category: String) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(subCategories) { sub ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                val encoded = URLEncoder.encode(sub, "UTF-8")
-                                navController.navigate(Screen.LifestyleServices.createRoute(encoded))
-                            },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(2.dp)
+                    LuxuryCard(
+                        onClick = {
+                            val encoded = URLEncoder.encode(sub, "UTF-8")
+                            navController.navigate(Screen.LifestyleServices(encoded))
+                        }
                     ) {
                         Box(
                             modifier = Modifier
-                                .padding(16.dp)
+                                .padding(24.dp)
                                 .fillMaxWidth()
                                 .heightIn(min = 60.dp),
                             contentAlignment = Alignment.Center
@@ -89,7 +76,7 @@ fun LifestyleSubCategoryScreen(navController: NavController, category: String) {
                                 text = sub,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
-                                color = Color.Black,
+                                color = LuxuryTextPrimary,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                         }

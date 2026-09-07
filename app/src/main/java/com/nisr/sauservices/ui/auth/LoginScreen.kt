@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.auth
 
+import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
@@ -35,231 +36,211 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
+import kotlinx.coroutines.launch
 import com.nisr.sauservices.R
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.components.PremiumInput
+import com.nisr.sauservices.ui.components.*
 import com.nisr.sauservices.ui.theme.*
-import com.nisr.sauservices.ui.theme.SAULightGray
 import com.nisr.sauservices.ui.viewmodel.AuthState
 import com.nisr.sauservices.ui.viewmodel.AuthViewModel
-import kotlinx.coroutines.delay
 
 @Composable
 fun LoginScreen(
     navController: NavController,
     authViewModel: AuthViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
-    val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    val authState by authViewModel.authState
+    val authState by authViewModel.authState.collectAsState()
     
-    // Animation states
-    var startAnimation by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { startAnimation = true }
-
-    val contentAlpha by animateFloatAsState(
-        targetValue = if (startAnimation) 1f else 0f,
-        animationSpec = tween(1000),
-        label = "fade"
-    )
-
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val sessionManager = remember { com.nisr.sauservices.data.local.SessionManager(context) }
+    
     LaunchedEffect(authState) {
-        if (authState is AuthState.Success) {
-            navController.navigate(Screen.Home.route) {
-                popUpTo(0) { inclusive = true }
+        when (val state = authState) {
+            is AuthState.Success -> {
+                sessionManager.saveLoginState(true)
+                sessionManager.saveUserRole("customer") // Default role
+                navController.navigate(Screen.Home) {
+                    popUpTo(0) {
+                        inclusive = true
+                    }
+                }
+                authViewModel.resetState()
             }
-            authViewModel.resetState()
+            is AuthState.Error -> {
+                Toast.makeText(
+                    context,
+                    state.message,
+                    Toast.LENGTH_LONG
+                ).show()
+                authViewModel.resetState()
+            }
+            else -> {
+                // Idle / Loading
+            }
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(SAUNavy)
-    ) {
-        // PREMIUM GRADIENT GLOWS
-        Box(
-            modifier = Modifier
-                .size(400.dp)
-                .align(Alignment.TopStart)
-                .offset(x = (-150).dp, y = (-100).dp)
-                .background(SAUPink.copy(alpha = 0.08f), CircleShape)
-        )
-        
-        Box(
-            modifier = Modifier
-                .size(300.dp)
-                .align(Alignment.BottomEnd)
-                .offset(x = 100.dp, y = 100.dp)
-                .background(SAUPrimaryLight.copy(alpha = 0.08f), CircleShape)
-        )
-
+    LuxuryScaffold(
+        title = "",
+        onBackClick = { navController.popBackStack() }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
+                .padding(padding)
                 .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
-                .graphicsLayer { alpha = contentAlpha },
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.clip(CircleShape).background(Color.White.copy(alpha = 0.1f))
-                ) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back", tint = Color.White)
-                }
-            }
-
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Branding
+            // Premium Cinematic Branding
             Surface(
-                modifier = Modifier.size(90.dp),
-                shape = RoundedCornerShape(24.dp),
-                color = Color.White,
-                shadowElevation = 20.dp
+                modifier = Modifier.size(100.dp),
+                shape = RoundedCornerShape(28.dp),
+                color = LuxuryCard,
+                border = BorderStroke(1.dp, LuxuryBorder)
             ) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(14.dp)) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(16.dp)) {
                     Image(
                         painter = painterResource(id = R.drawable.sau_logo),
                         contentDescription = "Logo",
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().graphicsLayer(alpha = 0.9f),
                         contentScale = ContentScale.Fit
                     )
                 }
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             
             Text(
                 text = "Welcome Back",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontWeight = FontWeight.Black,
+                    color = LuxuryTextPrimary,
+                    fontFamily = FontFamily.Serif
                 )
             )
             Text(
-                text = "Sign in to your premium account",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = SAULightGray.copy(alpha = 0.6f)
+                text = "Sign in to your member account",
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = LuxuryTextSecondary
                 )
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(56.dp))
 
-            // Login Form
+            // Luxury Form
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "EMAIL ADDRESS",
-                    style = TextStyle(
-                        color = SAULightGray,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-                )
-                
-                PremiumInput(
+                LuxuryTextField(
                     value = email,
                     onValueChange = { email = it },
-                    placeholder = "e.g. name@example.com",
-                    leadingIcon = {
-                        Icon(Icons.Default.Email, null, tint = SAULightGray, modifier = Modifier.size(20.dp))
-                    }
+                    label = "EMAIL",
+                    leadingIcon = Icons.Default.Email
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Text(
-                    text = "PASSWORD",
-                    style = TextStyle(
-                        color = SAULightGray,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    ),
-                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-                )
-                
-                PremiumInput(
+                LuxuryTextField(
                     value = password,
                     onValueChange = { password = it },
-                    placeholder = "Your secure password",
-                    leadingIcon = {
-                        Icon(Icons.Default.Lock, null, tint = SAULightGray, modifier = Modifier.size(20.dp))
-                    },
+                    label = "PASSWORD",
+                    leadingIcon = Icons.Default.Lock,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
                                 imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                 contentDescription = null,
-                                tint = SAULightGray
+                                tint = LuxuryGold
                             )
                         }
                     }
                 )
 
-                // Forgot Password
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    TextButton(onClick = { navController.navigate(Screen.ForgotPassword.route) }) {
-                        Text("Forgot Password?", color = SAUPinkLight, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    TextButton(onClick = { navController.navigate(Screen.ForgotPassword) }) {
+                        Text("Forgot Password?", color = LuxuryGold, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(40.dp))
 
-                // Sign In Button
-                Button(
+                LuxuryButton(
+                    text = "SIGN IN",
                     onClick = { authViewModel.signIn(email, password) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .shadow(12.dp, RoundedCornerShape(20.dp), spotColor = SAUPink),
-                    shape = RoundedCornerShape(20.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                    enabled = authState !is AuthState.Loading
+                    isLoading = authState is AuthState.Loading
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // OR Divider
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Brush.horizontalGradient(colors = listOf(SAUPink, SAUPinkLight))),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (authState is AuthState.Loading) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                        } else {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("SIGN IN", fontWeight = FontWeight.Black, fontSize = 16.sp, letterSpacing = 1.sp)
-                                Spacer(Modifier.width(12.dp))
-                                Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, modifier = Modifier.size(20.dp))
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = LuxuryBorder)
+                    Text(
+                        " OR ", 
+                        color = LuxuryTextSecondary, 
+                        fontSize = 12.sp, 
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = LuxuryBorder)
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Google Button
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            try {
+                                val idToken = GoogleSignInUtils.launchGoogleSignIn(context)
+                                if (idToken != null) {
+                                    authViewModel.signInWithGoogle(idToken)
+                                }
+                            } catch (e: Exception) {
+                                if (e !is androidx.credentials.exceptions.GetCredentialCancellationException) {
+                                    Toast.makeText(context, "Google Sign In Failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                }
                             }
                         }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, LuxuryBorder),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = LuxuryTextPrimary)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_google),
+                            contentDescription = "Google",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Sign in with Google", fontWeight = FontWeight.Bold)
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                // Footer
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Don't have an account?", color = SAULightGray.copy(alpha = 0.7f), fontSize = 14.sp)
-                    TextButton(onClick = { navController.navigate(Screen.SignUp.createRoute("customer")) }) {
-                        Text("Sign Up", color = SAUPinkLight, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                    Text("New to SAU?", color = LuxuryTextSecondary, fontSize = 14.sp)
+                    TextButton(onClick = { navController.navigate(Screen.Register("customer")) }) {
+                        Text("Join Now", color = LuxuryGold, fontWeight = FontWeight.Black, fontSize = 14.sp)
                     }
                 }
             }

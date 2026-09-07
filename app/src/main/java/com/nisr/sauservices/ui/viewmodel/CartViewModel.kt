@@ -124,18 +124,25 @@ class CartViewModel : ViewModel() {
         }
     }
 
-    fun placeOrder(address: String, @Suppress("UNUSED_PARAMETER") paymentMethod: String = "Cash on Delivery") {
+    fun placeOrder(address: String, shopId: String? = null, @Suppress("UNUSED_PARAMETER") paymentMethod: String = "Cash on Delivery") {
         viewModelScope.launch {
+            val userId = repository.getCurrentUserId() ?: return@launch
             val items = _dbCartItems.value
             if (items.isEmpty()) return@launch
 
+            // Fetch latest user profile to ensure backend has real info
+            val profile = repository.getUserProfile(userId).getOrNull()
+            
             val total = items.sumOf { it.totalPrice }
             val order = OrderModel(
-                userId = repository.getCurrentUserId() ?: "",
+                userId = userId,
+                userName = profile?.name ?: "Unknown Customer",
+                shopId = shopId,
                 items = items,
                 totalAmount = total,
                 address = address,
-                status = "placed"
+                status = "placed",
+                paymentMethod = paymentMethod
             )
 
             repository.placeOrder(order).onSuccess { orderId ->

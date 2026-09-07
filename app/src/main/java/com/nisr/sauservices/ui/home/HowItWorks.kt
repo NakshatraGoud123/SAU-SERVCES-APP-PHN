@@ -19,9 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nisr.sauservices.ui.theme.Black
-import com.nisr.sauservices.ui.theme.GrayText
-import com.nisr.sauservices.ui.theme.LightGray
+import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.theme.PrimaryBlue
 
 data class HowItWorksItem(val name: String, val icon: ImageVector)
@@ -41,7 +39,7 @@ fun HowItWorks() {
             style = MaterialTheme.typography.titleLarge.copy(
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
-                color = Black
+                color = LuxuryTextPrimary
             ),
             modifier = Modifier.padding(bottom = 16.dp)
         )

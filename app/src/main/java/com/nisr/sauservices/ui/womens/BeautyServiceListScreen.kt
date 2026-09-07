@@ -47,7 +47,7 @@ fun BeautyServiceListScreen(navController: NavController, subcategory: String, v
                         },
                         modifier = Modifier
                             .padding(end = 16.dp)
-                            .clickable { navController.navigate(Screen.Cart.route) }
+                            .clickable { navController.navigate(Screen.Cart) }
                     ) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
                     }
@@ -73,7 +73,7 @@ fun BeautyServiceListScreen(navController: NavController, subcategory: String, v
                             Text("₹${viewModel.calculateTotal().toInt()}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PinkPrimary)
                         }
                         Button(
-                            onClick = { navController.navigate(Screen.Cart.route) },
+                            onClick = { navController.navigate(Screen.Cart) },
                             colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
                             shape = RoundedCornerShape(12.dp)
                         ) {

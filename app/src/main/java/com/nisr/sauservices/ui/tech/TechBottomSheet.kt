@@ -83,7 +83,7 @@ fun TechBottomSheet(navController: NavController, onDismiss: () -> Unit) {
                     items(categories) { category ->
                         TechCategoryItem(category) {
                             onDismiss()
-                            navController.navigate(Screen.TechSubCategory.createRoute(category.name))
+                            navController.navigate(Screen.TechSubcategories(category.name))
                         }
                     }
                 }

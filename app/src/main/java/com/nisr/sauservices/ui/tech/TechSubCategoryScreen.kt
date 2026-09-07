@@ -73,7 +73,7 @@ fun TechSubCategoryScreen(navController: NavController, category: String) {
                             .fillMaxWidth()
                             .clickable {
                                 val encoded = URLEncoder.encode(sub, "UTF-8")
-                                navController.navigate(Screen.TechServices.createRoute(encoded))
+                                navController.navigate(Screen.TechServices(encoded))
                             },
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),

@@ -60,7 +60,7 @@ fun MyOrdersScreen(navController: NavController) {
             ) {
                 items(orders.sortedByDescending { it.timestamp }) { order ->
                     OrderCard(order, onClick = {
-                        navController.navigate(Screen.OrderTracking.createRoute(order.orderId))
+                        navController.navigate(Screen.BookingDetails(order.orderId))
                     })
                 }
             }

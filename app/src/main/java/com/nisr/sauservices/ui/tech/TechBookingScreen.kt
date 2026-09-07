@@ -48,7 +48,7 @@ fun TechBookingScreen(navController: NavController, viewModel: TechServicesViewM
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.TechCheckout.route) },
+                onClick = { navController.navigate(Screen.TechCheckout) },
                 enabled = viewModel.selectedDate.value.isNotEmpty() && 
                           viewModel.selectedTime.value.isNotEmpty() &&
                           viewModel.customerAddress.value.isNotEmpty() &&

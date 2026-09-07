@@ -1,10 +1,7 @@
 package com.nisr.sauservices.ui.home
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.LocalMall
@@ -14,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -24,8 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.nisr.sauservices.data.local.SessionManager
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.OrchidPrimary
-import com.nisr.sauservices.ui.theme.White
+import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.CartViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,7 +41,7 @@ fun TopAppBarUI(navController: NavController, sessionManager: SessionManager) {
                 TextButton(
                     onClick = {
                         sessionManager.logout()
-                        navController.navigate(Screen.Onboarding.route) {
+                        navController.navigate(Screen.Login) {
                             popUpTo(0) { inclusive = true }
                         }
                         showLogoutDialog = false
@@ -69,73 +64,66 @@ fun TopAppBarUI(navController: NavController, sessionManager: SessionManager) {
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding(),
-        color = Color(0xFFFFF7FA), // Match overall background
+        color = LuxuryBackground,
+        shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Left: Logo
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+            // Left: Branding
+            Column(
+                modifier = Modifier.clickable { navController.navigate(Screen.Home) }
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(OrchidPrimary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("S", color = White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
-                }
-                Spacer(Modifier.width(8.dp))
                 Text(
                     "SAU",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 22.sp,
+                    color = LuxuryGold,
+                    letterSpacing = (-0.5).sp
+                )
+                Text(
+                    "SERVICES",
+                    fontSize = 8.sp,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.Black
+                    color = LuxuryTextSecondary,
+                    letterSpacing = 2.sp
                 )
             }
 
-            // Center: Location Selector Pill
-            Surface(
+            Spacer(Modifier.width(16.dp))
+
+            // Center: Location Selector
+            Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 8.dp)
-                    .clip(RoundedCornerShape(50))
-                    .clickable { navController.navigate(Screen.MapPicker.route) },
-                color = Color(0xFFFCE4EC).copy(alpha = 0.4f) // Very soft pink
+                    .clickable { /* Navigate to Settings or Location screen */ },
+                horizontalAlignment = Alignment.Start
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn, 
-                        contentDescription = null,
-                        tint = OrchidPrimary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = userAddress,
-                        fontSize = 12.sp,
-                        color = Color.Black,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.weight(1f, fill = false)
+                        "Location",
+                        fontSize = 10.sp,
+                        color = LuxuryTextSecondary,
+                        fontWeight = FontWeight.Bold
                     )
-                    Spacer(Modifier.width(2.dp))
                     Icon(
                         Icons.Default.KeyboardArrowDown,
                         null,
-                        tint = Color.Black,
-                        modifier = Modifier.size(16.dp)
+                        tint = LuxuryTextSecondary,
+                        modifier = Modifier.size(12.dp)
                     )
                 }
+                Text(
+                    text = userAddress.ifBlank { "Select Location" },
+                    fontSize = 14.sp,
+                    color = LuxuryTextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
 
             // Right: Action Icons
@@ -147,20 +135,22 @@ fun TopAppBarUI(navController: NavController, sessionManager: SessionManager) {
                     Icon(
                         Icons.Outlined.LocalMall,
                         contentDescription = "Shopping Bag",
-                        tint = Color.Black,
+                        tint = LuxuryTextPrimary,
                         modifier = Modifier.size(24.dp)
                     )
                 }
 
                 IconButton(
-                    onClick = { navController.navigate(Screen.Cart.route) },
+                    onClick = { /* Navigate to Cart or My Bookings */ 
+                        navController.navigate(Screen.MyBookings)
+                    },
                     modifier = Modifier.size(36.dp),
                 ) {
                     BadgedBox(
                         badge = {
                             if (cartCount > 0) {
-                                Badge(containerColor = OrchidPrimary) {
-                                    Text(cartCount.toString(), color = White, fontSize = 9.sp)
+                                Badge(containerColor = LuxuryGold) {
+                                    Text(text = cartCount.toString(), color = LuxuryBackground, fontSize = 9.sp)
                                 }
                             }
                         },
@@ -168,7 +158,7 @@ fun TopAppBarUI(navController: NavController, sessionManager: SessionManager) {
                         Icon(
                             Icons.Outlined.ShoppingCart,
                             contentDescription = "Cart",
-                            tint = Color.Black,
+                            tint = LuxuryTextPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -178,7 +168,7 @@ fun TopAppBarUI(navController: NavController, sessionManager: SessionManager) {
                     Icon(
                         Icons.AutoMirrored.Outlined.Logout,
                         contentDescription = "Logout",
-                        tint = Color.Black,
+                        tint = LuxuryTextPrimary,
                         modifier = Modifier.size(24.dp)
                     )
                 }

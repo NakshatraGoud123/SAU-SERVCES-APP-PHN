@@ -38,7 +38,7 @@ fun BeautyPaymentScreen(navController: NavController, viewModel: WomensBeautyVie
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.WomensBeautyOrderSummary.route) },
+                onClick = { navController.navigate(Screen.WomensBeautyOrderSummary) },
                 modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC2185B)),

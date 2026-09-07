@@ -41,7 +41,7 @@ fun BusinessCartScreen(navController: NavController, viewModel: BusinessViewMode
         bottomBar = {
             if (viewModel.cartItems.isNotEmpty()) {
                 BusinessCartBottomBar(viewModel) {
-                    navController.navigate(Screen.Cart.route)
+                    navController.navigate(Screen.Cart)
                 }
             }
         },

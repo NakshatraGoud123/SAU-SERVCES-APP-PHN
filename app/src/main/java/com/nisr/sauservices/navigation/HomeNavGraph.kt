@@ -4,81 +4,83 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import com.nisr.sauservices.data.local.SessionManager
+import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.home.*
 import com.nisr.sauservices.ui.pls.*
 import com.nisr.sauservices.ui.dashboard.CustomerHomeScreen
 import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
 import com.nisr.sauservices.ui.viewmodel.ResidentialViewModel
+import com.nisr.sauservices.ui.viewmodel.HomeViewModel
+import com.nisr.sauservices.ui.viewmodel.LocationViewModel
 import com.nisr.sauservices.ui.viewmodels.PropertyLifestyleViewModel
 
 fun NavGraphBuilder.homeNavGraph(
     navController: NavController,
     sessionManager: SessionManager,
     bookingsViewModel: BookingsViewModel,
-    residentialViewModel: ResidentialViewModel
+    residentialViewModel: ResidentialViewModel,
+    homeViewModel: HomeViewModel,
+    locationViewModel: LocationViewModel
 ) {
-    composable(Routes.HOME) {
-        CustomerHomeScreen(navController, sessionManager)
+    composable<Screen.Home> {
+        SauHomeScreen(
+            navController = navController, 
+            viewModel = homeViewModel, 
+            bookingsViewModel = bookingsViewModel, 
+            sessionManager = sessionManager,
+            locationViewModel = locationViewModel
+        )
     }
 
-    composable(Routes.CATEGORIES) {
+    composable<Screen.Search> {
+        SearchResultsScreen(navController, "", residentialViewModel)
+    }
+
+    composable<Screen.Categories> {
         CategoriesScreen(navController)
     }
 
-    composable(
-        route = Routes.SEARCH_RESULTS,
-        arguments = listOf(navArgument("query") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val query = backStackEntry.arguments?.getString("query") ?: ""
-        SearchResultsScreen(navController, query, residentialViewModel)
+    composable<Screen.SearchResults> { backStackEntry ->
+        val route: Screen.SearchResults = backStackEntry.toRoute()
+        SearchResultsScreen(navController, route.query, residentialViewModel)
     }
     
     // Property & Lifestyle Services (PLS)
-    composable(Routes.PLS_MAIN) { PLSMainScreen(navController) }
+    composable<Screen.PLSMain> { PLSMainScreen(navController) }
     
-    composable(
-        route = Routes.PLS_SUBCATEGORIES,
-        arguments = listOf(navArgument("category") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val category = backStackEntry.arguments?.getString("category") ?: ""
-        PLSSubcategoriesScreen(navController, category)
+    composable<Screen.PLSSubcategories> { backStackEntry ->
+        val route: Screen.PLSSubcategories = backStackEntry.toRoute()
+        PLSSubcategoriesScreen(navController, route.category)
     }
 
-    composable(
-        route = Routes.PLS_SERVICES,
-        arguments = listOf(navArgument("subcategory") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val subcategory = backStackEntry.arguments?.getString("subcategory") ?: ""
-        PLSServicesScreen(navController, subcategory, viewModel())
+    composable<Screen.PLSServices> { backStackEntry ->
+        val route: Screen.PLSServices = backStackEntry.toRoute()
+        PLSServicesScreen(navController, route.subcategory, viewModel())
     }
 
-    composable(
-        route = Routes.PLS_BOOKING,
-        arguments = listOf(navArgument("serviceId") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val serviceId = backStackEntry.arguments?.getString("serviceId") ?: ""
+    composable<Screen.PLSBooking> { backStackEntry ->
+        val route: Screen.PLSBooking = backStackEntry.toRoute()
         val parentEntry = remember(backStackEntry) {
-            navController.getBackStackEntry(Routes.PLS_MAIN)
+            navController.getBackStackEntry(Screen.PLSMain)
         }
         val plsViewModel: PropertyLifestyleViewModel = viewModel(parentEntry)
-        PLSBookingScreen(navController, serviceId, plsViewModel, sessionManager)
+        PLSBookingScreen(navController, route.serviceId, plsViewModel, sessionManager)
     }
 
-    composable(Routes.PLS_CHECKOUT) { backStackEntry ->
+    composable<Screen.PLSCheckout> { backStackEntry ->
         val parentEntry = remember(backStackEntry) {
-            navController.getBackStackEntry(Routes.PLS_MAIN)
+            navController.getBackStackEntry(Screen.PLSMain)
         }
         val plsViewModel: PropertyLifestyleViewModel = viewModel(parentEntry)
         PLSCheckoutScreen(navController, plsViewModel)
     }
 
-    composable(Routes.PLS_SUCCESS) { backStackEntry ->
+    composable<Screen.PLSSuccess> { backStackEntry ->
         val parentEntry = remember(backStackEntry) {
-            navController.getBackStackEntry(Routes.PLS_MAIN)
+            navController.getBackStackEntry(Screen.PLSMain)
         }
         val plsViewModel: PropertyLifestyleViewModel = viewModel(parentEntry)
         PLSSuccessScreen(navController, plsViewModel)

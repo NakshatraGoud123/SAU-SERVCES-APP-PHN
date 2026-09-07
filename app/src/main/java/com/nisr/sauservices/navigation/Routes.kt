@@ -1,5 +1,6 @@
 package com.nisr.sauservices.navigation
 
+@Deprecated("Use Screen sealed class instead for Type-Safe navigation")
 object Routes {
     // Auth & Onboarding
     const val ONBOARDING = "onboarding"

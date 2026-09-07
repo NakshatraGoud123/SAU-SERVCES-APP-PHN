@@ -195,7 +195,7 @@ fun OnboardingScreen(
                         ),
 
                     contentDescription =
-                        "SAU Services",
+                        "SAU Solutions",
 
                     modifier =
                         Modifier.size(58.dp),
@@ -219,8 +219,8 @@ fun OnboardingScreen(
 
                     modifier =
                         Modifier.clickable {
-                            navController.navigate(Screen.Login.createRoute("customer")) {
-                                popUpTo(Screen.Onboarding.route) { inclusive = true }
+                            navController.navigate(Screen.Login("customer")) {
+                                popUpTo<Screen.Onboarding> { inclusive = true }
                             }
                         }
                 )
@@ -538,8 +538,8 @@ fun OnboardingScreen(
                                 currentPage++
 
                             } else {
-                                navController.navigate(Screen.Login.createRoute("customer")) {
-                                    popUpTo(Screen.Onboarding.route) { inclusive = true }
+                                navController.navigate(Screen.Login("customer")) {
+                                    popUpTo<Screen.Onboarding> { inclusive = true }
                                 }
                             }
                         },

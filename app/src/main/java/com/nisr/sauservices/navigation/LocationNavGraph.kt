@@ -2,9 +2,8 @@ package com.nisr.sauservices.navigation
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.location.LocationPermissionScreen
 import com.nisr.sauservices.ui.location.LocationPickerScreen
@@ -20,25 +19,22 @@ fun NavGraphBuilder.locationNavGraph(
     locationViewModel: LocationViewModel,
     trackingViewModel: TrackingViewModel
 ) {
-    composable(Screen.LocationPermission.route) {
+    composable<Screen.LocationPermission> {
         LocationPermissionScreen(navController = navController)
     }
 
-    composable(Screen.MapPicker.route) {
+    composable<Screen.MapPicker> {
         LocationPickerScreen(
             navController = navController,
             viewModel = locationViewModel
         )
     }
     
-    composable(
-        route = Screen.OrderTracking.route,
-        arguments = listOf(navArgument("orderId") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+    composable<Screen.OrderTracking> { backStackEntry ->
+        val route: Screen.OrderTracking = backStackEntry.toRoute()
         OrderTrackingScreen(
             navController = navController,
-            orderId = orderId,
+            orderId = route.orderId,
             viewModel = trackingViewModel
         )
     }

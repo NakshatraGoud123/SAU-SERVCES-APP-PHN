@@ -40,7 +40,7 @@ fun TechCheckoutScreen(navController: NavController, viewModel: TechServicesView
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.TechPayment.route) },
+                onClick = { navController.navigate(Screen.TechPayment) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)

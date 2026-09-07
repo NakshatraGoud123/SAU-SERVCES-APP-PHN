@@ -1,9 +1,11 @@
 package com.nisr.sauservices.ui.food
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -15,7 +17,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.text.font.FontFamily
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.components.*
+import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.BookingItem
 import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
 import java.text.SimpleDateFormat
@@ -24,61 +29,70 @@ import java.util.Locale
 
 @Composable
 fun FoodSuccessScreen(navController: NavController, bookingsViewModel: BookingsViewModel) {
-    // Add a generic food booking entry on entry for demonstration
-    // In a real app, you'd pass the actual cart/booking details
+    val orderId = "FOOO${(1000..9999).random()}"
+    
     LaunchedEffect(Unit) {
         bookingsViewModel.addBooking(
             BookingItem(
-                id = "FOOD_${System.currentTimeMillis()}",
-                serviceName = "Food & Beverage Order",
-                date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()),
+                id = orderId,
+                serviceName = "Pizza House",
+                date = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date()),
                 time = "Today",
                 status = "Upcoming",
-                price = "Order Confirmed"
+                price = "₹264"
             )
         )
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        contentAlignment = Alignment.Center
-    ) {
+    Surface(modifier = Modifier.fillMaxSize(), color = LuxuryBackground) {
         Column(
+            modifier = Modifier.fillMaxSize().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = null,
-                modifier = Modifier.size(100.dp),
-                tint = Color(0xFF2E7D32)
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "🎉 Order Confirmed!",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "Your food is being prepared and will arrive shortly. Thank you for choosing SAU Solutions!",
-                fontSize = 16.sp,
-                color = Color.Gray,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(40.dp))
-            Button(
-                onClick = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6F00))
+            Box(
+                modifier = Modifier.size(100.dp).background(LuxuryGold.copy(alpha = 0.1f), CircleShape),
+                contentAlignment = Alignment.Center
             ) {
-                Text("Back to Home", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Icon(Icons.Default.Check, null, modifier = Modifier.size(60.dp), tint = LuxuryGold)
+            }
+            Spacer(Modifier.height(32.dp))
+            Text(
+                text = "Order Confirmed!", 
+                color = LuxuryTextPrimary, 
+                fontSize = 28.sp, 
+                fontWeight = FontWeight.Black,
+                fontFamily = FontFamily.Serif
+            )
+            Text("Your food has been ordered successfully.", color = LuxuryTextSecondary, textAlign = TextAlign.Center)
+            
+            Spacer(Modifier.height(32.dp))
+            LuxuryCard(modifier = Modifier.padding(horizontal = 8.dp)) {
+                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Order ID", color = LuxuryTextSecondary)
+                        Text("#$orderId", color = LuxuryTextPrimary, fontWeight = FontWeight.Bold)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Expected Time", color = LuxuryTextSecondary)
+                        Text("30-40 mins", color = LuxuryTextPrimary, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(60.dp))
+            LuxuryButton(
+                text = "TRACK ORDER",
+                onClick = { navController.navigate(Screen.FoodOrderTracking(orderId)) }
+            )
+            Spacer(Modifier.height(16.dp))
+            TextButton(
+                onClick = { 
+                    navController.navigate(Screen.Home) { popUpTo(0) { inclusive = true } } 
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Back to Home", color = LuxuryTextSecondary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
             }
         }
     }

@@ -14,35 +14,35 @@ fun NavGraphBuilder.profileNavGraph(
     navController: NavHostController,
     profileViewModel: ProfileViewModel
 ) {
-    composable(Screen.Profile.route) {
+    composable<Screen.Profile> {
         ProfileScreen(navController, profileViewModel)
     }
 
-    composable(Screen.EditProfile.route) {
+    composable<Screen.EditProfile> {
         EditProfileScreen(navController, profileViewModel)
     }
 
-    composable(Screen.Notifications.route) {
+    composable<Screen.Notifications> {
         NotificationsScreen(navController, profileViewModel)
     }
 
-    composable(Screen.ShippingAddress.route) {
+    composable<Screen.ShippingAddress> {
         ShippingAddressScreen(navController, profileViewModel)
     }
 
-    composable(Screen.ChangePassword.route) {
+    composable<Screen.ChangePassword> {
         ChangePasswordScreen(navController)
     }
 
-    composable(Screen.AddAccounts.route) {
+    composable<Screen.AddAccounts> {
         AddAccountsScreen(navController)
     }
 
-    composable(Screen.ContactUs.route) {
+    composable<Screen.ContactUs> {
         ContactUsScreen(navController, profileViewModel)
     }
 
-    composable(Screen.FAQ.route) {
+    composable<Screen.FAQ> {
         FAQScreen(navController)
     }
 }

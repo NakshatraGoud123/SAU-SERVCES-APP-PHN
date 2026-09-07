@@ -47,8 +47,13 @@ class BookingsViewModel : ViewModel() {
         address: String
     ) {
         viewModelScope.launch {
+            val userId = repository.getCurrentUserId() ?: return@launch
+            val profile = repository.getUserProfile(userId).getOrNull()
+
             val booking = BookingModel(
-                userId = repository.getCurrentUserId() ?: "",
+                userId = userId,
+                userName = profile?.name ?: "Unknown Customer",
+                userPhone = profile?.phone ?: "",
                 serviceId = serviceId,
                 serviceName = serviceName,
                 scheduleDate = date,
@@ -75,9 +80,15 @@ class BookingsViewModel : ViewModel() {
         viewModelScope.launch {
             val order = OrderModel(
                 userId = repository.getCurrentUserId() ?: "",
-                items = items,
+                serviceName = serviceName,
+                category = category,
+                subcategory = subcategory,
+                scheduleDate = date,
+                scheduleTime = time,
                 totalAmount = amount,
+                paymentMethod = paymentMethod,
                 address = address,
+                items = items,
                 status = "pending"
             )
             val result = repository.placeOrder(order)

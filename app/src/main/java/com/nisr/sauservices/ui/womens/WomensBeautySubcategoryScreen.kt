@@ -56,7 +56,7 @@ fun WomensBeautySubcategoryScreen(navController: NavController, categoryName: St
         ) {
             items(subcategories) { sub ->
                 SubcategoryItem(sub) {
-                    navController.navigate(Screen.WomensBeautyServices.createRoute(sub))
+                    navController.navigate(Screen.WomensBeautyServices(sub))
                 }
             }
         }

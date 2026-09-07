@@ -19,9 +19,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.ui.text.font.FontFamily
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.PinkPrimary
-import com.nisr.sauservices.ui.theme.LightPink
+import com.nisr.sauservices.ui.components.*
+import com.nisr.sauservices.ui.theme.*
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -40,27 +41,18 @@ fun BusinessSubCategoryScreen(navController: NavController, category: String) {
         else -> emptyList()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(decodedCategory, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        containerColor = Color(0xFFF7F7F7)
+    LuxuryScaffold(
+        title = decodedCategory,
+        onBackClick = { navController.popBackStack() }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             Text(
-                text = "Select Sub-Category",
+                text = "Select Service",
                 modifier = Modifier.padding(16.dp),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = PinkPrimary
+                color = LuxuryGold,
+                fontFamily = FontFamily.Serif
             )
 
             LazyVerticalGrid(
@@ -70,20 +62,15 @@ fun BusinessSubCategoryScreen(navController: NavController, category: String) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(subCategories) { sub ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                val encoded = URLEncoder.encode(sub, "UTF-8")
-                                navController.navigate(Screen.BusinessServices.createRoute(encoded))
-                            },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(2.dp)
+                    LuxuryCard(
+                        onClick = {
+                            val encoded = URLEncoder.encode(sub, "UTF-8")
+                            navController.navigate(Screen.BusinessServices(encoded))
+                        }
                     ) {
                         Box(
                             modifier = Modifier
-                                .padding(16.dp)
+                                .padding(24.dp)
                                 .fillMaxWidth(),
                             contentAlignment = Alignment.Center
                         ) {
@@ -91,7 +78,8 @@ fun BusinessSubCategoryScreen(navController: NavController, category: String) {
                                 text = sub,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
-                                color = Color.Black
+                                color = LuxuryTextPrimary,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
                             )
                         }
                     }

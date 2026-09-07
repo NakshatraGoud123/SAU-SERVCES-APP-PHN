@@ -2,13 +2,15 @@ package com.nisr.sauservices.navigation
 
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import com.nisr.sauservices.ui.home.*
 import com.nisr.sauservices.ui.payment.*
 import com.nisr.sauservices.ui.viewmodel.*
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.BookingDetailsScreen
+import com.nisr.sauservices.ui.residential.ResidentialBookingDetailsScreen
+import com.nisr.sauservices.ui.essentials.*
 
 fun NavGraphBuilder.bookingNavGraph(
     navController: NavController,
@@ -25,12 +27,12 @@ fun NavGraphBuilder.bookingNavGraph(
     educationCartViewModel: EducationCartViewModel
 ) {
     // Unified Bookings List
-    composable(Routes.BOOKINGS) {
+    composable<Screen.Bookings> {
         BookingsScreen(navController, bookingsViewModel)
     }
 
     // Unified Cart for all Services
-    composable(Routes.CART) {
+    composable<Screen.Cart> {
         UnifiedCartScreen(
             navController = navController,
             residentialViewModel = residentialViewModel,
@@ -46,16 +48,36 @@ fun NavGraphBuilder.bookingNavGraph(
         )
     }
 
-    // Shared Checkout Flow for Services
-    composable(Routes.SERVICE_BOOKING_DETAILS) {
-        ResidentialBookingDetailsScreen(navController, residentialViewModel)
+    // Essentials Checkout
+    composable<Screen.HomeEssentialsCheckout> {
+        HomeEssentialsCheckoutScreen(navController, homeCartViewModel)
     }
 
-    composable(Routes.SERVICE_PAYMENT) {
-        ResidentialPaymentScreen(navController, residentialViewModel)
+    composable<Screen.HomeEssentialsSuccess> {
+        HomeEssentialsSuccessScreen(navController)
+    }
+    composable<Screen.ResidentialBookingDetails> { backStackEntry ->
+        val route: Screen.ResidentialBookingDetails = backStackEntry.toRoute()
+        ResidentialBookingDetailsScreen(
+            navController = navController, 
+            viewModel = residentialViewModel,
+            partnerId = route.partnerId,
+            serviceId = route.serviceId
+        )
     }
 
-    composable(Routes.SERVICE_ORDER_SUMMARY) {
+    composable<Screen.ResidentialPayment> { backStackEntry ->
+        val route: Screen.ResidentialPayment = backStackEntry.toRoute()
+        ResidentialPaymentScreen(
+            navController = navController, 
+            viewModel = residentialViewModel,
+            partnerId = route.partnerId,
+            serviceId = route.serviceId
+        )
+    }
+
+    composable<Screen.ResidentialOrderSummary> { backStackEntry ->
+        val route: Screen.ResidentialOrderSummary = backStackEntry.toRoute()
         ResidentialOrderSummaryScreen(
             navController = navController,
             viewModel = residentialViewModel,
@@ -68,76 +90,53 @@ fun NavGraphBuilder.bookingNavGraph(
             healthcareViewModel = healthcareViewModel,
             foodCartViewModel = foodCartViewModel,
             homeCartViewModel = homeCartViewModel,
-            educationViewModel = educationCartViewModel
+            educationViewModel = educationCartViewModel,
+            partnerId = route.partnerId,
+            serviceId = route.serviceId
         )
     }
 
-    composable(Routes.SERVICE_BOOKING_SUCCESS) {
+    composable<Screen.ResidentialSuccess> {
         BookingSuccessScreen(navController)
     }
 
+    // Booking Details & Success Flow
+    composable<Screen.BookingConfirmation> {
+        BookingSuccessScreen(navController, "Your booking is confirmed!")
+    }
+
+    composable<Screen.MyBookings> {
+        MyOrdersScreen(navController)
+    }
+
+    composable<Screen.BookingDetails> { backStackEntry ->
+        val route: Screen.BookingDetails = backStackEntry.toRoute()
+        BookingDetailsScreen(navController, route.bookingId)
+    }
+
     // --- PAYMENT FLOW ---
-    composable(
-        route = Screen.PaymentMethod.route,
-        arguments = listOf(
-            navArgument("bookingId") { type = NavType.StringType },
-            navArgument("customerId") { type = NavType.StringType },
-            navArgument("partnerId") { type = NavType.StringType },
-            navArgument("amount") { type = NavType.FloatType }
-        )
-    ) { backStackEntry ->
-        val bId = backStackEntry.arguments?.getString("bookingId") ?: ""
-        val cId = backStackEntry.arguments?.getString("customerId") ?: ""
-        val pId = backStackEntry.arguments?.getString("partnerId") ?: ""
-        val amt = backStackEntry.arguments?.getFloat("amount")?.toDouble() ?: 0.0
-        PaymentMethodScreen(navController, bId, cId, pId, amt)
+    composable<Screen.PaymentMethod> { backStackEntry ->
+        val dest: Screen.PaymentMethod = backStackEntry.toRoute()
+        PaymentMethodScreen(navController, dest.bookingId, dest.customerId, dest.partnerId, dest.amount)
     }
 
-    composable(
-        route = Screen.CashSuccess.route,
-        arguments = listOf(
-            navArgument("paymentId") { type = NavType.StringType },
-            navArgument("amount") { type = NavType.FloatType }
-        )
-    ) { backStackEntry ->
-        val pId = backStackEntry.arguments?.getString("paymentId") ?: ""
-        val amt = backStackEntry.arguments?.getFloat("amount")?.toDouble() ?: 0.0
-        CashBookingSuccessScreen(navController, pId, amt)
+    composable<Screen.CashSuccess> { backStackEntry ->
+        val dest: Screen.CashSuccess = backStackEntry.toRoute()
+        CashBookingSuccessScreen(navController, dest.paymentId, dest.amount)
     }
 
-    composable(
-        route = Screen.CashCollection.route,
-        arguments = listOf(
-            navArgument("paymentId") { type = NavType.StringType },
-            navArgument("bookingId") { type = NavType.StringType },
-            navArgument("amount") { type = NavType.FloatType }
-        )
-    ) { backStackEntry ->
-        val pId = backStackEntry.arguments?.getString("paymentId") ?: ""
-        val bId = backStackEntry.arguments?.getString("bookingId") ?: ""
-        val amt = backStackEntry.arguments?.getFloat("amount")?.toDouble() ?: 0.0
-        CashCollectionScreen(navController, pId, bId, amt)
+    composable<Screen.CashCollection> { backStackEntry ->
+        val dest: Screen.CashCollection = backStackEntry.toRoute()
+        CashCollectionScreen(navController, dest.paymentId, dest.bookingId, dest.amount)
     }
 
-    composable(
-        route = Screen.CustomerOtp.route,
-        arguments = listOf(
-            navArgument("paymentId") { type = NavType.StringType },
-            navArgument("bookingId") { type = NavType.StringType },
-            navArgument("amount") { type = NavType.FloatType }
-        )
-    ) { backStackEntry ->
-        val pId = backStackEntry.arguments?.getString("paymentId") ?: ""
-        val bId = backStackEntry.arguments?.getString("bookingId") ?: ""
-        val amt = backStackEntry.arguments?.getFloat("amount")?.toDouble() ?: 0.0
-        CustomerOtpScreen(navController, pId, bId, amt)
+    composable<Screen.CustomerOtp> { backStackEntry ->
+        val dest: Screen.CustomerOtp = backStackEntry.toRoute()
+        CustomerOtpScreen(navController, dest.paymentId, dest.bookingId, dest.amount)
     }
 
-    composable(
-        route = Screen.PaidSuccess.route,
-        arguments = listOf(navArgument("amount") { type = NavType.FloatType })
-    ) { backStackEntry ->
-        val amt = backStackEntry.arguments?.getFloat("amount")?.toDouble() ?: 0.0
-        DigitalPaymentSuccessScreen(navController, amt)
+    composable<Screen.PaidSuccess> { backStackEntry ->
+        val dest: Screen.PaidSuccess = backStackEntry.toRoute()
+        DigitalPaymentSuccessScreen(navController, dest.amount)
     }
 }

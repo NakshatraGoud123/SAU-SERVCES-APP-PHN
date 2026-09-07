@@ -75,7 +75,7 @@ fun MechanicBottomSheet(navController: NavController, onDismiss: () -> Unit) {
                 items(categories) { category ->
                     MechanicCategoryCard(category) {
                         onDismiss()
-                        navController.navigate(Screen.MechanicSubcategories.createRoute(category.name))
+                        navController.navigate(Screen.MechanicSubcategories(category.name))
                     }
                 }
             }

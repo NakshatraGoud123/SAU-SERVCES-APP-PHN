@@ -19,16 +19,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nisr.sauservices.ui.theme.Black
-import com.nisr.sauservices.ui.theme.LightGray
-import com.nisr.sauservices.ui.theme.PrimaryBlue
+import com.nisr.sauservices.ui.theme.*
 
 @Composable
 fun ValuePropositionsRow() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(LightGray, RoundedCornerShape(12.dp))
+            .background(LuxuryCard, RoundedCornerShape(12.dp))
             .padding(vertical = 12.dp, horizontal = 4.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
@@ -49,7 +47,7 @@ fun ValueItem(icon: ImageVector, text: String) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = PrimaryBlue,
+            tint = LuxuryGold,
             modifier = Modifier.size(20.dp)
         )
         Spacer(Modifier.height(4.dp))
@@ -58,7 +56,7 @@ fun ValueItem(icon: ImageVector, text: String) {
             style = MaterialTheme.typography.bodySmall.copy(
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Medium,
-                color = Black,
+                color = LuxuryTextPrimary,
                 lineHeight = 11.sp
             ),
             textAlign = TextAlign.Center,

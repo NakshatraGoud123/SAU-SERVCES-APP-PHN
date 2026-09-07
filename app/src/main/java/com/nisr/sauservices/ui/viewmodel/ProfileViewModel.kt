@@ -6,8 +6,10 @@ import com.nisr.sauservices.data.api.SupabaseClient
 import com.nisr.sauservices.data.model.Address
 import com.nisr.sauservices.data.model.NotificationPreferences
 import com.nisr.sauservices.data.model.UserProfile
+import com.nisr.sauservices.data.model.Notification
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +19,7 @@ import kotlinx.coroutines.withContext
 class ProfileViewModel : ViewModel() {
     private val auth = SupabaseClient.client.auth
     private val postgrest = SupabaseClient.client.postgrest
+    private val storage = SupabaseClient.client.storage
 
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile
@@ -27,13 +30,20 @@ class ProfileViewModel : ViewModel() {
     private val _notificationPrefs = MutableStateFlow(NotificationPreferences())
     val notificationPrefs: StateFlow<NotificationPreferences> = _notificationPrefs
 
+    private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
+    val notifications: StateFlow<List<Notification>> = _notifications
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _isUploading = MutableStateFlow(false)
+    val isUploading: StateFlow<Boolean> = _isUploading
 
     init {
         fetchUserProfile()
         fetchAddresses()
         fetchNotificationPreferences()
+        fetchNotifications()
     }
 
     fun fetchUserProfile() {
@@ -42,37 +52,102 @@ class ProfileViewModel : ViewModel() {
             _isLoading.value = true
             try {
                 val profile = withContext(Dispatchers.IO) {
-                    postgrest["users"].select {
+                    val response = postgrest["users"].select {
                         filter { eq("id", uid) }
-                    }.decodeSingleOrNull<UserProfile>()
+                    }
+                    android.util.Log.d("PROFILE_DEBUG", "Raw Profile Data: ${response.data}")
+                    response.decodeSingleOrNull<UserProfile>()
                 }
-                _userProfile.value = profile ?: UserProfile(name = "Guest User", email = "guest@example.com")
+                
+                if (profile != null) {
+                    _userProfile.value = profile
+                    android.util.Log.d("PROFILE_DEBUG", "Loaded Profile: Name=${profile.name}, Pic=${profile.profilePicUrl}")
+                } else {
+                    android.util.Log.e("PROFILE_DEBUG", "Profile not found in database for ID: $uid")
+                    // If no row exists, create a basic one from Auth metadata
+                    val currentAuthUser = auth.currentUserOrNull()
+                    val newProfile = UserProfile(
+                        name = (currentAuthUser?.userMetadata?.get("full_name") ?: currentAuthUser?.userMetadata?.get("name"))?.toString() ?: "New User",
+                        email = currentAuthUser?.email ?: "",
+                        phone = currentAuthUser?.phone ?: "",
+                        profilePicUrl = (currentAuthUser?.userMetadata?.get("avatar_url") ?: currentAuthUser?.userMetadata?.get("picture"))?.toString()
+                    )
+                    _userProfile.value = newProfile
+                }
             } catch (e: Exception) {
-                _userProfile.value = UserProfile(name = "Guest User", email = "guest@example.com")
+                android.util.Log.e("PROFILE_DEBUG", "Error fetching profile: ${e.message}")
+                _userProfile.value = UserProfile(name = "User", email = auth.currentUserOrNull()?.email ?: "")
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    fun updateProfile(name: String, phone: String) {
+    fun updateProfile(name: String, phone: String, profilePicUrl: String? = null, onComplete: (Result<Unit>) -> Unit = {}) {
         val uid = auth.currentUserOrNull()?.id ?: return
         viewModelScope.launch {
             _isLoading.value = true
             try {
                 withContext(Dispatchers.IO) {
-                    postgrest["users"].update({
-                        set("name", name)
-                        set("phone", phone)
-                    }) {
-                        filter { eq("id", uid) }
-                    }
+                    // Create a serializable profile object to avoid 'Any' serialization error
+                    val profileToSave = UserProfile(
+                        id = uid,
+                        name = name,
+                        phone = phone,
+                        profilePicUrl = profilePicUrl ?: _userProfile.value?.profilePicUrl,
+                        email = _userProfile.value?.email ?: auth.currentUserOrNull()?.email ?: ""
+                    )
+
+                    // UPSERT using the serializable data class
+                    postgrest["users"].upsert(profileToSave)
                 }
                 fetchUserProfile()
+                onComplete(Result.success(Unit))
             } catch (e: Exception) {
-                // Handle error
+                android.util.Log.e("DATABASE_ERROR", "Failed to upsert users table: ${e.message}")
+                onComplete(Result.failure(e))
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun uploadProfilePicture(byteArray: ByteArray, onResult: (Result<String>) -> Unit) {
+        val uid = auth.currentUserOrNull()?.id ?: return
+        viewModelScope.launch {
+            _isUploading.value = true
+            try {
+                val fileName = "profile_$uid.jpg"
+                val bucket = storage["avatars"]
+                
+                withContext(Dispatchers.IO) {
+                    bucket.upload(fileName, byteArray) {
+                        upsert = true
+                    }
+                }
+                
+                // Construct the direct public URL with a timestamp for cache busting
+                val supabaseUrl = com.nisr.sauservices.data.api.SupabaseClient.SUPABASE_URL
+                val publicUrl = "$supabaseUrl/storage/v1/object/public/avatars/$fileName?t=${System.currentTimeMillis()}"
+                
+                android.util.Log.d("PHOTO_DEBUG", "Final Avatar URL: $publicUrl")
+                
+                // Now update the users table in database
+                updateProfile(
+                    name = _userProfile.value?.name ?: "",
+                    phone = _userProfile.value?.phone ?: "",
+                    profilePicUrl = publicUrl
+                ) { dbResult ->
+                    if (dbResult.isSuccess) {
+                        onResult(Result.success(publicUrl))
+                    } else {
+                        onResult(Result.failure(Exception("Link failed: ${dbResult.exceptionOrNull()?.message}")))
+                    }
+                }
+            } catch (e: Exception) {
+                onResult(Result.failure(e))
+            } finally {
+                _isUploading.value = false
             }
         }
     }
@@ -152,6 +227,22 @@ class ProfileViewModel : ViewModel() {
                     _notificationPrefs.value = prefs
                 }
             } catch (e: Exception) { }
+        }
+    }
+
+    fun fetchNotifications() {
+        val uid = auth.currentUserOrNull()?.id ?: return
+        viewModelScope.launch {
+            try {
+                val list = withContext(Dispatchers.IO) {
+                    postgrest["notifications"].select {
+                        filter { eq("user_id", uid) }
+                    }.decodeList<Notification>()
+                }
+                _notifications.value = list
+            } catch (e: Exception) { 
+                // Fallback to empty list or handle error
+            }
         }
     }
 

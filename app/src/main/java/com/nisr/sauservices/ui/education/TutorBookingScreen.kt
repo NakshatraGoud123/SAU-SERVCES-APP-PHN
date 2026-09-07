@@ -158,7 +158,7 @@ fun TutorBookingScreen(navController: NavController, viewModel: EducationCartVie
 
             Button(
                 onClick = { 
-                    navController.navigate(Screen.EducationSuccess.route) 
+                    navController.navigate(Screen.EducationSuccess) 
                     viewModel.clearCart()
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),

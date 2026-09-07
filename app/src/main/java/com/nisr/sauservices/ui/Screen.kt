@@ -1,219 +1,179 @@
 package com.nisr.sauservices.ui
 
-sealed class Screen(val route: String) {
-    object Splash : Screen("splash")
-    object Onboarding : Screen("onboarding")
-    object RoleSelection : Screen("role_selection")
-    object AuthOptions : Screen("auth_options/{role}") {
-        fun createRoute(role: String) = "auth_options/$role"
-    }
-    object LocationPermission : Screen("location_permission")
-    object Home : Screen("home")
-    object Categories : Screen("categories")
-    object Bookings : Screen("bookings")
-    object Cart : Screen("cart")
-    object Profile : Screen("profile")
-    object MyOrders : Screen("my_orders")
+import kotlinx.serialization.Serializable
+
+@Serializable
+sealed class Screen {
+    @Serializable data class Splash(val id: String = "splash") : Screen()
     
-    // New Modules
-    object EssentialSupplies : Screen("essential_supplies")
-    object BookingsModule : Screen("bookings_module")
+    // Auth
+    @Serializable data object Onboarding : Screen()
+    @Serializable data object RoleSelection : Screen()
+    @Serializable data class AuthOptions(val role: String) : Screen()
+    @Serializable data class Login(val role: String = "customer") : Screen()
+    @Serializable data class Register(val role: String = "customer") : Screen()
+    @Serializable data object ForgotPassword : Screen()
+    @Serializable data class ResetPassword(val email: String) : Screen()
+    
+    @Serializable data object Home : Screen()
+    @Serializable data object Search : Screen()
+    @Serializable data object Categories : Screen()
+    @Serializable data class SearchResults(val query: String) : Screen()
 
     // Property & Lifestyle Services (PLS)
-    object PLSMain : Screen("PLS_main")
+    @Serializable data object PLSMain : Screen()
+    @Serializable data class PLSSubcategories(val category: String) : Screen()
+    @Serializable data class PLSServices(val subcategory: String) : Screen()
+    @Serializable data class PLSBooking(val serviceId: String) : Screen()
+    @Serializable data object PLSCheckout : Screen()
+    @Serializable data object PLSSuccess : Screen()
 
-    // Map & Location Routes
-    object MapPicker : Screen("map_picker")
-    object OrderTracking : Screen("order_tracking/{orderId}") {
-        fun createRoute(orderId: String) = "order_tracking/$orderId"
-    }
-
-    // Profile System Routes
-    object EditProfile : Screen("profile/edit")
-    object Notifications : Screen("profile/notifications")
-    object ShippingAddress : Screen("profile/address")
-    object ChangePassword : Screen("profile/change-password")
-    object AddAccounts : Screen("profile/add-accounts")
-    object ContactUs : Screen("profile/contact")
-    object FAQ : Screen("profile/faq")
+    @Serializable data class ServiceList(val categoryId: String, val subcategoryId: String) : Screen()
     
-    // Home Essentials Hierarchy
-    object HomeEssentialsMain : Screen("home_essentials_main")
-    object HomeEssentialsCategory : Screen("home_essentials_category/{categoryId}") {
-        fun createRoute(categoryId: String) = "home_essentials_category/$categoryId"
-    }
-    object HomeEssentialsItems : Screen("home_essentials_items/{subcategoryId}") {
-        fun createRoute(subcategoryId: String) = "home_essentials_items/$subcategoryId"
-    }
-    object HomeEssentialsCart : Screen("home_essentials_cart")
-    object HomeEssentialsCheckout : Screen("home_essentials_checkout")
-    object HomeEssentialsSuccess : Screen("home_essentials_success")
-
-    object Login : Screen("login/{role}") {
-        fun createRoute(role: String) = "login/$role"
-    }
-    object EmailLogin : Screen("email_login")
-    object PhoneLogin : Screen("phone_login")
-    object LoginSuccess : Screen("login_success/{name}") {
-        fun createRoute(name: String) = "login_success/$name"
-    }
-    object BookingSummary : Screen("booking_summary")
-    object BookingSuccess : Screen("service_booking_success")
-    
-    object ForgotPassword : Screen("forgot_password")
-    object SignUp : Screen("signup/{role}") {
-        fun createRoute(role: String) = "signup/$role"
-    }
-
-    object Register : Screen("register")
-    object Intro : Screen("intro")
-    object SignOutSuccess : Screen("sign_out_success")
-    object ResetPassword : Screen("reset_password/{email}") {
-        fun createRoute(email: String) = "reset_password/$email"
-    }
-
-    // Food & Beverages
-    object FoodCategories : Screen("FOODS_categories")
-    object FoodSubcategories : Screen("FOODS_subcategories/{category}") {
-        fun createRoute(category: String) = "FOODS_subcategories/$category"
-    }
-    object FoodTypes : Screen("FOODS_types/{subcategory}") {
-        fun createRoute(subcategory: String) = "FOODS_types/$subcategory"
-    }
-    object FoodItems : Screen("FOODS_items/{type}") {
-        fun createRoute(type: String) = "FOODS_items/$type"
-    }
-    object FoodCart : Screen("FOODS_cart")
-    object FoodCheckout : Screen("FOODS_checkout")
-    object FoodBooking : Screen("FOODS_booking/{service}") {
-        fun createRoute(service: String) = "FOODS_booking/$service"
-    }
-    object FoodOrderSuccess : Screen("FOODS_order_success")
-
     // Residential
-    object ResidentialCategories : Screen("res_categories")
-    object ResidentialSubcategories : Screen("res_subcategories/{categoryId}") {
-        fun createRoute(categoryId: String) = "res_subcategories/$categoryId"
-    }
-    object ResidentialServiceList : Screen("res_services/{categoryId}/{subcategoryId}") {
-        fun createRoute(categoryId: String, subcategoryId: String) = "res_services/$categoryId/$subcategoryId"
-    }
-    object ResidentialBookingDetails : Screen("service_booking_details")
-    object ResidentialPayment : Screen("service_payment")
-    object ResidentialOrderSummary : Screen("service_order_summary")
-    object ResidentialSuccess : Screen("service_booking_success")
+    @Serializable data object ResidentialCategories : Screen()
+    @Serializable data class ResidentialSubcategories(val categoryId: String) : Screen()
+    @Serializable data class ResidentialServices(val categoryId: String, val subcategoryId: String) : Screen()
+    
+    @Serializable data class PartnerList(val serviceId: String) : Screen()
+    @Serializable data class PartnerProfile(val partnerId: String, val serviceId: String) : Screen()
+    @Serializable data class Booking(val partnerId: String, val serviceId: String) : Screen()
+    @Serializable data class BookingConfirmation(val bookingId: String) : Screen()
+    
+    @Serializable data object MyBookings : Screen()
+    @Serializable data class BookingDetails(val bookingId: String) : Screen()
+    @Serializable data class Reviews(val partnerId: String) : Screen()
+    
+    @Serializable data object Notifications : Screen()
+    @Serializable data object Profile : Screen()
+    @Serializable data object Settings : Screen()
 
-    // Unified Services
-    object EducationSubCategory : Screen("edu_subcategories/{category}") {
-        fun createRoute(category: String) = "edu_subcategories/$category"
-    }
-    object EducationCourses : Screen("edu_courses/{subcategory}") {
-        fun createRoute(subcategory: String) = "edu_courses/$subcategory"
-    }
-    object EducationCart : Screen("edu_cart")
-    object EducationBooking : Screen("edu_booking")
-    object EducationSuccess : Screen("edu_success")
+    // Booking & Cart
+    @Serializable data object Cart : Screen()
+    @Serializable data object Bookings : Screen()
+    
+    @Serializable
+    data class ResidentialBookingDetails(
+        val partnerId: String,
+        val serviceId: String
+    ) : Screen()
+    @Serializable
+    data class ResidentialPayment(
+        val partnerId: String,
+        val serviceId: String
+    ) : Screen()
+    @Serializable
+    data class ResidentialOrderSummary(
+        val partnerId: String,
+        val serviceId: String
+    ) : Screen()
+    @Serializable data object ResidentialSuccess : Screen()
+    
+    @Serializable data class PaymentMethod(val bookingId: String, val customerId: String, val partnerId: String, val amount: Double) : Screen()
+    @Serializable data class CashSuccess(val paymentId: String, val amount: Double) : Screen()
+    @Serializable data class CashCollection(val paymentId: String, val bookingId: String, val amount: Double) : Screen()
+    @Serializable data class CustomerOtp(val paymentId: String, val bookingId: String, val amount: Double) : Screen()
+    @Serializable data class PaidSuccess(val amount: Double) : Screen()
+    
+    // Location
+    @Serializable data object LocationPermission : Screen()
+    @Serializable data object MapPicker : Screen()
+    @Serializable data class OrderTracking(val orderId: String) : Screen()
+    
+    // Profile Extended
+    @Serializable data object EditProfile : Screen()
+    @Serializable data object ShippingAddress : Screen()
+    @Serializable data object ChangePassword : Screen()
+    @Serializable data object AddAccounts : Screen()
+    @Serializable data object ContactUs : Screen()
+    @Serializable data object FAQ : Screen()
 
-    object BusinessSubCategory : Screen("biz_subcategories/{category}") {
-        fun createRoute(category: String) = "biz_subcategories/$category"
-    }
-    object BusinessServices : Screen("biz_services/{subcategory}") {
-        fun createRoute(subcategory: String) = "biz_services/$subcategory"
-    }
-    object BusinessBooking : Screen("biz_booking")
-    object BusinessCheckout : Screen("biz_checkout")
-    object BusinessPayment : Screen("biz_payment")
-    object BusinessSuccess : Screen("biz_success")
+    // Business
+    @Serializable data object BusinessMain : Screen()
+    @Serializable data class BusinessSubcategories(val category: String) : Screen()
+    @Serializable data class BusinessServices(val subcategory: String) : Screen()
+    @Serializable data object BusinessPayment : Screen()
+    @Serializable data object BusinessSuccess : Screen()
+    
+    // Education
+    @Serializable data class EducationSubcategories(val category: String) : Screen()
+    @Serializable data class EducationCourses(val subcategory: String) : Screen()
+    @Serializable data object EducationCart : Screen()
+    @Serializable data object EducationSuccess : Screen()
+    
+    // Lifestyle
+    @Serializable data class LifestyleSubcategories(val category: String) : Screen()
+    @Serializable data class LifestyleServices(val subcategory: String) : Screen()
+    @Serializable data object LifestyleCheckout : Screen()
+    @Serializable data object LifestylePayment : Screen()
+    @Serializable data object LifestyleSuccess : Screen()
+    
+    // Tech
+    @Serializable data class TechSubcategories(val category: String) : Screen()
+    @Serializable data class TechServices(val subcategory: String) : Screen()
+    @Serializable data object TechCheckout : Screen()
+    @Serializable data object TechPayment : Screen()
+    @Serializable data object TechSuccess : Screen()
+    
+    // Mens Grooming
+    @Serializable data class MensSubcategories(val category: String) : Screen()
+    @Serializable data class MensServices(val subcategory: String) : Screen()
+    @Serializable data object MensCheckout : Screen()
+    @Serializable data object MensSuccess : Screen()
+    
+    // Womens Beauty
+    @Serializable data class WomensBeautySubcategories(val category: String) : Screen()
+    @Serializable data class WomensBeautyServices(val subcategory: String) : Screen()
+    @Serializable data object WomensBeautyOrderSummary : Screen()
+    @Serializable data object WomensBeautyPayment : Screen()
+    @Serializable data object WomensBeautySuccess : Screen()
+    
+    // Healthcare
+    @Serializable data object HealthcareMain : Screen()
+    @Serializable data class HealthcareSubcategories(val category: String) : Screen()
+    @Serializable data class HealthcareServices(val subcategory: String) : Screen()
+    @Serializable data object HealthcareBooking : Screen()
+    @Serializable data object HealthcareOrderSummary : Screen()
+    @Serializable data object HealthcarePayment : Screen()
+    @Serializable data object HealthcareSuccess : Screen()
+    @Serializable data object HealthcareOrderTracking : Screen()
+    
+    // Food
+    @Serializable data object FoodCategories : Screen() // List of restaurants
+    @Serializable data class FoodSubCategory(val category: String) : Screen()
+    @Serializable data class FoodTypes(val subcategory: String) : Screen()
+    @Serializable data class FoodSubType(val typeName: String) : Screen()
+    @Serializable data class FoodItems(val restaurantId: String) : Screen() // Restaurant menu
+    @Serializable data object FoodCart : Screen()
+    @Serializable data class FoodBooking(val restaurantId: String) : Screen()
+    @Serializable data object FoodOrderSuccess : Screen()
+    @Serializable data class FoodOrderTracking(val orderId: String) : Screen()
+    
+    // Mechanic
+    @Serializable data class MechanicSubcategories(val categoryName: String) : Screen()
+    @Serializable data object MechanicBooking : Screen()
+    @Serializable data object MechanicSuccess : Screen()
+    
+    // Mobility
+    @Serializable data object MobilityMain : Screen()
+    @Serializable data object MobilitySuccess : Screen()
+    
+    // Essentials (Modules)
+    @Serializable data object HomeEssentialsMain : Screen()
+    @Serializable data class HomeEssentialsCategory(val categoryId: String, val shopId: String? = null) : Screen()
+    @Serializable data class HomeEssentialsItems(val subcategoryId: String, val shopId: String? = null) : Screen()
+    @Serializable data object HomeEssentialsCheckout : Screen()
+    @Serializable data object HomeEssentialsSuccess : Screen()
 
-    object LifestyleSubCategory : Screen("life_subcategories/{category}") {
-        fun createRoute(category: String) = "life_subcategories/$category"
-    }
-    object LifestyleServices : Screen("life_services/{subcategory}") {
-        fun createRoute(subcategory: String) = "life_services/$subcategory"
-    }
-    object LifestyleBooking : Screen("life_booking")
-    object LifestyleCheckout : Screen("life_checkout")
-    object LifestylePayment : Screen("life_payment")
-    object LifestyleSuccess : Screen("life_success")
-
-    object TechSubCategory : Screen("tech_subcategories/{category}") {
-        fun createRoute(category: String) = "tech_subcategories/$category"
-    }
-    object TechServices : Screen("tech_services/{subcategory}") {
-        fun createRoute(subcategory: String) = "tech_services/$subcategory"
-    }
-    object TechBooking : Screen("tech_booking")
-    object TechCheckout : Screen("tech_checkout")
-    object TechPayment : Screen("tech_payment")
-    object TechSuccess : Screen("tech_success")
-
-    object MensCategories : Screen("mens_categories")
-    object MensSubcategories : Screen("mens_subcategories/{category}") {
-        fun createRoute(category: String) = "mens_subcategories/$category"
-    }
-    object MensServices : Screen("mens_services/{subcategory}") {
-        fun createRoute(subcategory: String) = "mens_services/$subcategory"
-    }
-    object MensBooking : Screen("mens_booking")
-    object MensCheckout : Screen("mens_checkout")
-    object MensPayment : Screen("mens_payment")
-    object MensSuccess : Screen("mens_success")
-
-    object WomensBeautyCategories : Screen("womens_beauty_categories")
-    object WomensBeautySubcategories : Screen("womens_beauty_subcategories/{category}") {
-        fun createRoute(category: String) = "womens_beauty_subcategories/$category"
-    }
-    object WomensBeautyServices : Screen("womens_beauty_services/{subcategory}") {
-        fun createRoute(subcategory: String) = "womens_beauty_services/$subcategory"
-    }
-    object WomensBeautyBooking : Screen("womens_beauty_booking")
-    object WomensBeautyPayment : Screen("womens_beauty_payment")
-    object WomensBeautyOrderSummary : Screen("womens_beauty_order_summary")
-    object WomensBeautySuccess : Screen("womens_beauty_success")
-
-    object HealthcareCategories : Screen("health_categories")
-    object HealthcareSubcategories : Screen("health_subcategories/{category}") {
-        fun createRoute(category: String) = "health_subcategories/$category"
-    }
-    object HealthcareServices : Screen("health_services/{subcategory}") {
-        fun createRoute(subcategory: String) = "health_services/$subcategory"
-    }
-    object HealthcareBooking : Screen("health_booking")
-    object HealthcarePayment : Screen("health_payment")
-    object HealthcareOrderSummary : Screen("health_order_summary")
-    object HealthcareOrderTracking : Screen("health_order_tracking")
-    object HealthcareSuccess : Screen("health_success")
-
-    // Mechanic Services
-    object MechanicMain : Screen("mechanic_main")
-    object MechanicSubcategories : Screen("mechanic_subcategories/{category}") {
-        fun createRoute(category: String) = "mechanic_subcategories/$category"
-    }
-    object MechanicBooking : Screen("mechanic_booking")
-    object MechanicSuccess : Screen("mechanic_success")
-
-    // Mobility Services
-    object MobilityMain : Screen("mobility_main")
-    object MobilityServiceTypes : Screen("mobility_types")
-    object MobilityBooking : Screen("mobility_booking")
-    object MobilityRideTracking : Screen("mobility_tracking")
-    object MobilitySuccess : Screen("mobility_success")
-
-    // Payment Routes
-    object PaymentMethod : Screen("payment_method/{bookingId}/{customerId}/{partnerId}/{amount}") {
-        fun createRoute(bookingId: String, customerId: String, partnerId: String, amount: Double) = 
-            "payment_method/$bookingId/$customerId/$partnerId/$amount"
-    }
-    object CashSuccess : Screen("cash_success/{paymentId}/{amount}") {
-        fun createRoute(paymentId: String, amount: Double) = "cash_success/$paymentId/$amount"
-    }
-    object CashCollection : Screen("cash_collection/{paymentId}/{bookingId}/{amount}") {
-        fun createRoute(paymentId: String, bookingId: String, amount: Double) = "cash_collection/$paymentId/$bookingId/$amount"
-    }
-    object CustomerOtp : Screen("customer_otp/{paymentId}/{bookingId}/{amount}") {
-        fun createRoute(paymentId: String, bookingId: String, amount: Double) = "customer_otp/$paymentId/$bookingId/$amount"
-    }
-    object PaidSuccess : Screen("paid_success/{amount}") {
-        fun createRoute(amount: Double) = "paid_success/$amount"
-    }
+    // Luxury Screens
+    @Serializable data object LuxurySplash : Screen()
+    @Serializable data object LuxuryOnboarding1 : Screen()
+    @Serializable data object LuxuryOnboarding2 : Screen()
+    @Serializable data object LuxuryOnboarding3 : Screen()
+    @Serializable data object LuxuryLogin : Screen()
+    @Serializable data object LuxurySignUp : Screen()
+    @Serializable data object LuxuryForgotPassword : Screen()
+    @Serializable data object LuxuryResetPassword : Screen()
+    @Serializable data object LuxuryProfile : Screen()
+    @Serializable data object LuxurySignOut : Screen()
 }

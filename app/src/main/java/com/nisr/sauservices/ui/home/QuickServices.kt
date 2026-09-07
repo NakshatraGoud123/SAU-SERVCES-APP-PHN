@@ -1,6 +1,7 @@
 package com.nisr.sauservices.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -22,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.OrchidPrimary
+import com.nisr.sauservices.ui.theme.*
 
 data class ServiceItem(
     val name: String, 
@@ -52,20 +53,21 @@ fun QuickServicesRow(navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .clickable {
-                        navController.navigate(Screen.ResidentialSubcategories.createRoute(item.categoryId))
+                        navController.navigate(Screen.ResidentialSubcategories(item.categoryId))
                     }
             ) {
                 Box(
                     modifier = Modifier
-                        .size(72.dp) // Large circles
+                        .size(72.dp)
                         .clip(CircleShape)
-                        .background(OrchidPrimary), // Orchid Pink background
+                        .background(LuxuryCard)
+                        .border(1.dp, LuxuryGold.copy(alpha = 0.3f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = item.icon,
                         contentDescription = item.name,
-                        tint = Color.White, // White icon on pink
+                        tint = LuxuryGold,
                         modifier = Modifier.size(36.dp)
                     )
                 }
@@ -76,7 +78,7 @@ fun QuickServicesRow(navController: NavController) {
                     text = item.name,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black,
+                    color = LuxuryTextPrimary,
                     textAlign = TextAlign.Center,
                     maxLines = 1
                 )

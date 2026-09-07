@@ -78,7 +78,7 @@ fun LifestyleBottomSheet(navController: NavController, onDismiss: () -> Unit) {
                 items(categories) { category ->
                     LifestyleCategoryItem(category) {
                         onDismiss()
-                        navController.navigate(Screen.LifestyleSubCategory.createRoute(category.name))
+                        navController.navigate(Screen.LifestyleSubcategories(category.name))
                     }
                 }
             }

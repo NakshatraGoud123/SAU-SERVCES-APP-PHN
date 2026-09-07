@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.healthcare
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,11 +10,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MedicalServices
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,96 +22,115 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontFamily
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.PinkPrimary
+import com.nisr.sauservices.ui.components.*
+import com.nisr.sauservices.ui.theme.*
 
-data class HealthCategory(val name: String, val icon: String)
+data class HealthCategory(val id: String, val name: String, val icon: String, val color: Color)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthcareCategoryScreen(navController: NavController) {
     val categories = listOf(
-        HealthCategory("Lab Tests & Diagnostics", "🔬"),
-        HealthCategory("Doctor Consultation", "👨‍⚕️"),
-        HealthCategory("Pharmacy & Medicines", "💊"),
-        HealthCategory("Home Healthcare Services", "🏠")
+        HealthCategory("lab", "Lab Tests & Diagnostics", "🔬", SuccessGreen),
+        HealthCategory("doctor", "Doctor Consultation", "👨‍⚕️", Color(0xFF4D8DFF)),
+        HealthCategory("pharmacy", "Pharmacy & Medicines", "💊", Color(0xFFFF8A3D)),
+        HealthCategory("homecare", "Home Healthcare", "🏠", LuxuryGold)
     )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Healthcare & Pharmacy", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        containerColor = Color(0xFFF9FAFB)
+    LuxuryScaffold(
+        title = "Healthcare",
+        onBackClick = { navController.popBackStack() }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            // Search Bar
+            // Luxury Search Bar
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
                 shape = RoundedCornerShape(16.dp),
-                color = Color.White,
-                shadowElevation = 1.dp
+                color = LuxuryCard,
+                border = BorderStroke(1.dp, LuxuryBorder)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Outlined.Search, null, tint = Color.Gray)
+                    Icon(Icons.Outlined.Search, null, tint = LuxuryGold)
                     Spacer(Modifier.width(12.dp))
-                    Text("Search medicines, tests...", color = Color.Gray, fontSize = 14.sp)
+                    Text("Search medicines, tests...", color = LuxuryTextSecondary, fontSize = 14.sp)
                 }
             }
 
-            // Hero Card
+            // Luxury Hero Card for Pharmacy (since user asked for better pharmacy)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(horizontal = 16.dp)
+                    .clickable { navController.navigate(Screen.HealthcareSubcategories("Pharmacy & Medicines")) },
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = PinkPrimary),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A18)),
+                border = BorderStroke(1.dp, LuxuryGold.copy(alpha = 0.3f))
             ) {
-                Row(modifier = Modifier.padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Healthcare", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
-                        Text("Medicines & care at your doorstep", color = Color.White.copy(alpha = 0.9f), fontSize = 13.sp)
+                        Text(
+                            "SAU PHARMACY", 
+                            color = LuxuryGold, 
+                            fontSize = 12.sp, 
+                            fontWeight = FontWeight.Black, 
+                            letterSpacing = 2.sp
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Order Medicines", 
+                            color = White, 
+                            fontSize = 20.sp, 
+                            fontWeight = FontWeight.ExtraBold, 
+                            fontFamily = FontFamily.Serif
+                        )
+                        Text(
+                            "Genuine medicines delivered in 60 mins", 
+                            color = LuxuryTextSecondary, 
+                            fontSize = 11.sp, 
+                            fontWeight = FontWeight.Medium
+                        )
                     }
-                    Box(modifier = Modifier.size(56.dp).background(Color.White.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.MedicalServices, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(Color(0xFFE8C66A).copy(alpha = 0.1f), CircleShape), 
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("💊", fontSize = 28.sp)
                     }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(28.dp))
 
             Text(
-                "What are you looking for?", 
-                style = MaterialTheme.typography.titleMedium, 
-                fontWeight = FontWeight.Bold, 
-                color = Color.Black, 
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                "CURATED CARE", 
+                style = MaterialTheme.typography.labelSmall, 
+                fontWeight = FontWeight.Black, 
+                color = LuxuryGold, 
+                letterSpacing = 2.sp,
+                modifier = Modifier.padding(horizontal = 18.dp)
             )
+            Spacer(Modifier.height(12.dp))
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(categories) { category ->
-                    HealthCategoryCardProfessional(category) {
-                        navController.navigate(Screen.HealthcareSubcategories.createRoute(category.name))
+                    HealthLuxuryCategoryCard(category) {
+                        navController.navigate(Screen.HealthcareSubcategories(category.name))
                     }
                 }
             }
@@ -120,35 +139,36 @@ fun HealthcareCategoryScreen(navController: NavController) {
 }
 
 @Composable
-fun HealthCategoryCardProfessional(category: HealthCategory, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().height(150.dp).clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
+fun HealthLuxuryCategoryCard(category: HealthCategory, onClick: () -> Unit) {
+    LuxuryCard(onClick = onClick) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier = Modifier.padding(18.dp),
+            horizontalAlignment = Alignment.Start
         ) {
             Surface(
-                modifier = Modifier.size(64.dp),
-                shape = CircleShape,
-                color = PinkPrimary.copy(alpha = 0.05f)
+                modifier = Modifier.size(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = category.color.copy(alpha = 0.1f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(category.icon, fontSize = 32.sp)
+                    Text(category.icon, fontSize = 24.sp)
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 category.name, 
                 fontSize = 14.sp, 
+                fontWeight = FontWeight.ExtraBold, 
+                color = LuxuryTextPrimary,
+                lineHeight = 18.sp,
+                maxLines = 2
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                "Explore Services", 
+                fontSize = 10.sp, 
                 fontWeight = FontWeight.Bold, 
-                textAlign = TextAlign.Center, 
-                color = Color.Black,
-                lineHeight = 18.sp
+                color = LuxuryGold
             )
         }
     }

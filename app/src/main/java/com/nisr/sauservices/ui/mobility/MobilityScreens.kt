@@ -155,7 +155,7 @@ fun MobilityMainScreen(navController: NavController, viewModel: MobilityViewMode
                         
                         Spacer(Modifier.height(24.dp))
                         Button(
-                            onClick = { navController.navigate(Screen.MobilitySuccess.route) },
+                            onClick = { navController.navigate(Screen.MobilitySuccess) },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = mobilityBlue)

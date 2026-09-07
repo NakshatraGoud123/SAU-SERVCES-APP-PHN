@@ -3,20 +3,28 @@ package com.nisr.sauservices.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // ========================================
-// SAU SERVICES - PROFESSIONAL BLUE THEME
+// SAU SOLUTIONS - PREMIUM DARK LUXURY THEME
 // ========================================
 
-// Clean Light Theme Palette
-val PrimaryBlue = Color(0xFF2563EB)
-val PrimaryDark = Color(0xFF1D4ED8)
-val PrimaryLight = Color(0xFFDBEAFE)
-val AppBackground = Color(0xFFF8FAFC)
+val LuxuryBackground = Color(0xFF0B0B0A)
+val LuxuryCard = Color(0xFF151514)
+val LuxuryTextPrimary = Color(0xFFFFFFFF)
+val LuxuryTextSecondary = Color(0xFFA8A8A5)
+val LuxuryGold = Color(0xFFE8C66A)
+val LuxuryCream = Color(0xFFF3E3B5)
+val LuxuryBorder = Color(0xFF292927)
 
-val White = Color(0xFFFFFFFF)
-val Black = Color(0xFF111827) // Primary Text
-val GrayText = Color(0xFF6B7280) // Secondary Text
-val GrayDivider = Color(0xFFE5E7EB)
-val InactiveIcon = Color(0xFF9CA3AF)
+// Semantic Mappings for Global Compatibility
+val PrimaryBlue = LuxuryGold
+val PrimaryDark = LuxuryGold
+val PrimaryLight = LuxuryCream
+val AppBackground = LuxuryBackground
+
+val White = LuxuryTextPrimary
+val Black = LuxuryBackground
+val GrayText = LuxuryTextSecondary
+val GrayDivider = LuxuryBorder
+val InactiveIcon = Color(0xFF4B4B48)
 
 // Status Colors
 val SuccessGreen = Color(0xFF22C55E)

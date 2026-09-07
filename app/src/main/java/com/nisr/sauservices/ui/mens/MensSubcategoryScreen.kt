@@ -69,7 +69,7 @@ fun MensSubcategoryScreen(navController: NavController, category: String) {
                 subCategories.forEach { sub ->
                     MensSubCategoryRow(sub) {
                         val encoded = URLEncoder.encode(sub, "UTF-8")
-                        navController.navigate(Screen.MensServices.createRoute(encoded))
+                        navController.navigate(Screen.MensServices(encoded))
                     }
                 }
             }

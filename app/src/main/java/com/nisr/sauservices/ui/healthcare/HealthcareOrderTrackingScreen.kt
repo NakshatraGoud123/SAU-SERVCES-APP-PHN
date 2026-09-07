@@ -79,7 +79,7 @@ fun HealthcareOrderTrackingScreen(navController: NavController, viewModel: Healt
             Spacer(modifier = Modifier.weight(1f))
             
             Button(
-                onClick = { navController.navigate(Screen.Home.route) },
+                onClick = { navController.navigate(Screen.Home) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))

@@ -1,223 +1,157 @@
 package com.nisr.sauservices.ui.food
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.viewmodel.FoodCartItem
+import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.FoodCartViewModel
-import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
-
-private val PrimaryOrange = Color(0xFFFF6F00)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FoodCartScreen(navController: NavController, viewModel: FoodCartViewModel) {
+    val cartItems = viewModel.cartItems
+    val deliveryFee = 25
+    val subtotal = viewModel.getTotal()
+    val grandTotal = if (cartItems.isEmpty()) 0 else subtotal + deliveryFee
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Food Cart", fontWeight = FontWeight.Bold) },
+                title = { Text("Your Order (${cartItems.size})", color = LuxuryTextPrimary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxuryTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxuryBackground)
             )
         },
-        containerColor = Color(0xFFF8F9FA)
-    ) { padding ->
-        if (viewModel.cartItems.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(80.dp), tint = Color.LightGray)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Your cart is empty", fontSize = 18.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = { navController.navigate(Screen.FoodCategories.route) },
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryOrange),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Order Something Tasty")
+        bottomBar = {
+            if (cartItems.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shadowElevation = 16.dp,
+                    color = LuxuryCard,
+                    border = BorderStroke(1.dp, LuxuryBorder),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp).navigationBarsPadding()) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Column {
+                                Text("Total Amount", fontSize = 14.sp, color = LuxuryTextSecondary)
+                                Text("₹$grandTotal", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = LuxuryGold)
+                            }
+                            Button(
+                                onClick = { navController.navigate(Screen.FoodBooking("res_1")) },
+                                modifier = Modifier.height(56.dp).widthIn(min = 180.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = LuxuryGold)
+                            ) {
+                                Text("Proceed to Checkout", color = LuxuryBackground, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                            }
+                        }
                     }
                 }
+            }
+        },
+        containerColor = LuxuryBackground
+    ) { padding ->
+        if (cartItems.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("Your cart is empty", color = LuxuryTextSecondary)
             }
         } else {
-            Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(viewModel.cartItems) { item ->
-                        FoodCartItemRow(item, viewModel)
-                    }
-                }
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(12.dp)
-                ) {
-                    Column(modifier = Modifier.padding(24.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total Amount", fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
-                            Text("₹${viewModel.getTotal()}", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = PrimaryOrange)
-                        }
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Button(
-                            onClick = { navController.navigate(Screen.Cart.route) },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryOrange)
-                        ) {
-                            Text("Go to Unified Cart", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun FoodCartItemRow(item: FoodCartItem, viewModel: FoodCartViewModel) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .background(PrimaryOrange.copy(alpha = 0.05f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
+            LazyColumn(
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(Icons.Default.Fastfood, contentDescription = null, tint = PrimaryOrange)
-            }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = item.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = "₹${item.price} per item", color = Color.Gray, fontSize = 12.sp)
-                Text(text = "₹${item.price * item.quantity}", fontWeight = FontWeight.ExtraBold, color = PrimaryOrange, fontSize = 15.sp)
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
-            ) {
-                IconButton(onClick = { viewModel.decreaseQty(item.id) }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Remove, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Black)
+                item {
+                    Text("Delivering to Home", fontWeight = FontWeight.Bold, color = LuxuryGold, fontSize = 12.sp)
+                    Text("123, Main Road, Hyderabad", color = LuxuryTextPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Spacer(Modifier.height(8.dp))
                 }
-                Text(text = item.quantity.toString(), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 4.dp), color = Color.Black)
-                IconButton(onClick = { viewModel.increaseQty(item.id) }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Black)
-                }
-            }
-        }
-    }
-}
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun FoodCheckoutScreen(navController: NavController, viewModel: FoodCartViewModel) {
-    // Legacy checkout - redirected in new flow
-    var address by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var paymentMethod by remember { mutableStateOf("Cash on Delivery") }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Food Checkout", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                items(cartItems) { item ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = LuxuryCard),
+                        border = BorderStroke(1.dp, LuxuryBorder),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(item.name, color = LuxuryTextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text("₹${item.price}", color = LuxuryTextSecondary, fontSize = 14.sp)
+                            }
+                            
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .background(LuxuryGold, RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 4.dp)
+                            ) {
+                                IconButton(onClick = { viewModel.decreaseQty(item.id) }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Default.Remove, null, tint = LuxuryBackground, modifier = Modifier.size(16.dp))
+                                }
+                                Text(item.quantity.toString(), color = LuxuryBackground, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(horizontal = 8.dp))
+                                IconButton(onClick = { viewModel.increaseQty(item.id) }, modifier = Modifier.size(32.dp)) {
+                                    Icon(Icons.Default.Add, null, tint = LuxuryBackground, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        }
                     }
                 }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            Text("Delivery Address", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            OutlinedTextField(
-                value = address,
-                onValueChange = { address = it },
-                label = { Text("Full Address") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                minLines = 3
-            )
 
-            Text("Contact Information", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Phone Number") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) }
-            )
-
-            Text("Payment Method", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Cash on Delivery", "UPI", "Card", "Wallet").forEach { method ->
-                    Row(
+                item {
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { paymentMethod = method }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(top = 16.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(LuxuryCard)
+                            .border(BorderStroke(1.dp, LuxuryBorder), RoundedCornerShape(16.dp))
+                            .padding(20.dp)
                     ) {
-                        RadioButton(selected = (paymentMethod == method), onClick = { paymentMethod = method })
-                        Text(text = method, modifier = Modifier.padding(start = 8.dp))
+                        Text("Bill Details", color = LuxuryTextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Spacer(Modifier.height(16.dp))
+                        LuxuryBillRow("Item Subtotal", "₹$subtotal")
+                        LuxuryBillRow("Delivery Fee", "₹$deliveryFee")
+                        HorizontalDivider(Modifier.padding(vertical = 12.dp), color = LuxuryBorder)
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Grand Total", color = LuxuryTextPrimary, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                            Text("₹$grandTotal", color = LuxuryGold, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
+                        }
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Button(
-                onClick = { 
-                    viewModel.clearCart()
-                    navController.navigate(Screen.FoodOrderSuccess.route) 
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryOrange)
-            ) {
-                Text("Place Order - ₹${viewModel.getTotal()}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            }
         }
+    }
+}
+
+@Composable
+private fun LuxuryBillRow(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, color = LuxuryTextSecondary, fontSize = 14.sp)
+        Text(value, color = LuxuryTextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
     }
 }

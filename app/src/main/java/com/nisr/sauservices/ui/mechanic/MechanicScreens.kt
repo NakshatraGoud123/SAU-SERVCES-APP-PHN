@@ -61,7 +61,7 @@ fun MechanicSubcategoryScreen(navController: NavController, categoryName: String
                 items(MechanicData.categories) { cat ->
                     Card(
                         modifier = Modifier.fillMaxWidth().clickable {
-                            navController.navigate(Screen.MechanicSubcategories.createRoute(cat.name))
+                            navController.navigate(Screen.MechanicSubcategories(cat.name))
                         },
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -91,7 +91,7 @@ fun MechanicSubcategoryScreen(navController: NavController, categoryName: String
                 items(subcategories) { sub ->
                     MechanicSubcategoryCard(sub) {
                         viewModel.updateSubcategoryId(sub.id)
-                        navController.navigate(Screen.MechanicBooking.route)
+                        navController.navigate(Screen.MechanicBooking)
                     }
                 }
             }
@@ -259,7 +259,7 @@ fun MechanicBookingScreen(navController: NavController, viewModel: MechanicViewM
                     
                     Spacer(Modifier.height(32.dp))
                     Button(
-                        onClick = { navController.navigate(Screen.MechanicSuccess.route) },
+                        onClick = { navController.navigate(Screen.MechanicSuccess) },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = garageGreen)

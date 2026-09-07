@@ -36,7 +36,7 @@ fun BeautyOrderSummaryScreen(navController: NavController, viewModel: WomensBeau
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.WomensBeautySuccess.route) },
+                onClick = { navController.navigate(Screen.WomensBeautySuccess) },
                 modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC2185B))

@@ -52,7 +52,7 @@ fun TechServiceListScreen(navController: NavController, subcategory: String, vie
                                 }
                             }
                         },
-                        modifier = Modifier.padding(end = 16.dp).clickable { navController.navigate(Screen.Cart.route) }
+                        modifier = Modifier.padding(end = 16.dp).clickable { navController.navigate(Screen.Cart) }
                     ) {
                         Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
                     }
@@ -78,7 +78,7 @@ fun TechServiceListScreen(navController: NavController, subcategory: String, vie
                             Text("₹${viewModel.getTotalPrice().toInt()}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = PinkPrimary)
                         }
                         Button(
-                            onClick = { navController.navigate(Screen.Cart.route) },
+                            onClick = { navController.navigate(Screen.Cart) },
                             colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
                             shape = RoundedCornerShape(12.dp)
                         ) {

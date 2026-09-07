@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.healthcare
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -7,7 +8,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MedicalServices
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -19,7 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.TealPrimary
+import com.nisr.sauservices.ui.components.*
+import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.HealthcareService
 import com.nisr.sauservices.ui.viewmodel.HealthcareViewModel
 
@@ -29,68 +34,64 @@ fun HealthcareServiceListScreen(navController: NavController, subcategory: Strin
     val services = getServicesForHealthcareSubcategory(subcategory)
     val cartItems = viewModel.cartItems
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(subcategory, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
+    LuxuryScaffold(
+        title = subcategory,
+        onBackClick = { navController.popBackStack() },
+        actions = {
+            if (cartItems.isNotEmpty()) {
+                IconButton(onClick = { navController.navigate(Screen.Cart) }) {
                     BadgedBox(
                         badge = { 
-                            if (cartItems.isNotEmpty()) {
-                                Badge(containerColor = TealPrimary) { Text(cartItems.size.toString(), color = Color.White) }
+                            Badge(containerColor = LuxuryGold, contentColor = LuxuryBackground) { 
+                                Text(cartItems.sumOf { it.quantity }.toString(), fontWeight = FontWeight.Bold) 
                             }
-                        },
-                        modifier = Modifier.padding(end = 16.dp).clickable { navController.navigate(Screen.Cart.route) }
+                        }
                     ) {
-                        Icon(Icons.Default.ShoppingCart, contentDescription = "Cart")
+                        Icon(Icons.Default.ShoppingCart, contentDescription = "Cart", tint = LuxuryTextPrimary)
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
+                }
+            }
         },
         bottomBar = {
             if (cartItems.isNotEmpty()) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 8.dp,
-                    color = Color.White
+                    shadowElevation = 16.dp,
+                    color = LuxuryCard,
+                    border = BorderStroke(1.dp, LuxuryBorder),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp).navigationBarsPadding(),
+                        modifier = Modifier.padding(20.dp).navigationBarsPadding(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
                             val count = cartItems.sumOf { it.quantity }
-                            Text("$count items added", fontSize = 14.sp, color = Color.Gray)
-                            Text("₹${viewModel.calculateTotal().toInt()}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TealPrimary)
+                            Text("$count items added", fontSize = 13.sp, color = LuxuryTextSecondary)
+                            Text("₹${viewModel.calculateTotal().toInt()}", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = LuxuryGold)
                         }
                         Button(
-                            onClick = { navController.navigate(Screen.Cart.route) },
-                            colors = ButtonDefaults.buttonColors(containerColor = TealPrimary),
+                            onClick = { navController.navigate(Screen.Cart) },
+                            colors = ButtonDefaults.buttonColors(containerColor = LuxuryGold),
+                            modifier = Modifier.height(50.dp).widthIn(min = 140.dp),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("View Cart", fontWeight = FontWeight.Bold)
+                            Text("VIEW CART", color = LuxuryBackground, fontWeight = FontWeight.Black)
                         }
                     }
                 }
             }
-        },
-        containerColor = Color(0xFFF8FBFF)
+        }
     ) { padding ->
         LazyColumn(
             modifier = Modifier.padding(padding).fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(services) { service ->
                 val cartItem = cartItems.find { it.id == service.id }
-                HealthcareServiceCard(
+                HealthcareServiceLuxuryCard(
                     service = service,
                     quantity = cartItem?.quantity ?: 0,
                     onAdd = { viewModel.addToCart(service) },
@@ -98,34 +99,55 @@ fun HealthcareServiceListScreen(navController: NavController, subcategory: Strin
                     onDecrease = { viewModel.updateQty(service.id, false) }
                 )
             }
+            
+            if (services.isEmpty()) {
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.MedicalServices, null, tint = LuxuryGold.copy(alpha = 0.2f), modifier = Modifier.size(64.dp))
+                            Spacer(Modifier.height(16.dp))
+                            Text("No services available in this category", color = LuxuryTextSecondary)
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun HealthcareServiceCard(
+fun HealthcareServiceLuxuryCard(
     service: HealthcareService,
     quantity: Int,
     onAdd: () -> Unit,
     onIncrease: () -> Unit,
     onDecrease: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
+    LuxuryCard {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(service.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                Text(
+                    text = service.name, 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 16.sp, 
+                    color = LuxuryTextPrimary
+                )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("₹${service.price.toInt()}", fontWeight = FontWeight.ExtraBold, color = TealPrimary, fontSize = 15.sp)
+                Text(
+                    text = "₹${service.price.toInt()}", 
+                    fontWeight = FontWeight.ExtraBold, 
+                    color = LuxuryGold, 
+                    fontSize = 15.sp
+                )
                 if (service.requiresPrescription) {
-                    Text("Prescription Required", fontSize = 10.sp, color = Color.Red, fontWeight = FontWeight.Medium)
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+                        Icon(Icons.Default.Info, null, tint = Color.Red, modifier = Modifier.size(12.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Prescription Required", fontSize = 10.sp, color = Color.Red, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
 
@@ -133,21 +155,30 @@ fun HealthcareServiceCard(
                 Button(
                     onClick = onAdd,
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = TealPrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = LuxuryBackground),
+                    border = BorderStroke(1.dp, LuxuryGold),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Text("ADD", fontWeight = FontWeight.Bold)
+                    Text("ADD", color = LuxuryGold, fontWeight = FontWeight.Bold)
                 }
             } else {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.background(TealPrimary.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                    modifier = Modifier
+                        .background(LuxuryGold, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 4.dp)
                 ) {
-                    IconButton(onClick = onDecrease) {
-                        Text("-", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TealPrimary)
+                    IconButton(onClick = onDecrease, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Remove, null, tint = LuxuryBackground, modifier = Modifier.size(16.dp))
                     }
-                    Text(quantity.toString(), fontWeight = FontWeight.Bold, color = TealPrimary, modifier = Modifier.padding(horizontal = 8.dp))
-                    IconButton(onClick = onIncrease) {
-                        Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TealPrimary)
+                    Text(
+                        text = quantity.toString(), 
+                        fontWeight = FontWeight.Black, 
+                        color = LuxuryBackground, 
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Add, null, tint = LuxuryBackground, modifier = Modifier.size(16.dp))
                     }
                 }
             }
