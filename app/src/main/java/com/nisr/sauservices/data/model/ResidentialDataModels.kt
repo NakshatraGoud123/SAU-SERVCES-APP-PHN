@@ -28,7 +28,8 @@ data class BookingDetails(
 data class ResidentialCategory(
     val id: String,
     val name: String,
-    val icon: ImageVector
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val imageRes: Int? = null
 )
 
 data class ResidentialSubcategory(

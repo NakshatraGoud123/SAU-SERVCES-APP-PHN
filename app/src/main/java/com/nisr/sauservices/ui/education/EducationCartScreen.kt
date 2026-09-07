@@ -42,7 +42,7 @@ fun EducationCartScreen(navController: NavController, viewModel: EducationCartVi
         bottomBar = {
             if (viewModel.cartItems.isNotEmpty()) {
                 EducationCartBottomBar(viewModel) {
-                    navController.navigate(Screen.Cart.route)
+                    navController.navigate(Screen.Cart)
                 }
             }
         },

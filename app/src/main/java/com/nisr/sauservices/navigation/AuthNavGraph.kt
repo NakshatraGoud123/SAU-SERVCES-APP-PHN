@@ -3,59 +3,46 @@ package com.nisr.sauservices.navigation
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import com.nisr.sauservices.data.repository.UserRepository
+import androidx.navigation.toRoute
 import com.nisr.sauservices.ui.auth.*
 import com.nisr.sauservices.ui.onboarding.OnboardingScreen
 import com.nisr.sauservices.ui.Screen
 
-fun NavGraphBuilder.authNavGraph(navController: NavController, userRepository: UserRepository) {
-    composable(Routes.ONBOARDING) {
+fun NavGraphBuilder.authNavGraph(navController: NavController) {
+    composable<Screen.Onboarding> {
         OnboardingScreen(navController)
     }
     
-    composable(Routes.ROLE_SELECTION) {
+    composable<Screen.RoleSelection> {
         // Redirect to Login as customer
         LaunchedEffect(Unit) {
-            navController.navigate(Screen.Login.createRoute("customer")) {
-                popUpTo(Routes.ROLE_SELECTION) { inclusive = true }
+            navController.navigate(Screen.Login("customer")) {
+                popUpTo<Screen.RoleSelection> { inclusive = true }
             }
         }
     }
     
-    composable(
-        route = Routes.AUTH_OPTIONS,
-        arguments = listOf(navArgument("role") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val role = backStackEntry.arguments?.getString("role") ?: "customer"
-        SignInScreen(navController, role)
+    composable<Screen.AuthOptions> { backStackEntry ->
+        val route: Screen.AuthOptions = backStackEntry.toRoute()
+        SignInScreen(navController, route.role)
     }
     
-    composable(
-        route = Routes.LOGIN,
-        arguments = listOf(navArgument("role") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val role = backStackEntry.arguments?.getString("role") ?: "customer"
-        SignInScreen(navController, role) 
+    composable<Screen.Login> {
+        LoginScreen(navController) 
     }
     
-    composable(
-        route = Routes.SIGNUP,
-        arguments = listOf(navArgument("role") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val role = backStackEntry.arguments?.getString("role") ?: "customer"
-        SignUpScreen(navController, role)
+    composable<Screen.Register> { backStackEntry ->
+        val route: Screen.Register = backStackEntry.toRoute()
+        SignUpScreen(navController, route.role)
     }
     
-    composable(Routes.REGISTER_CUSTOMER) {
-        SignUpScreen(navController, "customer")
-    }
-    
-    composable(Routes.FORGOT_PASSWORD) {
+    composable<Screen.ForgotPassword> {
         ForgotPasswordScreen(navController)
     }
 
-    // Dashboard Registration removed as the app is now customer-only
+    composable<Screen.ResetPassword> { backStackEntry ->
+        val route: Screen.ResetPassword = backStackEntry.toRoute()
+        ResetPasswordScreen(navController, route.email)
+    }
 }

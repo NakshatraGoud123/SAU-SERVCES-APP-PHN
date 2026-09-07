@@ -4,17 +4,16 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,285 +29,188 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.nisr.sauservices.ui.theme.PinkPrimary
-import com.nisr.sauservices.ui.theme.SoftPeach
-import com.nisr.sauservices.ui.viewmodel.AuthState
-import com.nisr.sauservices.ui.viewmodel.AuthViewModel
+import com.nisr.sauservices.ui.components.*
+import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.ProfileViewModel
+import io.github.jan.supabase.auth.auth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
     navController: NavController, 
-    viewModel: ProfileViewModel = viewModel(),
-    authViewModel: AuthViewModel = viewModel()
+    viewModel: ProfileViewModel = viewModel()
 ) {
     val userProfile by viewModel.userProfile.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val authState by authViewModel.authState
     val context = LocalContext.current
 
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     
-    var isPhoneVerified by remember { mutableStateOf(true) }
-    var showOtpDialog by remember { mutableStateOf(false) }
-    var otpCode by remember { mutableStateOf("") }
+    // Check Auth for fallbacks
+    val client = com.nisr.sauservices.data.api.SupabaseClient.client
+    val authUser = client.auth.currentUserOrNull()
+    
+    LaunchedEffect(userProfile) {
+        userProfile?.let {
+            name = it.name.ifEmpty { "User" }
+            phone = it.phone
+            email = it.email.ifEmpty { authUser?.email ?: "" }
+        }
+    }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        selectedImageUri = uri
-    }
-
-    LaunchedEffect(userProfile) {
-        userProfile?.let {
-            name = it.name
-            phone = it.phone
-            email = it.email
-            isPhoneVerified = true
-        }
-    }
-    
-    // Listen for successful verification from AuthViewModel
-    LaunchedEffect(authState) {
-        if (authState is AuthState.Success && showOtpDialog) {
-            showOtpDialog = false
-            isPhoneVerified = true
-            Toast.makeText(context, "Phone number verified!", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Edit Profile", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+        uri?.let {
+            try {
+                val inputStream = context.contentResolver.openInputStream(it)
+                val byteArray = inputStream?.readBytes()
+                byteArray?.let { bytes ->
+                    viewModel.uploadProfilePicture(bytes) { result ->
+                        if (result.isSuccess) {
+                            Toast.makeText(context, "Profile picture updated!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Upload failed: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
-        containerColor = Color.White
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Failed to read image", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    LuxuryScaffold(
+        title = "EDIT PROFILE",
+        onBackClick = { navController.popBackStack() }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Profile Picture Section
+            // Luxury Profile Picture Section
             Box(
                 contentAlignment = Alignment.BottomEnd,
-                modifier = Modifier.clickable { photoPickerLauncher.launch("image/*") }
+                modifier = Modifier
+                    .size(120.dp)
+                    .clickable { 
+                        photoPickerLauncher.launch("image/*")
+                    }
             ) {
-                Box(
+                Surface(
                     modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .background(SoftPeach),
-                    contentAlignment = Alignment.Center
+                        .fillMaxSize()
+                        .clip(CircleShape),
+                    color = LuxuryCard,
+                    border = BorderStroke(2.dp, LuxuryGold)
                 ) {
-                    if (selectedImageUri != null) {
-                        AsyncImage(
-                            model = selectedImageUri,
-                            contentDescription = "New Profile Picture",
-                            modifier = Modifier.fillMaxSize().clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else if (userProfile?.profilePicUrl.isNullOrEmpty() == false) {
-                        AsyncImage(
-                            model = userProfile?.profilePicUrl,
-                            contentDescription = "Current Profile Picture",
-                            modifier = Modifier.fillMaxSize().clip(CircleShape),
-                            contentScale = ContentScale.Crop
-                        )
+                    val picUrl = userProfile?.profilePicUrl
+                    if (!picUrl.isNullOrEmpty()) {
+                        Box(contentAlignment = Alignment.Center) {
+                            // Always add a timestamp to force Coil to reload the image from network
+                            val imageUrl = if (picUrl.contains("?")) "$picUrl&t=${System.currentTimeMillis()}" else "$picUrl?t=${System.currentTimeMillis()}"
+                            
+                            AsyncImage(
+                                model = imageUrl,
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                            if (isLoading) {
+                                CircularProgressIndicator(modifier = Modifier.size(30.dp), color = LuxuryGold, strokeWidth = 2.dp)
+                            }
+                        }
                     } else {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = null,
-                            modifier = Modifier.size(60.dp),
-                            tint = PinkPrimary
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            val initials = (if (name.isNotEmpty()) name else "U").take(1).uppercase()
+                            Text(
+                                initials,
+                                color = LuxuryGold,
+                                fontSize = 48.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
                     }
                 }
+                
                 Surface(
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(36.dp),
                     shape = CircleShape,
-                    color = PinkPrimary,
+                    color = LuxuryGold,
                     shadowElevation = 4.dp
                 ) {
                     Icon(
                         Icons.Default.CameraAlt,
                         contentDescription = "Change Picture",
-                        modifier = Modifier.padding(8.dp).size(16.dp),
-                        tint = Color.White
+                        modifier = Modifier.padding(8.dp).size(20.dp),
+                        tint = LuxuryBackground
                     )
                 }
             }
 
             Text(
-                "Tap to change profile picture",
+                "Tap to change avatar",
                 fontSize = 12.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(top = 8.dp)
+                color = LuxuryGold,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 12.dp, bottom = 40.dp)
             )
 
-            Spacer(Modifier.height(32.dp))
-
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Full Name") },
+            // Luxury Form Fields
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PinkPrimary,
-                    focusedLabelColor = PinkPrimary
-                )
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = email,
-                onValueChange = { },
-                label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                enabled = false,
-                colors = OutlinedTextFieldDefaults.colors(
-                    disabledBorderColor = Color.LightGray,
-                    disabledLabelColor = Color.Gray
-                )
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { 
-                    phone = it
-                    isPhoneVerified = (it == userProfile?.phone)
-                },
-                label = { Text("Phone Number") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                trailingIcon = {
-                    if (phone.length >= 10 && !isPhoneVerified) {
-                        TextButton(
-                            onClick = { 
-                                authViewModel.sendOtp(phone)
-                                showOtpDialog = true
-                            },
-                            enabled = authState !is AuthState.Loading
-                        ) {
-                            Text("Verify", color = PinkPrimary, fontWeight = FontWeight.Bold)
-                        }
-                    } else if (isPhoneVerified && phone.isNotEmpty()) {
-                        Icon(Icons.Default.CheckCircle, "Verified", tint = Color(0xFF4CAF50))
-                    }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PinkPrimary,
-                    focusedLabelColor = PinkPrimary
-                )
-            )
-
-            Spacer(Modifier.height(32.dp))
-
-            Button(
-                onClick = {
-                    if (name.isNotEmpty() && phone.length >= 10) {
-                        if (!isPhoneVerified && phone != userProfile?.phone) {
-                            Toast.makeText(context, "Please verify your phone number first", Toast.LENGTH_SHORT).show()
-                        } else {
-                            viewModel.updateProfile(name, phone)
-                            Toast.makeText(context, "Profile Updated Successfully!", Toast.LENGTH_SHORT).show()
-                            navController.popBackStack()
-                        }
-                    } else {
-                        Toast.makeText(context, "Please enter valid details", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
-                enabled = !isLoading
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                } else {
-                    Text("Save Changes", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-    }
+                LuxuryTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = "FULL NAME",
+                    leadingIcon = Icons.Default.Person
+                )
 
-    if (showOtpDialog) {
-        AlertDialog(
-            onDismissRequest = { 
-                showOtpDialog = false
-                authViewModel.resetState()
-            },
-            title = { Text("Verify Phone") },
-            text = {
-                Column {
-                    Text("Enter the 6-digit code sent to $phone", fontSize = 14.sp)
-                    Spacer(Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = otpCode,
-                        onValueChange = { if (it.length <= 6) otpCode = it },
-                        label = { Text("OTP Code") },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PinkPrimary)
-                    )
-                    if (authState is AuthState.Error) {
-                        Text(
-                            text = (authState as AuthState.Error).message,
-                            color = Color.Red,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (otpCode.length == 6) {
-                            authViewModel.verifyOtp(phone, otpCode)
-                        } else {
-                            Toast.makeText(context, "Enter 6-digit OTP", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
-                    enabled = authState !is AuthState.Loading
-                ) {
-                    if (authState is AuthState.Loading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
-                    } else {
-                        Text("Verify")
-                    }
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { 
-                    showOtpDialog = false 
-                    authViewModel.resetState()
-                }) {
-                    Text("Cancel")
-                }
+                LuxuryTextField(
+                    value = email,
+                    onValueChange = { },
+                    label = "EMAIL ADDRESS",
+                    leadingIcon = Icons.Default.Email,
+                    enabled = false
+                )
+
+                LuxuryTextField(
+                    value = phone,
+                    onValueChange = { phone = it },
+                    label = "PHONE NUMBER",
+                    leadingIcon = Icons.Default.Phone,
+                    keyboardType = KeyboardType.Phone
+                )
             }
-        )
+
+            Spacer(Modifier.height(56.dp))
+
+            LuxuryButton(
+                text = "SAVE CHANGES",
+                onClick = {
+                    if (name.isNotEmpty()) {
+                        viewModel.updateProfile(name, phone) { result ->
+                            if (result.isSuccess) {
+                                Toast.makeText(context, "Profile Updated Successfully!", Toast.LENGTH_SHORT).show()
+                                navController.popBackStack()
+                            } else {
+                                Toast.makeText(context, "Update failed: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    } else {
+                        Toast.makeText(context, "Please enter a valid name", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                isLoading = isLoading
+            )
+        }
     }
 }

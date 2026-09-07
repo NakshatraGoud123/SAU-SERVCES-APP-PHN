@@ -2,63 +2,57 @@ package com.nisr.sauservices.navigation
 
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
+import androidx.navigation.toRoute
 import com.nisr.sauservices.ui.food.*
 import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
 import com.nisr.sauservices.ui.viewmodel.FoodCartViewModel
+import com.nisr.sauservices.ui.Screen
 
 fun NavGraphBuilder.foodNavGraph(
     navController: NavController,
     foodCartViewModel: FoodCartViewModel,
     bookingsViewModel: BookingsViewModel
 ) {
-    composable(Routes.FOOD_CATEGORIES) {
+    composable<Screen.FoodCategories> {
         FoodMainScreen(navController)
     }
 
-    composable(
-        route = Routes.FOOD_SUBCATEGORIES,
-        arguments = listOf(navArgument("category") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val category = backStackEntry.arguments?.getString("category") ?: ""
-        FoodSubCategoryScreen(navController, category)
+    composable<Screen.FoodSubCategory> { backStackEntry ->
+        val route: Screen.FoodSubCategory = backStackEntry.toRoute()
+        FoodSubCategoryScreen(navController, route.category)
     }
 
-    composable(
-        route = Routes.FOOD_TYPES,
-        arguments = listOf(navArgument("subcategory") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val subCat = backStackEntry.arguments?.getString("subcategory") ?: ""
-        FoodTypeScreen(navController, subCat)
+    composable<Screen.FoodTypes> { backStackEntry ->
+        val route: Screen.FoodTypes = backStackEntry.toRoute()
+        FoodTypeScreen(navController, route.subcategory)
     }
 
-    composable(
-        route = Routes.FOOD_ITEMS,
-        arguments = listOf(navArgument("type") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val type = backStackEntry.arguments?.getString("type") ?: ""
-        FoodItemsScreen(navController, type, foodCartViewModel)
+    composable<Screen.FoodSubType> { backStackEntry ->
+        val route: Screen.FoodSubType = backStackEntry.toRoute()
+        FoodSubTypeScreen(navController, route.typeName)
     }
 
-    composable(Routes.FOOD_CART) {
+    composable<Screen.FoodItems> { backStackEntry ->
+        val route: Screen.FoodItems = backStackEntry.toRoute()
+        FoodItemsScreen(navController, route.restaurantId, foodCartViewModel)
+    }
+
+    composable<Screen.FoodCart> {
         FoodCartScreen(navController, foodCartViewModel)
     }
 
-    composable(Routes.FOOD_CHECKOUT) {
-        FoodCheckoutScreen(navController, foodCartViewModel)
+    composable<Screen.FoodBooking> { backStackEntry ->
+        val route: Screen.FoodBooking = backStackEntry.toRoute()
+        BookingScreen(navController, route.restaurantId)
     }
 
-    composable(
-        route = Routes.FOOD_BOOKING,
-        arguments = listOf(navArgument("service") { type = NavType.StringType })
-    ) { backStackEntry ->
-        val service = backStackEntry.arguments?.getString("service") ?: ""
-        BookingScreen(navController, service)
-    }
-
-    composable(Routes.FOOD_SUCCESS) {
+    composable<Screen.FoodOrderSuccess> {
         FoodSuccessScreen(navController, bookingsViewModel)
+    }
+
+    composable<Screen.FoodOrderTracking> { backStackEntry ->
+        val route: Screen.FoodOrderTracking = backStackEntry.toRoute()
+        FoodOrderTrackingScreen(navController, route.orderId)
     }
 }

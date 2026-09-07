@@ -41,7 +41,7 @@ fun TechCartScreen(navController: NavController, viewModel: TechServicesViewMode
         bottomBar = {
             if (viewModel.cartItems.isNotEmpty()) {
                 TechCartBottomBar(viewModel) {
-                    navController.navigate(Screen.Cart.route)
+                    navController.navigate(Screen.Cart)
                 }
             }
         },

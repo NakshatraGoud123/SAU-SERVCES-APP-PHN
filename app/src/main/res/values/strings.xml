@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">SAU SOLUTIONS</string>
     <string name="home">Home</string>
-    <string name="web_client_id" tools:ignore="TypographyDashes">667407477969-1q4ledsggs8dm195dv4pht3ifnfnuqr5.apps.googleusercontent.com</string>
+    <string name="google_client_id" tools:ignore="TypographyDashes">1049970396285-96cc1mqh7rjntv2pq96mth1mc0eba4qf.apps.googleusercontent.com</string>
 </resources>

@@ -49,7 +49,14 @@ fun BusinessBookingScreen(navController: NavController, viewModel: BusinessViewM
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.ResidentialBookingDetails.route) },
+                onClick = {
+                    navController.navigate(
+                        Screen.ResidentialBookingDetails(
+                            partnerId = "business",
+                            serviceId = "business"
+                        )
+                    )
+                },
                 enabled = viewModel.selectedDate.value.isNotEmpty() && 
                           viewModel.selectedTime.value.isNotEmpty() && 
                           viewModel.customerAddress.value.isNotEmpty() && 

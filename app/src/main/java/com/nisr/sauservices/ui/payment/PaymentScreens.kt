@@ -115,7 +115,7 @@ fun PaymentMethodScreen(
                 onClick = {
                     if (selectedMethod == "cash") {
                         viewModel.createCashPayment(bookingId, customerId, partnerId, amount) { paymentId ->
-                            navController.navigate("cash_success/$paymentId/$amount")
+                            navController.navigate(Screen.CashSuccess(paymentId, amount))
                         }
                     } else if (activity != null) {
                         val user = authViewModel.currentUser
@@ -128,7 +128,7 @@ fun PaymentMethodScreen(
                             customerEmail = user?.email ?: "customer@example.com",
                             customerContact = "9999999999" // TODO: Get from user data if available
                         ) {
-                            navController.navigate("paid_success/$amount")
+                            navController.navigate(Screen.PaidSuccess(amount))
                         }
                     }
                 },
@@ -235,8 +235,8 @@ fun DigitalPaymentSuccessScreen(
 
             Button(
                 onClick = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.Home> { inclusive = true }
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(55.dp),
@@ -288,8 +288,8 @@ fun CashBookingSuccessScreen(
 
             Button(
                 onClick = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.Home> { inclusive = true }
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(55.dp),
@@ -358,7 +358,7 @@ fun CashCollectionScreen(
             Button(
                 onClick = {
                     viewModel.markCashCollected(paymentId) {
-                        navController.navigate("customer_otp/$paymentId/$bookingId/$amount")
+                        navController.navigate(Screen.CustomerOtp(paymentId, bookingId, amount))
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(60.dp),
@@ -436,7 +436,7 @@ fun CustomerOtpScreen(
             Button(
                 onClick = {
                     viewModel.verifyOtp(paymentId, otp, bookingId) {
-                        navController.navigate("paid_success/$amount")
+                        navController.navigate(Screen.PaidSuccess(amount))
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(60.dp),

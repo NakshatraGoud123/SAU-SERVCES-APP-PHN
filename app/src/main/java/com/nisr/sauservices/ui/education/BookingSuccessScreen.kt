@@ -84,8 +84,8 @@ fun EducationSuccessScreen(navController: NavController) {
 
         Button(
             onClick = {
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.Home.route) { inclusive = true }
+                navController.navigate(Screen.Home) {
+                    popUpTo<Screen.Home> { inclusive = true }
                 }
             },
             modifier = Modifier

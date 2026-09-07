@@ -74,7 +74,7 @@ fun MensGroomingCategoryScreen(navController: NavController) {
                 items(categories) { category ->
                     MensCategoryCardProfessional(category) {
                         val encoded = URLEncoder.encode(category.name, "UTF-8")
-                        navController.navigate(Screen.MensSubcategories.createRoute(encoded))
+                        navController.navigate(Screen.MensSubcategories(encoded))
                     }
                 }
             }

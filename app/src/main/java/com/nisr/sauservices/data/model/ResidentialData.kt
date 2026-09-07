@@ -2,18 +2,19 @@ package com.nisr.sauservices.data.model
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import com.nisr.sauservices.R
 
 object ResidentialData {
     val categories = listOf(
-        ResidentialCategory("electrician", "Electrician", Icons.Default.ElectricBolt),
-        ResidentialCategory("plumber", "Plumber", Icons.Default.WaterDrop),
-        ResidentialCategory("carpenter", "Carpenter", Icons.Default.Handyman),
-        ResidentialCategory("painter", "Painter", Icons.Default.FormatPaint),
-        ResidentialCategory("ac_repair", "AC Repair", Icons.Default.Air),
-        ResidentialCategory("laundry", "Laundry", Icons.Default.LocalLaundryService),
-        ResidentialCategory("appliance", "Appliance Repair", Icons.Default.Kitchen),
-        ResidentialCategory("pest_control", "Pest Control", Icons.Default.BugReport),
-        ResidentialCategory("home_cleaning", "Home Cleaning", Icons.Default.CleaningServices)
+        ResidentialCategory("electrician", "Electrician", Icons.Default.ElectricBolt, R.drawable.electrician), // Standard: srv_electrician
+        ResidentialCategory("plumber", "Plumber", Icons.Default.WaterDrop, R.drawable.plumber), // Standard: srv_plumber
+        ResidentialCategory("carpenter", "Carpenter", Icons.Default.Handyman, R.drawable.property_lifestyle), // Standard: srv_carpenter
+        ResidentialCategory("painter", "Painter", Icons.Default.FormatPaint, R.drawable.cleaning), // Standard: srv_painter
+        ResidentialCategory("ac_repair", "AC Repair", Icons.Default.Air, R.drawable.ac_repair), // Standard: srv_ac_repair
+        ResidentialCategory("laundry", "Laundry", Icons.Default.LocalLaundryService, R.drawable.cleaning), // Standard: srv_laundry
+        ResidentialCategory("appliance", "Appliance Repair", Icons.Default.Kitchen, R.drawable.tech_services), // Standard: srv_appliance
+        ResidentialCategory("pest_control", "Pest Control", Icons.Default.BugReport, R.drawable.cleaning), // Standard: srv_pest_control
+        ResidentialCategory("home_cleaning", "Home Cleaning", Icons.Default.CleaningServices, R.drawable.cleaning) // Standard: srv_cleaning
     )
 
     val subcategories = listOf(

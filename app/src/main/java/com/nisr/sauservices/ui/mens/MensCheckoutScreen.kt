@@ -46,7 +46,7 @@ fun MensCheckoutScreen(navController: NavController, viewModel: MensGroomingView
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.MensSuccess.route) },
+                onClick = { navController.navigate(Screen.MensSuccess) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)

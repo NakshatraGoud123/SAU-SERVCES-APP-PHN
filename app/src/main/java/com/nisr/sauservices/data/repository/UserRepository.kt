@@ -4,10 +4,7 @@ import com.nisr.sauservices.data.api.SupabaseClient
 import com.nisr.sauservices.data.model.User
 import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
-import io.github.jan.supabase.auth.providers.builtin.IDToken
-import io.github.jan.supabase.auth.providers.builtin.OTP
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
@@ -30,19 +27,7 @@ class UserRepository {
         }
     }
 
-    suspend fun signInWithGoogle(idToken: String): Result<Unit> {
-        return try {
-            client.auth.signInWith(IDToken) {
-                this.idToken = idToken
-                this.provider = Google
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun signUp(email: String, password: String, userData: Map<String, Any>): Result<Unit> {
+    suspend fun signUp(email: String, password: String, userData: Map<String, Any?>): Result<Unit> {
         return try {
             val authUser = client.auth.signUpWith(Email) {
                 this.email = email
@@ -55,6 +40,7 @@ class UserRepository {
                 profileData["id"] = userId
                 
                 withContext(Dispatchers.IO) {
+                    // Using postgrest to insert profile data
                     client.postgrest["users"].insert(profileData)
                 }
             }
@@ -90,7 +76,7 @@ class UserRepository {
         }
     }
 
-    suspend fun saveUserData(uid: String, userData: Map<String, Any>): Result<Unit> {
+    suspend fun saveUserData(uid: String, userData: Map<String, Any?>): Result<Unit> {
         return try {
             withContext(Dispatchers.IO) {
                 client.postgrest["users"].upsert(userData) {
@@ -99,30 +85,6 @@ class UserRepository {
                     }
                 }
             }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun sendOtp(phone: String): Result<Unit> {
-        return try {
-            client.auth.signInWith(OTP) {
-                this.phone = phone
-            }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun verifyOtp(phone: String, token: String): Result<Unit> {
-        return try {
-            client.auth.verifyPhoneOtp(
-                type = OtpType.Phone.SMS,
-                phone = phone,
-                token = token,
-            )
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

@@ -46,7 +46,7 @@ fun HealthcareBookingScreen(navController: NavController, viewModel: HealthcareV
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.HealthcarePayment.route) },
+                onClick = { navController.navigate(Screen.HealthcarePayment) },
                 modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),

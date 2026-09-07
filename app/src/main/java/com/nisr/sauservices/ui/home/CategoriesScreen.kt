@@ -4,26 +4,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontFamily
 import androidx.navigation.NavController
 import com.nisr.sauservices.data.local.SessionManager
-import com.nisr.sauservices.ui.essentials.HomeEssentialsSheetContent
-import com.nisr.sauservices.ui.education.EducationBottomSheet
-import com.nisr.sauservices.ui.business.BusinessBottomSheet
-import com.nisr.sauservices.ui.lifestyle.LifestyleBottomSheet
-import com.nisr.sauservices.ui.tech.TechBottomSheet
-import com.nisr.sauservices.ui.mechanic.MechanicBottomSheet
-import com.nisr.sauservices.ui.mobility.MobilityBottomSheet
-import com.nisr.sauservices.ui.theme.OrchidBackground
+import com.nisr.sauservices.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,28 +23,10 @@ fun CategoriesScreen(navController: NavController) {
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     
-    var showHomeEssentialsSheet by remember { mutableStateOf(false) }
-    var showEduSheet by remember { mutableStateOf(false) }
-    var showBizSheet by remember { mutableStateOf(false) }
-    var showLifeSheet by remember { mutableStateOf(false) }
-    var showTechSheet by remember { mutableStateOf(false) }
-    var showMechanicSheet by remember { mutableStateOf(false) }
-    var showMobilitySheet by remember { mutableStateOf(false) }
-
-    if (showHomeEssentialsSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showHomeEssentialsSheet = false }
-        ) {
-            HomeEssentialsSheetContent(navController) {
-                showHomeEssentialsSheet = false
-            }
-        }
-    }
-
     Scaffold(
-        topBar = { TopAppBarUI(navController, sessionManager) },
+        topBar = { PremiumHomeHeader(navController) },
         bottomBar = { BottomNavBar(navController) },
-        containerColor = Color(0xFFF7F7F7) // Minimal Light Gray background
+        containerColor = LuxuryBackground
     ) { padding ->
         Column(
             modifier = Modifier
@@ -62,82 +36,20 @@ fun CategoriesScreen(navController: NavController) {
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             Text(
-                "All Categories",
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 24.sp,
-                color = Color.Black,
-                modifier = Modifier.padding(bottom = 20.dp, start = 4.dp)
+                text = "All Categories",
+                fontWeight = FontWeight.Black,
+                fontSize = 28.sp,
+                color = LuxuryTextPrimary,
+                fontFamily = FontFamily.Serif,
+                modifier = Modifier.padding(bottom = 24.dp, start = 4.dp)
             )
             
             CategoriesGrid(
                 navController = navController, 
-                showAll = true,
-                onHomeEssentialsClick = {
-                    showHomeEssentialsSheet = true
-                },
-                onEducationClick = {
-                    showEduSheet = true
-                },
-                onBusinessClick = {
-                    showBizSheet = true
-                },
-                onLifestyleClick = {
-                    showLifeSheet = true
-                },
-                onTechClick = {
-                    showTechSheet = true
-                },
-                onMechanicClick = {
-                    showMechanicSheet = true
-                },
-                onMobilityClick = {
-                    showMobilitySheet = true
-                }
+                showAll = true
             )
             
             Spacer(Modifier.height(24.dp))
         }
-    }
-
-    if (showEduSheet) {
-        EducationBottomSheet(
-            navController = navController,
-            onDismiss = { showEduSheet = false }
-        )
-    }
-
-    if (showBizSheet) {
-        BusinessBottomSheet(
-            navController = navController,
-            onDismiss = { showBizSheet = false }
-        )
-    }
-
-    if (showLifeSheet) {
-        LifestyleBottomSheet(
-            navController = navController,
-            onDismiss = { showLifeSheet = false }
-        )
-    }
-
-    if (showTechSheet) {
-        TechBottomSheet(
-            navController = navController,
-            onDismiss = { showTechSheet = false }
-        )
-    }
-
-    if (showMechanicSheet) {
-        MechanicBottomSheet(
-            navController = navController,
-            onDismiss = { showMechanicSheet = false }
-        )
-    }
-
-    if (showMobilitySheet) {
-        MobilityBottomSheet(
-            navController = navController,
-            onDismiss = { showMobilitySheet = false }
-        )
     }
 }

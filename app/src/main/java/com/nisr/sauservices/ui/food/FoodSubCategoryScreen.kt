@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.food
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,7 +22,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.nisr.sauservices.ui.theme.PinkPrimary
+import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.theme.*
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -43,22 +45,23 @@ fun FoodSubCategoryScreen(navController: NavController, category: String) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(decodedCategory, fontWeight = FontWeight.Bold) },
+                title = { Text(decodedCategory, color = LuxuryTextPrimary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = LuxuryTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxuryBackground)
             )
         },
-        containerColor = Color(0xFFF8F9FA)
+        containerColor = LuxuryBackground
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             Text(
                 text = "Select Sub-Category",
                 modifier = Modifier.padding(16.dp),
                 style = MaterialTheme.typography.titleMedium,
+                color = LuxuryTextSecondary,
                 fontWeight = FontWeight.Bold
             )
 
@@ -71,7 +74,7 @@ fun FoodSubCategoryScreen(navController: NavController, category: String) {
                 items(subCategories) { sub ->
                     FoodSubCategoryCard(sub) {
                         val encoded = URLEncoder.encode(sub, "UTF-8")
-                        navController.navigate("FOODS_types/$encoded")
+                        navController.navigate(Screen.FoodTypes(encoded))
                     }
                 }
             }
@@ -86,8 +89,8 @@ fun FoodSubCategoryCard(name: String, onClick: () -> Unit) {
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
+        colors = CardDefaults.cardColors(containerColor = LuxuryCard),
+        border = BorderStroke(1.dp, LuxuryBorder)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -98,14 +101,15 @@ fun FoodSubCategoryCard(name: String, onClick: () -> Unit) {
                 modifier = Modifier
                     .size(56.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(PinkPrimary.copy(alpha = 0.1f)),
+                    .background(LuxuryGold.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = PinkPrimary, modifier = Modifier.size(30.dp))
+                Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = LuxuryGold, modifier = Modifier.size(30.dp))
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = name,
+                color = LuxuryTextPrimary,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,

@@ -50,7 +50,7 @@ fun BusinessPaymentScreen(navController: NavController, viewModel: BusinessViewM
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.BusinessSuccess.route) },
+                onClick = { navController.navigate(Screen.BusinessSuccess) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)

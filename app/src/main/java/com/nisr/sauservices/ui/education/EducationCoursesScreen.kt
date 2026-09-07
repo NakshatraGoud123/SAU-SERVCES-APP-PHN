@@ -70,7 +70,7 @@ fun EducationCoursesScreen(navController: NavController, subcategory: String, vi
                     }
                 },
                 actions = {
-                    IconButton(onClick = { navController.navigate(Screen.EducationCart.route) }) {
+                    IconButton(onClick = { navController.navigate(Screen.EducationCart) }) {
                         BadgedBox(badge = {
                             if (viewModel.cartItems.isNotEmpty()) {
                                 Badge(containerColor = EduPrimary) {

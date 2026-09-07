@@ -24,11 +24,12 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.*
+import com.nisr.sauservices.ui.components.*
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Premium Location Permission screen for SAU Services.
+ * Premium Location Permission screen for SAU Solutions.
  * Features a custom radar-pulse illustration and staggered content animations.
  */
 @Composable
@@ -42,8 +43,8 @@ fun LocationPermissionScreen(navController: NavController) {
                         permissions.getOrDefault(android.Manifest.permission.ACCESS_COARSE_LOCATION, defaultValue = false)
         
         if (isGranted) {
-            navController.navigate(Screen.Home.route) {
-                popUpTo(Screen.LocationPermission.route) { inclusive = true }
+            navController.navigate(Screen.Home) {
+                popUpTo<Screen.LocationPermission> { inclusive = true }
             }
         }
     }
@@ -56,15 +57,15 @@ fun LocationPermissionScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(LuxuryBackground)
             .systemBarsPadding(),
     ) {
         // Subtle Skip Button
         TextButton(
             onClick = { 
                 // Navigate forward even if skipped (Guest mode logic)
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.LocationPermission.route) { inclusive = true }
+                navController.navigate(Screen.Home) {
+                    popUpTo<Screen.LocationPermission> { inclusive = true }
                 }
             },
             modifier = Modifier
@@ -73,7 +74,7 @@ fun LocationPermissionScreen(navController: NavController) {
         ) {
             Text(
                 text = "Skip",
-                color = TextGrey,
+                color = LuxuryTextSecondary,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.labelLarge
             )
@@ -102,7 +103,7 @@ fun LocationPermissionScreen(navController: NavController) {
                         text = "Enable Location Services",
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.ExtraBold,
-                            color = TextDark,
+                            color = LuxuryTextPrimary,
                             textAlign = TextAlign.Center,
                             letterSpacing = (-0.5).sp
                         )
@@ -111,9 +112,9 @@ fun LocationPermissionScreen(navController: NavController) {
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = "Allow SAU Services to access your location to discover expert service partners nearby and provide real-time tracking.",
+                        text = "Allow SAU Solutions to access your location to discover expert service partners nearby and provide real-time tracking.",
                         style = MaterialTheme.typography.bodyLarge.copy(
-                            color = TextGrey,
+                            color = LuxuryTextSecondary,
                             textAlign = TextAlign.Center,
                             lineHeight = 26.sp
                         )
@@ -129,7 +130,8 @@ fun LocationPermissionScreen(navController: NavController) {
                 enter = slideInVertically { 80 } + fadeIn(animationSpec = tween(800, delayMillis = 200)),
                 label = "button_entrance"
             ) {
-                Button(
+                LuxuryButton(
+                    text = "Allow Location Access",
                     onClick = { 
                         permissionLauncher.launch(
                             arrayOf(
@@ -137,30 +139,8 @@ fun LocationPermissionScreen(navController: NavController) {
                                 android.Manifest.permission.ACCESS_COARSE_LOCATION
                             )
                         )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = OrchidPink),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn, 
-                            contentDescription = null, 
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = "Allow Location Access",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White
-                        )
                     }
-                }
+                )
             }
         }
     }
@@ -196,7 +176,7 @@ private fun LocationIllustration(visible: Boolean) {
         // Radar Waves (Drawn on Canvas for smooth performance)
         Canvas(modifier = Modifier.size(80.dp)) {
             drawCircle(
-                color = OrchidPink,
+                color = LuxuryGold,
                 radius = (size.minDimension / 2) * scale,
                 alpha = alpha,
                 style = Stroke(width = 3.dp.toPx())
@@ -207,7 +187,7 @@ private fun LocationIllustration(visible: Boolean) {
         Box(
             modifier = Modifier
                 .size(140.dp)
-                .background(OrchidPink.copy(alpha = 0.08f), CircleShape)
+                .background(LuxuryGold.copy(alpha = 0.08f), CircleShape)
         )
 
         // Animated Pin with Bouncy Entrance and Idle Hover
@@ -228,7 +208,7 @@ private fun LocationIllustration(visible: Boolean) {
             Icon(
                 imageVector = Icons.Default.LocationOn,
                 contentDescription = null,
-                tint = OrchidPink,
+                tint = LuxuryGold,
                 modifier = Modifier
                     .size(96.dp)
                     .offset(y = hoverOffset.dp)

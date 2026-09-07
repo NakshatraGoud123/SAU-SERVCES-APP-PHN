@@ -48,7 +48,7 @@ fun LifestylePaymentScreen(navController: NavController, viewModel: LifestyleVie
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.LifestyleSuccess.route) },
+                onClick = { navController.navigate(Screen.LifestyleSuccess) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)

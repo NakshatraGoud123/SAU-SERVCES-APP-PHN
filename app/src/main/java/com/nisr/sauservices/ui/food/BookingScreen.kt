@@ -1,11 +1,14 @@
 package com.nisr.sauservices.ui.food
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,33 +19,43 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.nisr.sauservices.ui.theme.PinkPrimary
-import java.net.URLDecoder
+import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BookingScreen(navController: NavController, serviceName: String) {
-    val decodedServiceName = URLDecoder.decode(serviceName, "UTF-8")
-
-    var date by remember { mutableStateOf("") }
-    var time by remember { mutableStateOf("") }
-    var guests by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var instructions by remember { mutableStateOf("") }
-
+fun BookingScreen(navController: NavController, restaurantId: String) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Book $decodedServiceName", fontWeight = FontWeight.Bold) },
+                title = { Text("Checkout", color = LuxuryTextPrimary, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxuryTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxuryBackground)
             )
         },
-        containerColor = Color(0xFFF8F9FA)
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 16.dp,
+                color = LuxuryCard,
+                border = BorderStroke(1.dp, LuxuryBorder),
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                Button(
+                    onClick = { navController.navigate(Screen.FoodOrderSuccess) },
+                    modifier = Modifier.padding(20.dp).fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = LuxuryGold)
+                ) {
+                    Text("Place Order", color = LuxuryBackground, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                }
+            }
+        },
+        containerColor = LuxuryBackground
     ) { padding ->
         Column(
             modifier = Modifier
@@ -50,99 +63,69 @@ fun BookingScreen(navController: NavController, serviceName: String) {
                 .fillMaxSize()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Text("Booking Information", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
-            
-            OutlinedTextField(
-                value = decodedServiceName,
-                onValueChange = {},
-                label = { Text("Event Type") },
+            // Delivery Address
+            LuxuryCheckoutSection("Delivery Address") {
+                Column {
+                    Text("Home", color = LuxuryTextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("123, Main Road, Hyderabad", color = LuxuryTextSecondary, fontSize = 14.sp)
+                }
+            }
+
+            // Delivery Time
+            LuxuryCheckoutSection("Delivery Time") {
+                Text("Today, 7:00 PM - 7:30 PM", color = LuxuryTextPrimary, fontWeight = FontWeight.Medium)
+            }
+
+            // Summary
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PinkPrimary,
-                    unfocusedBorderColor = Color.LightGray
-                )
-            )
-
-            OutlinedTextField(
-                value = date,
-                onValueChange = { date = it },
-                label = { Text("Date (DD/MM/YYYY)") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, tint = PinkPrimary) },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PinkPrimary,
-                    unfocusedBorderColor = Color.LightGray
-                )
-            )
-
-            OutlinedTextField(
-                value = time,
-                onValueChange = { time = it },
-                label = { Text("Time Slot") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Schedule, contentDescription = null, tint = PinkPrimary) },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PinkPrimary,
-                    unfocusedBorderColor = Color.LightGray
-                )
-            )
-
-            OutlinedTextField(
-                value = guests,
-                onValueChange = { guests = it },
-                label = { Text("Number of Guests") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.People, contentDescription = null, tint = PinkPrimary) },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PinkPrimary,
-                    unfocusedBorderColor = Color.LightGray
-                )
-            )
-
-            OutlinedTextField(
-                value = address,
-                onValueChange = { address = it },
-                label = { Text("Event Address") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null, tint = PinkPrimary) },
-                minLines = 3,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PinkPrimary,
-                    unfocusedBorderColor = Color.LightGray
-                )
-            )
-
-            OutlinedTextField(
-                value = instructions,
-                onValueChange = { instructions = it },
-                label = { Text("Special Instructions") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 2,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PinkPrimary,
-                    unfocusedBorderColor = Color.LightGray
-                )
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = { navController.navigate("FOODS_order_success") },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary)
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = LuxuryCard),
+                border = BorderStroke(1.dp, LuxuryBorder)
             ) {
-                Text("Confirm Booking", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("Bill Details", color = LuxuryTextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(Modifier.height(16.dp))
+                    LuxuryFoodBillRow("Item Total", "₹239")
+                    LuxuryFoodBillRow("Delivery Fee", "₹25")
+                    HorizontalDivider(Modifier.padding(vertical = 12.dp), color = LuxuryBorder)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Total Amount", color = LuxuryTextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                        Text("₹264", color = LuxuryGold, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+fun LuxuryCheckoutSection(title: String, content: @Composable () -> Unit) {
+    Column {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(title, color = LuxuryTextSecondary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text("Change", color = LuxuryGold, fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.clickable { })
+        }
+        Spacer(Modifier.height(12.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = LuxuryCard),
+            border = BorderStroke(1.dp, LuxuryBorder)
+        ) {
+            Box(Modifier.padding(16.dp)) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+fun LuxuryFoodBillRow(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, color = LuxuryTextSecondary, fontSize = 14.sp)
+        Text(value, color = LuxuryTextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
     }
 }

@@ -23,10 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.R
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.Black
-import com.nisr.sauservices.ui.theme.GrayText
+import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.theme.PrimaryBlue
-import com.nisr.sauservices.ui.theme.White
 
 data class PopularService(
     val id: String,
@@ -51,7 +49,7 @@ fun PopularServicesSection(navController: NavController) {
             style = MaterialTheme.typography.titleLarge.copy(
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
-                color = Black
+                color = LuxuryTextPrimary
             ),
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -131,7 +129,7 @@ fun PopularServicesSection(navController: NavController) {
                                 
                                 Button(
                                     onClick = {
-                                        navController.navigate(Screen.ResidentialServiceList.createRoute(item.categoryId, item.subcategoryId))
+                                        navController.navigate(Screen.ResidentialServices(item.categoryId, item.subcategoryId))
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                                     shape = RoundedCornerShape(10.dp),

@@ -173,7 +173,7 @@ fun SplashScreen(
                             ),
 
                         contentDescription =
-                            "SAU Services Logo",
+                            "SAU Solutions Logo",
 
                         modifier =
                             Modifier.size(145.dp),
@@ -217,7 +217,7 @@ fun SplashScreen(
                 ) {
 
                     Text(
-                        text = "SAU SERVICES",
+                        text = "SAU SOLUTIONS",
 
                         color =
                             SAUPrimary,

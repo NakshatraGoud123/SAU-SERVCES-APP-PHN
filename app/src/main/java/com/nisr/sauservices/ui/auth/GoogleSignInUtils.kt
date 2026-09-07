@@ -1,33 +1,41 @@
 package com.nisr.sauservices.ui.auth
 
 import android.content.Context
-import android.content.Intent
-import androidx.activity.compose.ManagedActivityResultLauncher
-import androidx.activity.result.ActivityResult
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.nisr.sauservices.R
 
 object GoogleSignInUtils {
-    private fun getGoogleSignInClient(context: Context): GoogleSignInClient {
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(context.getString(R.string.web_client_id))
-            .requestEmail()
-            .requestProfile()
+    suspend fun launchGoogleSignIn(context: Context): String? {
+        val credentialManager = CredentialManager.create(context)
+        
+        val googleIdOption = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false)
+            .setServerClientId(context.getString(R.string.google_client_id))
+            .setAutoSelectEnabled(false)
             .build()
-        return GoogleSignIn.getClient(context, gso)
+
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
+
+        return try {
+            val result = credentialManager.getCredential(context, request)
+            handleSignIn(result)
+        } catch (e: Exception) {
+            // Forward the exception or handle specific ones like GetCredentialCancellationException
+            throw e
+        }
     }
 
-    fun launchGoogleSignIn(
-        context: Context,
-        launcher: ManagedActivityResultLauncher<Intent, ActivityResult>
-    ) {
-        val client = getGoogleSignInClient(context)
-        // Sign out first to ensure the account picker shows up every time 
-        // and clears any previous stuck states
-        client.signOut().addOnCompleteListener {
-            launcher.launch(client.signInIntent)
+    private fun handleSignIn(result: GetCredentialResponse): String? {
+        val credential = result.credential
+        if (credential is GoogleIdTokenCredential) {
+            return credential.idToken
         }
+        return null
     }
 }

@@ -107,11 +107,11 @@ class PaymentViewModel : ViewModel() {
             orderResult.onSuccess { orderId ->
                 val checkout = Checkout()
                 // TODO: Replace with your actual Razorpay Key ID
-                checkout.setKeyID("rzp_test_YOUR_KEY_HERE") 
+                checkout.setKeyID("rzp_test_TYEz9RMOAJ2nmV")
 
                 try {
                     val options = JSONObject()
-                    options.put("name", "SAU SERVICES")
+                    options.put("name", "SAU SOLUTIONS")
                     options.put("description", "Booking Payment")
                     options.put("theme.color", "#00E5FF")
                     options.put("currency", "INR")

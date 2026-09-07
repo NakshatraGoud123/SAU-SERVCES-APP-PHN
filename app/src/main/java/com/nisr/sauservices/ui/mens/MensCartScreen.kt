@@ -56,7 +56,7 @@ fun MensCartScreen(navController: NavController, viewModel: MensGroomingViewMode
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = { navController.navigate(Screen.Cart.route) },
+                            onClick = { navController.navigate(Screen.Cart) },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)

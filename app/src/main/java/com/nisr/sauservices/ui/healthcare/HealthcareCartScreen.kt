@@ -59,7 +59,7 @@ fun HealthcareCartScreen(navController: NavController, viewModel: HealthcareView
                         Spacer(modifier = Modifier.height(20.dp))
                         Button(
                             onClick = { 
-                                navController.navigate(Screen.Cart.route)
+                                navController.navigate(Screen.Cart)
                             },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(16.dp),

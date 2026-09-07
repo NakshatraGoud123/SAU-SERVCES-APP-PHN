@@ -5,10 +5,11 @@ import kotlinx.serialization.SerialName
 
 @Serializable
 data class UserProfile(
-    val name: String = "",
+    val id: String = "",
+    @SerialName("full_name") val name: String = "",
     val email: String = "",
-    val phone: String = "",
-    @SerialName("profile_pic_url") val profilePicUrl: String? = null,
+    @SerialName("phone_number") val phone: String = "",
+    @SerialName("avatar_url") val profilePicUrl: String? = null,
     val role: String = "customer"
 )
 

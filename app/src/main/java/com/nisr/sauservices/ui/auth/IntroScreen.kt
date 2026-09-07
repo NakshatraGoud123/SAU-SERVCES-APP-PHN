@@ -4,8 +4,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,28 +18,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.R
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontFamily
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.theme.*
+import com.nisr.sauservices.ui.components.LuxuryButton
 
 @Composable
 fun IntroScreen(navController: NavController) {
-    val SAUBlue = Color(0xFF2563EB)
-    val Background = Color(0xFFF8FAFC)
-    val TextDark = Color(0xFF0F172A)
-    val TextSecondary = Color(0xFF64748B)
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background)
+            .background(LuxuryBackground)
     ) {
-        // Gradient Top
+        // Luxury cinematic overlay
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp)
+                .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(SAUBlue.copy(alpha = 0.1f), Color.Transparent)
+                        colors = listOf(LuxuryGold.copy(alpha = 0.05f), Color.Transparent, LuxuryBackground)
                     )
                 )
         )
@@ -54,78 +50,62 @@ fun IntroScreen(navController: NavController) {
             verticalArrangement = Arrangement.Center
         ) {
             Surface(
-                modifier = Modifier.size(120.dp),
-                shape = RoundedCornerShape(32.dp),
-                color = Color.White,
-                shadowElevation = 12.dp
+                modifier = Modifier.size(140.dp),
+                shape = RoundedCornerShape(40.dp),
+                color = LuxuryCard,
+                border = androidx.compose.foundation.BorderStroke(1.dp, LuxuryBorder)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Image(
                         painter = painterResource(id = R.drawable.sau_logo),
                         contentDescription = "SAU Logo",
-                        modifier = Modifier.size(80.dp),
+                        modifier = Modifier.size(90.dp).graphicsLayer(alpha = 0.9f),
                         contentScale = ContentScale.Fit
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
             Text(
                 text = "Welcome to SAU",
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    color = TextDark,
-                    letterSpacing = (-0.5).sp
+                style = MaterialTheme.typography.displayMedium.copy(
+                    fontWeight = FontWeight.Black,
+                    color = LuxuryTextPrimary,
+                    fontFamily = FontFamily.Serif
                 )
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Your one-stop solution for all professional services. Experience excellence at your fingertips.",
+                text = "Discover a premium world of lifestyle and professional services curated just for you.",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    color = TextSecondary,
-                    lineHeight = 24.sp
+                    color = LuxuryTextSecondary,
+                    lineHeight = 26.sp,
+                    textAlign = TextAlign.Center
                 ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 24.dp)
             )
 
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.height(80.dp))
 
-            Button(
-                onClick = { navController.navigate(Screen.Onboarding.route) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SAUBlue)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        "GET STARTED",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        letterSpacing = 1.sp
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, null)
-                }
-            }
+            LuxuryButton(
+                text = "EXPERIENCE NOW",
+                onClick = { navController.navigate(Screen.Onboarding) }
+            )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             TextButton(
-                onClick = { navController.navigate(Screen.Login.createRoute("customer")) }
+                onClick = { navController.navigate(Screen.Login("customer")) }
             ) {
                 Text(
-                    text = "Already have an account? Sign In",
-                    color = SAUBlue,
-                    fontWeight = FontWeight.SemiBold
+                    text = "Member? Sign In",
+                    color = LuxuryGold,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
                 )
             }
         }

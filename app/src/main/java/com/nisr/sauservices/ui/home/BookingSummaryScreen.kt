@@ -142,14 +142,14 @@ fun BookingSummaryScreen(
             onViewOrder = {
                 showSuccess = false
                 viewModel.resetStatus()
-                navController.navigate(Screen.MyOrders.route) {
-                    popUpTo(Screen.Home.route) { inclusive = false }
+                navController.navigate(Screen.MyBookings) {
+                    popUpTo<Screen.Home> { inclusive = false }
                 }
             },
             onGoHome = {
                 showSuccess = false
                 viewModel.resetStatus()
-                navController.navigate(Screen.Home.route) {
+                navController.navigate(Screen.Home) {
                     popUpTo(0) { inclusive = true }
                 }
             }

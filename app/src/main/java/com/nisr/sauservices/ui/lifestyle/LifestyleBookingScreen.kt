@@ -49,7 +49,7 @@ fun LifestyleBookingScreen(navController: NavController, viewModel: LifestyleVie
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.LifestyleCheckout.route) },
+                onClick = { navController.navigate(Screen.LifestyleCheckout) },
                 enabled = viewModel.selectedDate.value.isNotEmpty() && viewModel.selectedTime.value.isNotEmpty(),
                 modifier = Modifier
                     .fillMaxWidth()

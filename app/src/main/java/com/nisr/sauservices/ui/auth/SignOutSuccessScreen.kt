@@ -66,7 +66,7 @@ fun SignOutSuccessScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Thank you for using SAU Services. We hope to see you again soon!",
+                text = "Thank you for using SAU Solutions. We hope to see you again soon!",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = TextSecondary,
                     lineHeight = 22.sp
@@ -79,7 +79,7 @@ fun SignOutSuccessScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    navController.navigate(Screen.Login.createRoute("customer")) {
+                    navController.navigate(Screen.Login("customer")) {
                         popUpTo(0) { inclusive = true }
                     }
                 },

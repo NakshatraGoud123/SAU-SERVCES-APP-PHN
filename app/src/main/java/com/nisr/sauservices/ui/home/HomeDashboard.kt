@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontFamily
 import androidx.navigation.NavController
 import com.nisr.sauservices.R
 import com.nisr.sauservices.ui.Screen
@@ -35,7 +36,7 @@ import com.nisr.sauservices.ui.theme.*
 import kotlinx.coroutines.delay
 
 /**
- * Premium Home Dashboard for SAU Services.
+ * Premium Home Dashboard for SAU Solutions.
  * Inspired by Urban Company, Swiggy, and Blinkit.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -44,8 +45,8 @@ fun HomeDashboard(navController: NavController) {
     val scrollState = rememberScrollState()
     
     Scaffold(
-        bottomBar = { HomeBottomNavigation(navController) },
-        containerColor = Color(0xFFF8F9FA) 
+        bottomBar = { BottomNavBar(navController) },
+        containerColor = LuxuryBackground 
     ) { padding ->
         Column(
             modifier = Modifier
@@ -100,24 +101,24 @@ private fun DashboardHeader(navController: NavController) {
             Text(
                 text = "Welcome to SAU,",
                 style = MaterialTheme.typography.labelMedium,
-                color = OrchidPink,
+                color = LuxuryGold,
                 fontWeight = FontWeight.Bold
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { navController.navigate(Screen.MapPicker.route) }
+                modifier = Modifier.clickable { navController.navigate(Screen.MapPicker) }
             ) {
-                Icon(Icons.Rounded.LocationOn, null, tint = OrchidPink, modifier = Modifier.size(16.dp))
+                Icon(Icons.Rounded.LocationOn, null, tint = LuxuryGold, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = "Downtown Dubai, UAE",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = TextDark,
+                    color = LuxuryTextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Icon(Icons.Default.KeyboardArrowDown, null, tint = TextGrey)
+                Icon(Icons.Default.KeyboardArrowDown, null, tint = LuxuryTextSecondary)
             }
         }
         
@@ -126,24 +127,23 @@ private fun DashboardHeader(navController: NavController) {
                 onClick = { /* Notifications */ },
                 modifier = Modifier
                     .size(44.dp)
-                    .background(Color.White, CircleShape)
-                    .shadow(1.dp, CircleShape)
+                    .background(LuxuryCard, CircleShape)
+                    .border(1.dp, LuxuryBorder, CircleShape)
             ) {
-                Icon(Icons.Outlined.Notifications, null, tint = TextDark, modifier = Modifier.size(20.dp))
+                Icon(Icons.Outlined.Notifications, null, tint = LuxuryTextPrimary, modifier = Modifier.size(20.dp))
             }
             Spacer(modifier = Modifier.width(12.dp))
             Box(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .border(2.dp, Color.White, CircleShape)
-                    .shadow(2.dp, CircleShape)
-                    .clickable { navController.navigate(Screen.Profile.route) }
+                    .border(2.dp, LuxuryGold, CircleShape)
+                    .clickable { navController.navigate(Screen.Profile) }
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_launcher_foreground),
                     contentDescription = "Profile",
-                    modifier = Modifier.fillMaxSize().background(OrchidPinkLight)
+                    modifier = Modifier.fillMaxSize().background(LuxuryGold.copy(alpha = 0.1f))
                 )
             }
         }
@@ -167,14 +167,14 @@ private fun DashboardSearchBar(modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .height(56.dp),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White,
-        shadowElevation = 4.dp
+        color = LuxuryCard,
+        border = BorderStroke(1.dp, LuxuryBorder)
     ) {
         Row(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Search, null, tint = OrchidPink)
+            Icon(Icons.Default.Search, null, tint = LuxuryGold)
             Spacer(modifier = Modifier.width(12.dp))
             
             AnimatedContent(
@@ -184,12 +184,12 @@ private fun DashboardSearchBar(modifier: Modifier = Modifier) {
                 },
                 label = "search_hint"
             ) { hint ->
-                Text(text = hint, style = MaterialTheme.typography.bodyLarge, color = TextGrey.copy(alpha = 0.6f))
+                Text(text = hint, style = MaterialTheme.typography.bodyLarge, color = LuxuryTextSecondary.copy(alpha = 0.6f))
             }
             
             Spacer(modifier = Modifier.weight(1f))
-            VerticalDivider(modifier = Modifier.height(20.dp).padding(horizontal = 8.dp), thickness = 1.dp, color = Color.LightGray)
-            Icon(Icons.Default.Mic, null, tint = OrchidPink)
+            VerticalDivider(modifier = Modifier.height(20.dp).padding(horizontal = 8.dp), thickness = 1.dp, color = LuxuryBorder)
+            Icon(Icons.Default.Mic, null, tint = LuxuryGold)
         }
     }
 }
@@ -219,19 +219,19 @@ private fun DashboardHeroCarousel() {
                     )
                     Box(
                         modifier = Modifier.fillMaxSize()
-                            .background(Brush.horizontalGradient(listOf(OrchidPink.copy(alpha = 0.9f), Color.Transparent)))
+                            .background(Brush.horizontalGradient(listOf(LuxuryGold.copy(alpha = 0.9f), Color.Transparent)))
                     )
                     Column(modifier = Modifier.align(Alignment.CenterStart).padding(24.dp)) {
-                        Text("PREMIUM QUALITY", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 10.sp)
-                        Text("Home Repairs &\nCleaning - 40% Off", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
+                        Text("PREMIUM QUALITY", color = LuxuryBackground, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                        Text("Home Repairs &\nCleaning - 40% Off", color = LuxuryBackground, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold)
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
                             onClick = {},
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                            colors = ButtonDefaults.buttonColors(containerColor = LuxuryBackground),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.height(36.dp)
                         ) {
-                            Text("Book Now", color = OrchidPink, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text("Book Now", color = LuxuryGold, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }
@@ -241,7 +241,7 @@ private fun DashboardHeroCarousel() {
         Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.Center) {
             repeat(3) { i ->
                 val active = pagerState.currentPage == i
-                Box(modifier = Modifier.padding(horizontal = 3.dp).size(if (active) 16.dp else 6.dp, 6.dp).clip(CircleShape).background(if (active) OrchidPink else Color.LightGray))
+                Box(modifier = Modifier.padding(horizontal = 3.dp).size(if (active) 16.dp else 6.dp, 6.dp).clip(CircleShape).background(if (active) LuxuryGold else LuxuryBorder))
             }
         }
     }
@@ -261,7 +261,13 @@ private fun DashboardCategoriesGrid(navController: NavController) {
     )
 
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Text("Our Services", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = TextDark)
+        Text(
+            text = "Our Services", 
+            style = MaterialTheme.typography.titleLarge, 
+            fontWeight = FontWeight.ExtraBold, 
+            color = LuxuryTextPrimary,
+            fontFamily = FontFamily.Serif
+        )
         Spacer(modifier = Modifier.height(20.dp))
         
         repeat(2) { row ->
@@ -269,11 +275,11 @@ private fun DashboardCategoriesGrid(navController: NavController) {
                 repeat(4) { col ->
                     val item = items[row * 4 + col]
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(75.dp)) {
-                        Box(modifier = Modifier.size(60.dp).clip(RoundedCornerShape(18.dp)).background(Color.White).shadow(1.dp, RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) {
-                            Icon(item.icon, null, tint = OrchidPink, modifier = Modifier.size(26.dp))
+                        Box(modifier = Modifier.size(60.dp).clip(RoundedCornerShape(18.dp)).background(LuxuryCard).border(1.dp, LuxuryBorder, RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) {
+                            Icon(item.icon, null, tint = LuxuryGold, modifier = Modifier.size(26.dp))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text(item.name, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                        Text(item.name, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = LuxuryTextPrimary)
                     }
                 }
             }
@@ -284,16 +290,23 @@ private fun DashboardCategoriesGrid(navController: NavController) {
 @Composable
 private fun DashboardPromotionalBanners() {
     Column {
-        Text("Special Savings", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = TextDark, modifier = Modifier.padding(horizontal = 16.dp))
+        Text(
+            text = "Special Savings", 
+            style = MaterialTheme.typography.titleLarge, 
+            fontWeight = FontWeight.ExtraBold, 
+            color = LuxuryTextPrimary, 
+            modifier = Modifier.padding(horizontal = 16.dp),
+            fontFamily = FontFamily.Serif
+        )
         Spacer(modifier = Modifier.height(16.dp))
         LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             items(3) {
-                Card(modifier = Modifier.size(300.dp, 120.dp), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White), border = BorderStroke(1.dp, OrchidPinkLight)) {
+                Card(modifier = Modifier.size(300.dp, 120.dp), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = LuxuryCard), border = BorderStroke(1.dp, LuxuryBorder)) {
                     Row(modifier = Modifier.fillMaxSize().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("SAVE AED 50", color = OrchidPink, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
-                            Text("Premium AC Service", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
-                            Text("Use Code: SAU50", fontSize = 11.sp, color = TextGrey)
+                            Text("SAVE AED 50", color = LuxuryGold, fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+                            Text("Premium AC Service", color = LuxuryTextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                            Text("Use Code: SAU50", fontSize = 11.sp, color = LuxuryTextSecondary)
                         }
                         Image(painter = painterResource(id = R.drawable.ac_repair), contentDescription = null, modifier = Modifier.size(80.dp).clip(RoundedCornerShape(14.dp)), contentScale = ContentScale.Crop)
                     }
@@ -306,20 +319,27 @@ private fun DashboardPromotionalBanners() {
 @Composable
 private fun DashboardPopularServices(navController: NavController) {
     Column {
-        Text("Most Booked", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = TextDark, modifier = Modifier.padding(horizontal = 16.dp))
+        Text(
+            text = "Most Booked", 
+            style = MaterialTheme.typography.titleLarge, 
+            fontWeight = FontWeight.ExtraBold, 
+            color = LuxuryTextPrimary, 
+            modifier = Modifier.padding(horizontal = 16.dp),
+            fontFamily = FontFamily.Serif
+        )
         Spacer(modifier = Modifier.height(16.dp))
         LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             items(4) {
-                Card(modifier = Modifier.width(160.dp), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Card(modifier = Modifier.width(160.dp), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = LuxuryCard), border = BorderStroke(1.dp, LuxuryBorder)) {
                     Column {
                         Image(painter = painterResource(id = R.drawable.bathroom_cleaning), contentDescription = null, modifier = Modifier.height(110.dp).fillMaxWidth(), contentScale = ContentScale.Crop)
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text("Sofa Cleaning", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                            Text("Sofa Cleaning", color = LuxuryTextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Star, null, tint = Color(0xFFFFB300), modifier = Modifier.size(12.dp))
-                                Text(" 4.8", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Icon(Icons.Default.Star, null, tint = LuxuryGold, modifier = Modifier.size(12.dp))
+                                Text(" 4.8", color = LuxuryTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
-                            Text("AED 149", fontWeight = FontWeight.Bold, color = OrchidPink)
+                            Text("AED 149", fontWeight = FontWeight.Bold, color = LuxuryGold)
                         }
                     }
                 }
@@ -331,32 +351,27 @@ private fun DashboardPopularServices(navController: NavController) {
 @Composable
 private fun DashboardRecommendedSection(navController: NavController) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-        Text("Personalized for you", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = TextDark)
+        Text(
+            text = "Personalized for you", 
+            style = MaterialTheme.typography.titleLarge, 
+            fontWeight = FontWeight.ExtraBold, 
+            color = LuxuryTextPrimary,
+            fontFamily = FontFamily.Serif
+        )
         Spacer(modifier = Modifier.height(16.dp))
         repeat(3) {
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).background(Color.White, RoundedCornerShape(20.dp)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).background(LuxuryCard, RoundedCornerShape(20.dp)).border(1.dp, LuxuryBorder, RoundedCornerShape(20.dp)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Image(painter = painterResource(id = R.drawable.homescreen_illustration), contentDescription = null, modifier = Modifier.size(70.dp).clip(RoundedCornerShape(14.dp)), contentScale = ContentScale.Crop)
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Kitchen Cleaning", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
-                    Text("Starting at AED 199", color = OrchidPink, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Kitchen Cleaning", color = LuxuryTextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+                    Text("Starting at AED 199", color = LuxuryGold, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
-                IconButton(onClick = {}, modifier = Modifier.background(OrchidPink.copy(alpha = 0.1f), CircleShape)) {
-                    Icon(Icons.Default.Add, null, tint = OrchidPink)
+                IconButton(onClick = {}, modifier = Modifier.background(LuxuryGold.copy(alpha = 0.1f), CircleShape)) {
+                    Icon(Icons.Default.Add, null, tint = LuxuryGold)
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun HomeBottomNavigation(navController: NavController) {
-    NavigationBar(containerColor = Color.White, tonalElevation = 8.dp) {
-        val route = navController.currentDestination?.route
-        NavigationBarItem(selected = route == Screen.Home.route, onClick = { navController.navigate(Screen.Home.route) }, icon = { Icon(Icons.Rounded.Home, null) }, label = { Text("Home") }, colors = NavigationBarItemDefaults.colors(selectedIconColor = OrchidPink, selectedTextColor = OrchidPink, indicatorColor = OrchidPink.copy(alpha = 0.1f)))
-        NavigationBarItem(selected = route == Screen.Bookings.route, onClick = { navController.navigate(Screen.Bookings.route) }, icon = { Icon(Icons.AutoMirrored.Outlined.EventNote, null) }, label = { Text("Bookings") })
-        NavigationBarItem(selected = route == Screen.Cart.route, onClick = { navController.navigate(Screen.Cart.route) }, icon = { BadgedBox(badge = { Badge { Text("1") } }) { Icon(Icons.Outlined.ShoppingCart, null) } }, label = { Text("Cart") })
-        NavigationBarItem(selected = route == Screen.Profile.route, onClick = { navController.navigate(Screen.Profile.route) }, icon = { Icon(Icons.Outlined.Person, null) }, label = { Text("Profile") })
     }
 }
 

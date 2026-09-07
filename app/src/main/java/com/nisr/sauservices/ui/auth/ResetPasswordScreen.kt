@@ -45,7 +45,7 @@ fun ResetPasswordScreen(
     var confirmPassword by remember { mutableStateOf("") }
     
     val context = LocalContext.current
-    val authState by authViewModel.authState
+    val authState by authViewModel.authState.collectAsState()
 
     LaunchedEffect(authState) {
         if (authState is AuthState.Error) {
@@ -151,7 +151,7 @@ fun ResetPasswordScreen(
                             onClick = { 
                                 authViewModel.updatePassword(password)
                                 Toast.makeText(context, "Password updated successfully", Toast.LENGTH_SHORT).show()
-                                navController.navigate(Screen.Login.createRoute("customer")) {
+                                navController.navigate(Screen.Login("customer")) {
                                     popUpTo(0) { inclusive = true }
                                 }
                             },

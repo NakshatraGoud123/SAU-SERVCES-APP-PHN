@@ -100,6 +100,15 @@ class SupabaseRepository {
         }
     }
 
+    suspend fun getVendors(): Result<List<Vendor>> = withContext(Dispatchers.IO) {
+        try {
+            val list = postgrest["vendors"].select().decodeList<Vendor>()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getProducts(categoryId: String? = null): Result<List<Product>> = withContext(Dispatchers.IO) {
         try {
             val list = postgrest["products"].select {
@@ -176,6 +185,12 @@ class SupabaseRepository {
         }
     }
 
+    @OptIn(SupabaseExperimental::class)
+    fun listenToLocation(id: String, isWorker: Boolean): Flow<List<LiveLocation>> {
+        val table = if (isWorker) "worker_locations" else "delivery_locations"
+        return postgrest[table].selectAsFlow(LiveLocation::timestamp, filter = FilterOperation("user_id", FilterOperator.EQ, id))
+    }
+
     // --- PAYMENTS ---
 
     suspend fun savePayment(payment: Payment): Result<Unit> = withContext(Dispatchers.IO) {
@@ -203,5 +218,24 @@ class SupabaseRepository {
     @OptIn(SupabaseExperimental::class)
     fun getNotifications(userId: String): Flow<List<Notification>> {
         return postgrest["notifications"].selectAsFlow(Notification::id, filter = FilterOperation("user_id", FilterOperator.EQ, userId))
+    }
+
+    // --- REAL-TIME CHAT ---
+
+    suspend fun sendMessage(message: ChatMessage): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            postgrest["messages"].insert(message)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    @OptIn(SupabaseExperimental::class)
+    fun listenToMessages(orderId: String): Flow<List<ChatMessage>> {
+        return postgrest["messages"].selectAsFlow(
+            ChatMessage::id,
+            filter = FilterOperation("order_id", FilterOperator.EQ, orderId)
+        )
     }
 }

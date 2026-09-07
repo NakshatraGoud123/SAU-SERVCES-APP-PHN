@@ -51,7 +51,7 @@ fun HealthcareSuccessScreen(navController: NavController, viewModel: HealthcareV
             Spacer(modifier = Modifier.height(48.dp))
             
             Button(
-                onClick = { navController.navigate(Screen.HealthcareOrderTracking.route) },
+                onClick = { navController.navigate(Screen.HealthcareOrderTracking) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
@@ -64,8 +64,8 @@ fun HealthcareSuccessScreen(navController: NavController, viewModel: HealthcareV
             OutlinedButton(
                 onClick = { 
                     viewModel.clearCart()
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.Home> { inclusive = true }
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),

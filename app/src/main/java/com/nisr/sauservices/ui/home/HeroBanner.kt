@@ -18,93 +18,71 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.R
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.Black
-import com.nisr.sauservices.ui.theme.GrayText
-import com.nisr.sauservices.ui.theme.PrimaryBlue
-import com.nisr.sauservices.ui.theme.White
+import com.nisr.sauservices.ui.theme.*
 
 @Composable
 fun HeroBanner(navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(210.dp),
-        shape = RoundedCornerShape(20.dp),
+            .height(180.dp),
+        shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF))
+        colors = CardDefaults.cardColors(containerColor = LuxuryCard),
+        border = androidx.compose.foundation.BorderStroke(1.dp, LuxuryBorder)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = 20.dp, top = 16.dp, bottom = 16.dp, end = 4.dp),
+                .padding(24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
                 modifier = Modifier
-                    .weight(1.2f)
+                    .weight(1.5f)
                     .fillMaxHeight(),
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = "ALL\nSERVICES,\nONE APP",
-                    style = MaterialTheme.typography.headlineMedium.copy(
+                Surface(
+                    color = LuxuryGold,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "UP TO 50% OFF",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 22.sp,
-                        lineHeight = 26.sp,
-                        color = Black
+                        color = LuxuryBackground
                     )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    text = "Experience Premium\nLifestyle Services",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = LuxuryTextPrimary,
+                    lineHeight = 24.sp
                 )
 
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    text = "Trusted professionals at your doorstep",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 12.sp,
-                        color = GrayText,
-                        lineHeight = 15.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                    text = "Use code: SAULUXURY",
+                    fontSize = 13.sp,
+                    color = LuxuryGold,
+                    fontWeight = FontWeight.Bold
                 )
-
-                Spacer(Modifier.height(16.dp))
-
-                Button(
-                    onClick = { navController.navigate(Screen.ResidentialCategories.route) },
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    modifier = Modifier.wrapContentHeight().wrapContentWidth()
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            "Book a Service", 
-                            fontSize = 13.sp, 
-                            fontWeight = FontWeight.Bold,
-                            color = White
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Icon(
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight, 
-                            contentDescription = null,
-                            tint = White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                }
             }
 
             // Illustration on the right
             Image(
-                painter = painterResource(id = R.drawable.homescreen_illustration),
+                painter = painterResource(id = R.drawable.essential_supplies),
                 contentDescription = null,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight()
-                    .padding(vertical = 12.dp),
+                    .fillMaxHeight(),
                 contentScale = ContentScale.Fit
             )
         }

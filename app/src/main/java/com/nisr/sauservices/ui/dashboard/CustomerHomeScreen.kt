@@ -12,6 +12,7 @@ import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.data.local.SessionManager
 import com.nisr.sauservices.ui.home.*
+import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.education.EducationBottomSheet
 import com.nisr.sauservices.ui.business.BusinessBottomSheet
 import com.nisr.sauservices.ui.lifestyle.LifestyleBottomSheet
@@ -34,7 +35,7 @@ fun CustomerHomeScreen(
     Scaffold(
         topBar = { TopAppBarUI(navController, sessionManager) },
         bottomBar = { BottomNavBar(navController) },
-        containerColor = Color.White
+        containerColor = LuxuryBackground
     ) { padding ->
         Column(
             modifier = Modifier
@@ -47,20 +48,9 @@ fun CustomerHomeScreen(
             
             SearchBarUI(navController)
 
-            QuickServicesRow(navController)
-
             Spacer(Modifier.height(24.dp))
             
-            CategoriesGrid(
-                navController = navController,
-                onHomeEssentialsClick = { navController.navigate(Screen.HomeEssentialsMain.route) },
-                onEducationClick = { showEduSheet = true },
-                onBusinessClick = { showBizSheet = true },
-                onLifestyleClick = { showLifeSheet = true },
-                onTechClick = { showTechSheet = true },
-                onMechanicClick = { showMechanicSheet = true },
-                onMobilityClick = { showMobilitySheet = true }
-            )
+            CategoriesGrid(navController = navController)
 
             Spacer(Modifier.height(24.dp))
             

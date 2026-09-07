@@ -70,8 +70,8 @@ fun LifestyleSuccessScreen(navController: NavController, viewModel: LifestyleVie
         Button(
             onClick = {
                 viewModel.clearCart()
-                navController.navigate(Screen.Home.route) {
-                    popUpTo(Screen.Home.route) { inclusive = true }
+                navController.navigate(Screen.Home) {
+                    popUpTo<Screen.Home> { inclusive = true }
                 }
             },
             modifier = Modifier

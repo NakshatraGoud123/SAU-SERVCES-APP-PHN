@@ -1,624 +1,266 @@
 package com.nisr.sauservices.ui.viewmodel
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nisr.sauservices.data.repository.UserRepository
+import com.nisr.sauservices.data.supabase.AuthRepository
+import com.nisr.sauservices.data.api.SupabaseClient
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.providers.builtin.IDToken
 import io.github.jan.supabase.auth.user.UserInfo
+import io.github.jan.supabase.auth.OtpType
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// ============================================================
-// AUTH VIEW MODEL
-// ============================================================
+sealed class AuthState {
+    data object Idle : AuthState()
+    data object Loading : AuthState()
+    data class Success(
+        val user: UserInfo? = null,
+        val userData: Map<String, Any?>? = null
+    ) : AuthState()
+    data class Error(
+        val message: String
+    ) : AuthState()
+}
 
 class AuthViewModel(
+    private val authRepository: AuthRepository = AuthRepository(),
     private val userRepository: UserRepository = UserRepository()
 ) : ViewModel() {
 
+    private val supabase = SupabaseClient.client
+
     private val _authState =
-        mutableStateOf<AuthState>(AuthState.Idle)
+        MutableStateFlow<AuthState>(AuthState.Idle)
 
-    val authState: State<AuthState> =
-        _authState
-
-    // ========================================================
-    // CURRENT USER
-    // ========================================================
+    val authState: StateFlow<AuthState> =
+        _authState.asStateFlow()
 
     val currentUser: UserInfo?
-        get() = userRepository.getCurrentUser()
+        get() = supabase.auth.currentSessionOrNull()?.user
 
-
-    // ========================================================
-    // EMAIL / PASSWORD LOGIN
-    // ========================================================
-
+    /**
+     * Login using email and password
+     */
     fun signIn(
         email: String,
         password: String
     ) {
-
-        viewModelScope.launch {
-
+        if (email.isBlank()) {
             _authState.value =
-                AuthState.Loading
-
-            val result =
-                userRepository.signIn(
-                    email,
-                    password
-                )
-
-            if (result.isSuccess) {
-
-                val user =
-                    userRepository.getCurrentUser()
-
-                if (user != null) {
-
-                    val dataResult =
-                        userRepository.getUserData(
-                            user.id
-                        )
-
-                    _authState.value =
-                        if (dataResult.isSuccess) {
-
-                            AuthState.Success(
-                                user = user,
-                                userData =
-                                    dataResult
-                                        .getOrNull()
-                                        ?.mapValues {
-                                            it.value as Any
-                                        }
-                            )
-
-                        } else {
-
-                            AuthState.Error(
-                                dataResult
-                                    .exceptionOrNull()
-                                    ?.message
-                                    ?: "Failed to fetch user data"
-                            )
-                        }
-
-                } else {
-
-                    _authState.value =
-                        AuthState.Error(
-                            "User not found"
-                        )
-                }
-
-            } else {
-
-                _authState.value =
-                    AuthState.Error(
-                        result
-                            .exceptionOrNull()
-                            ?.message
-                            ?: "Login failed"
-                    )
-            }
+                AuthState.Error("Please enter your email")
+            return
         }
-    }
 
+        if (password.isBlank()) {
+            _authState.value =
+                AuthState.Error("Please enter your password")
+            return
+        }
 
-    // ========================================================
-    // GOOGLE LOGIN
-    // ========================================================
+        if (!android.util.Patterns.EMAIL_ADDRESS
+                .matcher(email.trim())
+                .matches()
+        ) {
+            _authState.value =
+                AuthState.Error("Please enter a valid email address")
+            return
+        }
 
-    fun signInWithGoogle(
-        idToken: String,
-        role: String
-    ) {
+        if (password.length < 6) {
+            _authState.value =
+                AuthState.Error(
+                    "Password must contain at least 6 characters"
+                )
+            return
+        }
 
         viewModelScope.launch {
-
-            _authState.value =
-                AuthState.Loading
-
-            if (idToken.isBlank()) {
-
-                _authState.value =
-                    AuthState.Error(
-                        "Google authentication token is missing"
-                    )
-
-                return@launch
-            }
-
-            val result =
-                userRepository.signInWithGoogle(
-                    idToken
-                )
-
-            if (result.isSuccess) {
-
-                val user =
-                    userRepository.getCurrentUser()
-
+            _authState.value = AuthState.Loading
+            try {
+                // 1. Authenticate with Supabase Auth
+                supabase.auth.signInWith(Email) {
+                    this.email = email.trim()
+                    this.password = password
+                }
+                
+                val user = supabase.auth.currentUserOrNull()
                 if (user != null) {
-
-                    val dataResult =
-                        userRepository.getUserData(
-                            user.id
+                    // 2. Verify they have a "real" profile in our database
+                    val profileResult = userRepository.getUserData(user.id)
+                    if (profileResult.isSuccess && profileResult.getOrNull() != null) {
+                        _authState.value = AuthState.Success(
+                            user = user,
+                            userData = profileResult.getOrNull()?.mapValues { it.value as Any? }
                         )
-
-                    if (
-                        dataResult.isSuccess &&
-                        dataResult.getOrNull() != null
-                    ) {
-
-                        _authState.value =
-                            AuthState.Success(
-                                user = user,
-                                userData =
-                                    dataResult
-                                        .getOrNull()
-                                        ?.mapValues {
-                                            it.value as Any
-                                        }
-                            )
-
                     } else {
-
-                        // First Google login
-                        val newProfile =
-                            mapOf(
-                                "id" to user.id,
-                                "email" to (
-                                        user.email
-                                            ?: ""
-                                        ),
-                                "role" to role
-                            )
-
-                        userRepository.saveUserData(
-                            user.id,
-                            newProfile
-                        )
-
-                        _authState.value =
-                            AuthState.Success(
-                                user = user,
-                                userData = newProfile
-                            )
+                        // User exists in Auth but not in our Users table (possible incomplete registration)
+                        _authState.value = AuthState.Error("User profile not found. Please register again.")
                     }
-
                 } else {
-
-                    _authState.value =
-                        AuthState.Error(
-                            "Google Sign-In failed"
-                        )
+                    _authState.value = AuthState.Error("Login successful, but session could not be established.")
                 }
-
-            } else {
-
-                _authState.value =
-                    AuthState.Error(
-                        result
-                            .exceptionOrNull()
-                            ?.message
-                            ?: "Google Sign-In failed"
-                    )
+            } catch (e: Exception) {
+                val errorMsg = e.message ?: "Login failed"
+                val finalMsg = when {
+                    errorMsg.contains("invalid", ignoreCase = true) -> 
+                        "Invalid email or password. Have you registered yet?"
+                    errorMsg.contains("confirm", ignoreCase = true) || errorMsg.contains("verified", ignoreCase = true) ->
+                        "Please check your email and confirm your account before logging in."
+                    else -> errorMsg
+                }
+                _authState.value = AuthState.Error(finalMsg)
             }
         }
     }
 
-
-    // ========================================================
-    // SEND PHONE OTP
-    // ========================================================
-
-    fun sendOtp(
-        phone: String
-    ) {
-
+    /**
+     * Sign in with Google ID Token
+     */
+    fun signInWithGoogle(idToken: String) {
         viewModelScope.launch {
-
-            _authState.value =
-                AuthState.Loading
-
-            val cleanPhone =
-                phone.trim()
-
-            /*
-             * User enters:
-             *
-             * 9133954771
-             *
-             * Supabase receives:
-             *
-             * +919133954771
-             */
-
-            val formattedPhone =
-                when {
-
-                    cleanPhone.startsWith("+") ->
-                        cleanPhone
-
-                    cleanPhone.length == 10 ->
-                        "+91$cleanPhone"
-
-                    else ->
-                        cleanPhone
+            _authState.value = AuthState.Loading
+            try {
+                supabase.auth.signInWith(IDToken) {
+                    this.idToken = idToken
+                    this.provider = Google
                 }
-
-            if (
-                formattedPhone.length < 12
-            ) {
-
-                _authState.value =
-                    AuthState.Error(
-                        "Please enter a valid Indian mobile number"
-                    )
-
-                return@launch
-            }
-
-            val result =
-                userRepository.sendOtp(
-                    formattedPhone
-                )
-
-            if (result.isSuccess) {
-
-                _authState.value =
-                    AuthState.OtpSent
-
-            } else {
-
-                _authState.value =
-                    AuthState.Error(
-                        result
-                            .exceptionOrNull()
-                            ?.message
-                            ?: "Failed to send OTP"
-                    )
-            }
-        }
-    }
-
-
-    // ========================================================
-    // VERIFY PHONE OTP
-    // ========================================================
-
-    fun verifyOtp(
-        phone: String,
-        token: String,
-        role: String = "customer"
-    ) {
-
-        viewModelScope.launch {
-
-            _authState.value =
-                AuthState.Loading
-
-            val cleanPhone =
-                phone.trim()
-
-            val formattedPhone =
-                when {
-
-                    cleanPhone.startsWith("+") ->
-                        cleanPhone
-
-                    cleanPhone.length == 10 ->
-                        "+91$cleanPhone"
-
-                    else ->
-                        cleanPhone
-                }
-
-            val cleanToken =
-                token.trim()
-
-            if (cleanToken.length < 4) {
-
-                _authState.value =
-                    AuthState.Error(
-                        "Please enter a valid OTP"
-                    )
-
-                return@launch
-            }
-
-            val result =
-                userRepository.verifyOtp(
-                    formattedPhone,
-                    cleanToken
-                )
-
-            if (result.isSuccess) {
-
-                val user =
-                    userRepository.getCurrentUser()
-
+                
+                val user = supabase.auth.currentUserOrNull()
                 if (user != null) {
-
-                    val dataResult =
-                        userRepository.getUserData(
-                            user.id
+                    // Check for profile or create one if it doesn't exist
+                    val profileResult = userRepository.getUserData(user.id)
+                    if (profileResult.isSuccess && profileResult.getOrNull() != null) {
+                        _authState.value = AuthState.Success(
+                            user = user,
+                            userData = profileResult.getOrNull()?.mapValues { it.value as Any? }
                         )
-
-                    val existingData =
-                        dataResult.getOrNull()
-
-                    if (existingData == null) {
-
-                        // ====================================
-                        // FIRST PHONE LOGIN
-                        // ====================================
-
-                        val newProfile =
-                            mapOf(
-                                "id" to user.id,
-                                "phone" to formattedPhone,
-                                "role" to role
-                            )
-
-                        userRepository.saveUserData(
-                            user.id,
-                            newProfile
-                        )
-
-                        _authState.value =
-                            AuthState.Success(
-                                user = user,
-                                userData = newProfile
-                            )
-
                     } else {
-
-                        // ====================================
-                        // EXISTING USER
-                        // ====================================
-
-                        _authState.value =
-                            AuthState.Success(
-                                user = user,
-                                userData =
-                                    existingData.mapValues {
-                                        it.value as Any
-                                    }
-                            )
+                        // Create basic profile for Google users
+                        val name = (user.userMetadata?.get("full_name") ?: user.userMetadata?.get("name"))?.toString() ?: "Google User"
+                        val avatar = (user.userMetadata?.get("avatar_url") ?: user.userMetadata?.get("picture"))?.toString() ?: ""
+                        userRepository.saveUserData(user.id, mapOf<String, Any?>(
+                            "full_name" to name, 
+                            "email" to (user.email ?: ""),
+                            "profile_pic_url" to avatar
+                        ))
+                        _authState.value = AuthState.Success(user = user)
                     }
-
                 } else {
-
-                    _authState.value =
-                        AuthState.Error(
-                            "Verification succeeded but user was not found"
-                        )
+                    _authState.value = AuthState.Error("Google authentication failed")
                 }
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "Google login failed")
+            }
+        }
+    }
 
-            } else {
+    /**
+     * Check whether a user is already logged in.
+     */
+    fun isUserLoggedIn(): Boolean {
+        return supabase.auth.currentSessionOrNull() != null
+    }
 
+    /**
+     * Logout
+     */
+    fun signOut() {
+        viewModelScope.launch {
+            try {
+                supabase.auth.signOut()
+                _authState.value = AuthState.Idle
+            } catch (e: Exception) {
                 _authState.value =
                     AuthState.Error(
-                        result
-                            .exceptionOrNull()
-                            ?.message
-                            ?: "Invalid OTP"
+                        e.message ?: "Logout failed"
                     )
             }
         }
     }
 
+    fun logout() = signOut()
 
-    // ========================================================
-    // SIGN UP
-    // ========================================================
-
-    fun signUp(
-        email: String,
-        password: String,
-        userData: Map<String, Any>
-    ) {
-
-        viewModelScope.launch {
-
-            _authState.value =
-                AuthState.Loading
-
-            val result =
-                userRepository.signUp(
-                    email,
-                    password,
-                    userData
-                )
-
-            if (result.isSuccess) {
-
-                val user =
-                    userRepository.getCurrentUser()
-
-                _authState.value =
-                    AuthState.Success(
-                        user = user,
-                        userData = userData
-                    )
-
-            } else {
-
-                _authState.value =
-                    AuthState.Error(
-                        result
-                            .exceptionOrNull()
-                            ?.message
-                            ?: "Registration failed"
-                    )
-            }
-        }
-    }
-
-
-    // ========================================================
-    // PASSWORD RESET
-    // ========================================================
-
-    fun sendPasswordReset(
-        email: String
-    ) {
-
-        viewModelScope.launch {
-
-            _authState.value =
-                AuthState.Loading
-
-            val result =
-                userRepository.sendPasswordReset(
-                    email
-                )
-
-            if (result.isSuccess) {
-
-                _authState.value =
-                    AuthState.Idle
-
-            } else {
-
-                _authState.value =
-                    AuthState.Error(
-                        result
-                            .exceptionOrNull()
-                            ?.message
-                            ?: "Failed to send reset email"
-                    )
-            }
-        }
-    }
-
-
-    // ========================================================
-    // VERIFY PASSWORD RESET OTP
-    // ========================================================
-
-    fun verifyPasswordResetOtp(
-        email: String,
-        token: String
-    ) {
-
-        viewModelScope.launch {
-
-            _authState.value =
-                AuthState.Loading
-
-            val result =
-                userRepository.verifyPasswordResetOtp(
-                    email,
-                    token
-                )
-
-            if (result.isSuccess) {
-
-                _authState.value =
-                    AuthState.Idle
-
-            } else {
-
-                _authState.value =
-                    AuthState.Error(
-                        result
-                            .exceptionOrNull()
-                            ?.message
-                            ?: "Invalid OTP"
-                    )
-            }
-        }
-    }
-
-
-    // ========================================================
-    // UPDATE PASSWORD
-    // ========================================================
-
-    fun updatePassword(
-        newPassword: String
-    ) {
-
-        viewModelScope.launch {
-
-            _authState.value =
-                AuthState.Loading
-
-            val result =
-                userRepository.updatePassword(
-                    newPassword
-                )
-
-            if (result.isSuccess) {
-
-                _authState.value =
-                    AuthState.Idle
-
-            } else {
-
-                _authState.value =
-                    AuthState.Error(
-                        result
-                            .exceptionOrNull()
-                            ?.message
-                            ?: "Failed to update password"
-                    )
-            }
-        }
-    }
-
-
-    // ========================================================
-    // LOGOUT
-    // ========================================================
-
-    fun logout() {
-
-        viewModelScope.launch {
-
-            userRepository.logout()
-
-            _authState.value =
-                AuthState.Idle
-        }
-    }
-
-
-    // ========================================================
-    // RESET STATE
-    // ========================================================
-
+    /**
+     * Reset state back to Idle.
+     */
     fun resetState() {
-
-        _authState.value =
-            AuthState.Idle
+        _authState.value = AuthState.Idle
     }
-}
 
+    fun signUp(email: String, password: String, userData: Map<String, Any?>) {
+        val fullName = userData["full_name"] as? String ?: ""
+        
+        if (fullName.isBlank() || fullName.length < 3) {
+            _authState.value = AuthState.Error("Please enter a valid full name")
+            return
+        }
 
-// ============================================================
-// AUTH STATE
-// ============================================================
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()) {
+            _authState.value = AuthState.Error("Please enter a valid email address")
+            return
+        }
 
-sealed class AuthState {
+        if (password.length < 6) {
+            _authState.value = AuthState.Error("Password must be at least 6 characters")
+            return
+        }
 
-    object Idle : AuthState()
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            val result = userRepository.signUp(email.trim(), password, userData)
+            if (result.isSuccess) {
+                _authState.value = AuthState.Success(user = supabase.auth.currentUserOrNull())
+            } else {
+                _authState.value = AuthState.Error(result.exceptionOrNull()?.message ?: "Registration failed")
+            }
+        }
+    }
 
-    object Loading : AuthState()
+    fun sendPasswordReset(email: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            try {
+                supabase.auth.resetPasswordForEmail(email)
+                _authState.value = AuthState.Idle
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "Failed to send reset email")
+            }
+        }
+    }
 
-    object OtpSent : AuthState()
+    fun verifyPasswordResetOtp(email: String, token: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            try {
+                supabase.auth.verifyEmailOtp(
+                    type = OtpType.Email.RECOVERY,
+                    email = email,
+                    token = token
+                )
+                _authState.value = AuthState.Idle
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "Invalid OTP")
+            }
+        }
+    }
 
-    data class Success(
-        val user: UserInfo?,
-        val userData: Map<String, Any>? = null
-    ) : AuthState()
-
-    data class Error(
-        val message: String
-    ) : AuthState()
+    fun updatePassword(newPassword: String) {
+        viewModelScope.launch {
+            _authState.value = AuthState.Loading
+            try {
+                supabase.auth.updateUser {
+                    password = newPassword
+                }
+                _authState.value = AuthState.Idle
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "Failed to update password")
+            }
+        }
+    }
 }

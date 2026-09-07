@@ -113,7 +113,7 @@ fun LoginSuccessScreen(navController: NavController, userName: String = "Abdul S
 
             Button(
                 onClick = { 
-                    navController.navigate(Screen.Home.route) {
+                    navController.navigate(Screen.Home) {
                         popUpTo(0) { inclusive = true }
                     }
                 },

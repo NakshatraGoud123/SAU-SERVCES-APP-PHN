@@ -39,7 +39,7 @@ fun LifestyleCheckoutScreen(navController: NavController, viewModel: LifestyleVi
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.LifestylePayment.route) },
+                onClick = { navController.navigate(Screen.LifestylePayment) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)

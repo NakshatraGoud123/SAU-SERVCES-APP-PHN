@@ -6,13 +6,29 @@ import androidx.lifecycle.ViewModel
 import com.nisr.sauservices.data.model.BookingDetails
 import com.nisr.sauservices.data.model.ResidentialCartItem
 import com.nisr.sauservices.data.model.ResidentialServiceItem
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class ResidentialViewModel : ViewModel() {
     private val _cartItems = mutableStateListOf<ResidentialCartItem>()
     val cartItems: List<ResidentialCartItem> get() = _cartItems
 
-    var bookingDetails = mutableStateOf(BookingDetails())
+    private val _bookingDetails = MutableStateFlow(BookingDetails())
+    val bookingDetails = _bookingDetails.asStateFlow()
+
+    var selectedPartnerId = mutableStateOf<String?>(null)
         private set
+
+    var selectedServiceId = mutableStateOf<String?>(null)
+        private set
+
+    fun selectPartner(partnerId: String) {
+        selectedPartnerId.value = partnerId
+    }
+
+    fun selectService(serviceId: String) {
+        selectedServiceId.value = serviceId
+    }
 
     fun addToCart(service: ResidentialServiceItem) {
         val index = _cartItems.indexOfFirst { it.service.id == service.id }
@@ -52,27 +68,27 @@ class ResidentialViewModel : ViewModel() {
     }
 
     fun setDate(date: String) {
-        bookingDetails.value = bookingDetails.value.copy(date = date)
+        _bookingDetails.value = _bookingDetails.value.copy(date = date)
     }
 
     fun setTimeSlot(slot: String) {
-        bookingDetails.value = bookingDetails.value.copy(timeSlot = slot)
+        _bookingDetails.value = _bookingDetails.value.copy(timeSlot = slot)
     }
 
     fun setAddress(address: String) {
-        bookingDetails.value = bookingDetails.value.copy(address = address)
+        _bookingDetails.value = _bookingDetails.value.copy(address = address)
     }
 
     fun setPhone(phone: String) {
-        bookingDetails.value = bookingDetails.value.copy(phone = phone)
+        _bookingDetails.value = _bookingDetails.value.copy(phone = phone)
     }
 
     fun setPaymentMethod(method: String) {
-        bookingDetails.value = bookingDetails.value.copy(paymentMethod = method)
+        _bookingDetails.value = _bookingDetails.value.copy(paymentMethod = method)
     }
 
     fun clearCart() {
         _cartItems.clear()
-        bookingDetails.value = BookingDetails()
+        _bookingDetails.value = BookingDetails()
     }
 }

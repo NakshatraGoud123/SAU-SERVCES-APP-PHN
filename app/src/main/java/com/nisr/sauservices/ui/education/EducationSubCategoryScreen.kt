@@ -71,7 +71,7 @@ fun EducationSubCategoryScreen(navController: NavController, category: String) {
                 items(subCategories) { sub ->
                     EduSubCategoryCard(sub) {
                         val encoded = URLEncoder.encode(sub, "UTF-8")
-                        navController.navigate(Screen.EducationCourses.createRoute(encoded))
+                        navController.navigate(Screen.EducationCourses(encoded))
                     }
                 }
             }

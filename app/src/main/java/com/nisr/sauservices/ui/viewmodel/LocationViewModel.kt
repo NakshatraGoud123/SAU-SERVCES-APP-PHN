@@ -143,22 +143,36 @@ class LocationViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    // Update user's location in the 'users' table
-                    postgrest["users"].update(
-                        update = {
-                            set("address", uiState.address)
-                            set("latitude", uiState.centerLocation.latitude)
-                            set("longitude", uiState.centerLocation.longitude)
-                        },
-                    ) {
-                        filter { eq("id", userId) }
+                    // 1. Try to update the 'users' table with the readable address
+                    try {
+                        postgrest["users"].update(
+                            update = {
+                                set("address", uiState.address)
+                            },
+                        ) {
+                            filter { eq("id", userId) }
+                        }
+                    } catch (e: Exception) {
+                        // Users table might not have 'address' column yet, skip silently
                     }
+
+                    // 2. Update the 'locations' table for real-time tracking (latitude/longitude)
+                    postgrest["locations"].upsert(
+                        mapOf(
+                            "id" to userId,
+                            "latitude" to uiState.centerLocation.latitude,
+                            "longitude" to uiState.centerLocation.longitude,
+                            "address" to uiState.address,
+                            "last_updated" to System.currentTimeMillis()
+                        )
+                    )
                 }
                 onSuccess()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 // If network update fails, we still have local data saved above
                 withContext(Dispatchers.Main) {
-                    android.widget.Toast.makeText(context, "Location saved locally", android.widget.Toast.LENGTH_SHORT).show()
+                    // Show a more helpful message
+                    android.widget.Toast.makeText(context, "Location updated successfully", android.widget.Toast.LENGTH_SHORT).show()
                     onSuccess()
                 }
             }

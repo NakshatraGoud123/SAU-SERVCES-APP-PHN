@@ -38,7 +38,7 @@ fun PrescriptionUploadScreen(navController: NavController, viewModel: Healthcare
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.HealthcareBooking.route) },
+                onClick = { navController.navigate(Screen.HealthcareBooking) },
                 modifier = Modifier.fillMaxWidth().padding(16.dp).height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),

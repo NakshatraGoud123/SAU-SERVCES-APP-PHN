@@ -41,7 +41,7 @@ fun LifestyleCartScreen(navController: NavController, viewModel: LifestyleViewMo
         bottomBar = {
             if (viewModel.cartItems.isNotEmpty()) {
                 LifestyleCartBottomBar(viewModel) {
-                    navController.navigate(Screen.Cart.route)
+                    navController.navigate(Screen.Cart)
                 }
             }
         },

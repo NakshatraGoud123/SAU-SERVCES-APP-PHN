@@ -47,7 +47,7 @@ fun TechPaymentScreen(navController: NavController, viewModel: TechServicesViewM
         },
         bottomBar = {
             Button(
-                onClick = { navController.navigate(Screen.TechSuccess.route) },
+                onClick = { navController.navigate(Screen.TechSuccess) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
