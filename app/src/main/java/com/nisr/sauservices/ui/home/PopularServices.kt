@@ -38,10 +38,9 @@ data class PopularService(
 
 @Composable
 fun PopularServicesSection(navController: NavController) {
-    val list = listOf(
-        PopularService("ac1", "AC Repair", R.drawable.ac_repair, "₹499", "4.6", "ac_repair", "ac_service"),
-        PopularService("hc2", "Bathroom Cleaning", R.drawable.bathroom_cleaning, "₹399", "4.8", "home_cleaning", "clean_room")
-    )
+    val list = emptyList<PopularService>()
+
+    if (list.isEmpty()) return
 
     Column(modifier = Modifier.padding(vertical = 16.dp)) {
         Text(

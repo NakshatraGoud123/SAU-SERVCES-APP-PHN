@@ -23,7 +23,8 @@ fun NavGraphBuilder.homeNavGraph(
     bookingsViewModel: BookingsViewModel,
     residentialViewModel: ResidentialViewModel,
     homeViewModel: HomeViewModel,
-    locationViewModel: LocationViewModel
+    locationViewModel: LocationViewModel,
+    chatViewModel: com.nisr.sauservices.ui.viewmodel.ChatViewModel
 ) {
     composable<Screen.Home> {
         SauHomeScreen(
@@ -46,6 +47,22 @@ fun NavGraphBuilder.homeNavGraph(
     composable<Screen.SearchResults> { backStackEntry ->
         val route: Screen.SearchResults = backStackEntry.toRoute()
         SearchResultsScreen(navController, route.query, residentialViewModel)
+        }
+
+    composable<Screen.MerchantShop> { backStackEntry ->
+        val route: Screen.MerchantShop = backStackEntry.toRoute()
+        val cartViewModel: com.nisr.sauservices.ui.viewmodel.CartViewModel = viewModel()
+        MerchantShopScreen(navController, route.vendorId, cartViewModel)
+    }
+
+    composable<Screen.Chat> { backStackEntry ->
+        val route: Screen.Chat = backStackEntry.toRoute()
+        ChatScreen(navController, route.orderId, route.receiverId, route.receiverName, chatViewModel)
+    }
+
+    composable<Screen.CategoryVendors> { backStackEntry ->
+        val route: Screen.CategoryVendors = backStackEntry.toRoute()
+        CategoryVendorListScreen(navController, route.category)
     }
     
     // Property & Lifestyle Services (PLS)

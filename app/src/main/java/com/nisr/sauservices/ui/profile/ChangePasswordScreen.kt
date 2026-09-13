@@ -1,6 +1,7 @@
 package com.nisr.sauservices.ui.profile
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,9 +20,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.data.api.SupabaseClient
-import com.nisr.sauservices.ui.theme.PinkPrimary
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.font.FontFamily
+import com.nisr.sauservices.ui.components.LuxuryButton
+
+// ============================================================
+// LUXE BRAND COLORS (Local for precision)
+// ============================================================
+private val LuxeBackground = Color(0xFFFDFBFA)
+private val LuxeCard = Color(0xFFFFFFFF)
+private val LuxeTextPrimary = Color(0xFF423F3D)
+private val LuxeTextSecondary = Color(0xFF8D7F77)
+private val LuxeAccentSage = Color(0xFF96A68F)
+private val LuxeHighlightChampagne = Color(0xFFF5E6D3)
+private val LuxeBorder = Color(0xFFEFE9E4)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,35 +59,37 @@ fun ChangePasswordScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Change Password", fontWeight = FontWeight.Bold) },
+                title = { Text("Update Password", fontWeight = FontWeight.Black, color = LuxeTextPrimary, fontFamily = FontFamily.Serif) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LuxeTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         },
-        containerColor = Color.White
+        containerColor = LuxeBackground
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             if (!isEmailUser) {
                 Surface(
-                    color = Color(0xFFFFFDE7),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    color = LuxeHighlightChampagne.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, LuxeBorder)
                 ) {
                     Text(
-                        "Password change is not available for Social users.",
+                        "Password change is not available for social accounts.",
                         modifier = Modifier.padding(16.dp),
-                        color = Color.DarkGray,
-                        fontSize = 14.sp
+                        color = LuxeTextSecondary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
@@ -81,60 +97,76 @@ fun ChangePasswordScreen(navController: NavController) {
             OutlinedTextField(
                 value = currentPassword,
                 onValueChange = { currentPassword = it },
-                label = { Text("Current Password") },
+                label = { Text("Current Password", color = LuxeTextSecondary) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 visualTransformation = if (currentPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { currentPasswordVisible = !currentPasswordVisible }) {
-                        Icon(if (currentPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null)
+                        Icon(if (currentPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null, tint = LuxeTextSecondary)
                     }
-                }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = LuxeAccentSage,
+                    unfocusedBorderColor = LuxeBorder,
+                    focusedLabelColor = LuxeAccentSage
+                )
             )
 
             OutlinedTextField(
                 value = newPassword,
                 onValueChange = { newPassword = it },
-                label = { Text("New Password") },
+                label = { Text("New Password", color = LuxeTextSecondary) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
-                        Icon(if (newPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null)
+                        Icon(if (newPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null, tint = LuxeTextSecondary)
                     }
-                }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = LuxeAccentSage,
+                    unfocusedBorderColor = LuxeBorder,
+                    focusedLabelColor = LuxeAccentSage
+                )
             )
 
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Confirm New Password") },
+                label = { Text("Confirm New Password", color = LuxeTextSecondary) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                        Icon(if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null)
+                        Icon(if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null, tint = LuxeTextSecondary)
                     }
-                }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = LuxeAccentSage,
+                    unfocusedBorderColor = LuxeBorder,
+                    focusedLabelColor = LuxeAccentSage
+                )
             )
 
             Spacer(Modifier.height(16.dp))
 
-            Button(
+            LuxuryButton(
+                text = "UPDATE PASSWORD",
                 onClick = {
                     if (!isEmailUser) {
-                        Toast.makeText(context, "Password change not available for your account type", Toast.LENGTH_SHORT).show()
-                        return@Button
+                        Toast.makeText(context, "Password change not available", Toast.LENGTH_SHORT).show()
+                        return@LuxuryButton
                     }
                     if (newPassword != confirmPassword) {
                         Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
-                        return@Button
+                        return@LuxuryButton
                     }
                     if (newPassword.length < 6) {
-                        Toast.makeText(context, "Password should be at least 6 characters", Toast.LENGTH_SHORT).show()
-                        return@Button
+                        Toast.makeText(context, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show()
+                        return@LuxuryButton
                     }
 
                     isLoading = true
@@ -152,14 +184,9 @@ fun ChangePasswordScreen(navController: NavController) {
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PinkPrimary),
-                enabled = !isLoading
-            ) {
-                if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                else Text("Update Password", fontWeight = FontWeight.Bold)
-            }
+                isLoading = isLoading,
+                modifier = Modifier.height(50.dp)
+            )
         }
     }
 }

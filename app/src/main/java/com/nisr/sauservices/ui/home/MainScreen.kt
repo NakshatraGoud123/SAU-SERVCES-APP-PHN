@@ -84,13 +84,13 @@ fun TopStoresRow() {
         StoreCard(
             name = "More Supermarket",
             rating = "4.6",
-            imageRes = R.drawable.essential_supplies,
+            imageRes = R.drawable.home_essentials,
             modifier = Modifier.weight(1f)
         )
         StoreCard(
             name = "FreshMart",
             rating = "4.4",
-            imageRes = R.drawable.food_beverages,
+            imageRes = R.drawable.home_lifestyle,
             modifier = Modifier.weight(1f)
         )
     }

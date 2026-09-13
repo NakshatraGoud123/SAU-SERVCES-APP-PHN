@@ -32,45 +32,75 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.nisr.sauservices.data.model.*
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.*
+import com.nisr.sauservices.ui.components.LuxuryButton
 
 data class PaymentOptionData(val name: String, val icon: ImageVector)
 
+// ============================================================
+// LUXE BRAND COLORS (Local for precision)
+// ============================================================
+private val LuxeBackground = Color(0xFFFDFBFA)
+private val LuxeCard = Color(0xFFFFFFFF)
+private val LuxeTextPrimary = Color(0xFF423F3D)
+private val LuxeTextSecondary = Color(0xFF8D7F77)
+private val LuxeAccentSage = Color(0xFF96A68F)
+private val LuxeHighlightChampagne = Color(0xFFF5E6D3)
+private val LuxeBorder = Color(0xFFEFE9E4)
+private val LuxeGold = Color(0xFFE8C66A)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResidentialCategoryScreen(navController: NavController) {
+fun ResidentialCategoryScreen(navController: NavController, viewModel: ResidentialViewModel = viewModel()) {
+    val categories by viewModel.categories.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Residential Services", color = LuxuryTextPrimary, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold) },
+                title = { Text("Service Categories", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxuryTextPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxuryBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         },
-        containerColor = LuxuryBackground
+        containerColor = LuxeBackground
     ) { padding ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(padding)
-        ) {
-            items(ResidentialData.categories) { category ->
-                ResidentialCategoryCardProfessional(category) {
-                    navController.navigate(Screen.ResidentialSubcategories(category.id))
+        if (isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = LuxeAccentSage)
+            }
+        } else if (categories.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No categories found.", color = LuxeTextSecondary)
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(20.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.padding(padding)
+            ) {
+                items(categories) { category ->
+                    LuxeCategoryCard(category) {
+                        navController.navigate(Screen.ResidentialSubcategories(category.id))
+                    }
                 }
             }
         }
@@ -78,29 +108,32 @@ fun ResidentialCategoryScreen(navController: NavController) {
 }
 
 @Composable
-fun ResidentialCategoryCardProfessional(category: ResidentialCategory, onClick: () -> Unit) {
+fun LuxeCategoryCard(category: Category, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(160.dp)
+            .height(180.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = LuxuryCard),
-        border = BorderStroke(1.dp, LuxuryBorder)
+        colors = CardDefaults.cardColors(containerColor = LuxeCard),
+        border = BorderStroke(1.dp, LuxeBorder)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            if (category.imageRes != null) {
-                Image(
-                    painter = painterResource(id = category.imageRes),
+            if (category.imageUrl != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(category.imageUrl)
+                        .crossfade(true)
+                        .build(),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
-                    alpha = 0.4f
+                    alpha = 0.6f
                 )
-                // Bottom Gradient for text readability
+                // Bottom Gradient
                 Box(modifier = Modifier.fillMaxSize().background(
                     Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f)),
                         startY = 100f
                     )
                 ))
@@ -108,29 +141,20 @@ fun ResidentialCategoryCardProfessional(category: ResidentialCategory, onClick: 
             
             Column(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Bottom
             ) {
-                if (category.imageRes == null) {
-                    Surface(
-                        modifier = Modifier.size(60.dp),
-                        shape = CircleShape,
-                        color = LuxuryGold.copy(alpha = 0.05f)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(category.icon, contentDescription = null, tint = LuxuryGold, modifier = Modifier.size(30.dp))
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                }
-                
                 Text(
                     category.name, 
-                    fontSize = 15.sp, 
-                    textAlign = TextAlign.Center, 
+                    fontSize = 16.sp, 
                     fontWeight = FontWeight.Black, 
-                    color = Color.White
+                    color = if (category.imageUrl != null) Color.White else LuxeTextPrimary,
+                    lineHeight = 20.sp
                 )
+                if (category.imageUrl == null) {
+                    Spacer(Modifier.height(4.dp))
+                    Text("Explore", color = LuxeAccentSage, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -138,45 +162,65 @@ fun ResidentialCategoryCardProfessional(category: ResidentialCategory, onClick: 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResidentialSubcategoryScreen(navController: NavController, categoryId: String) {
-    val category = ResidentialData.categories.find { it.id == categoryId }
-    val subcategories = ResidentialData.subcategories.filter { it.categoryId == categoryId }
+fun ResidentialSubcategoryScreen(
+    navController: NavController, 
+    categoryId: String,
+    viewModel: ResidentialViewModel = viewModel()
+) {
+    val subcategories by viewModel.subcategories.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(categoryId) {
+        viewModel.fetchSubcategories(categoryId)
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(category?.name ?: "Subcategories", color = LuxuryTextPrimary, fontWeight = FontWeight.ExtraBold) },
+                title = { Text("Subcategories", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxuryTextPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxuryBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         },
-        containerColor = LuxuryBackground
+        containerColor = LuxeBackground
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier.padding(padding).fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(subcategories) { sub ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        navController.navigate(Screen.ResidentialServices(categoryId, sub.id))
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = LuxuryCard),
-                    border = BorderStroke(1.dp, LuxuryBorder)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(20.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+        if (isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = LuxeAccentSage)
+            }
+        } else if (subcategories.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Text("No services available here.", color = LuxeTextSecondary)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.padding(padding).fillMaxSize(),
+                contentPadding = PaddingValues(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(subcategories) { sub ->
+                    val id = sub["id"] ?: ""
+                    val name = sub["name"] ?: ""
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            navController.navigate(Screen.MerchantShop(id))
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        color = LuxeCard,
+                        border = BorderStroke(1.dp, LuxeBorder)
                     ) {
-                        Text(sub.name, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = LuxuryTextPrimary)
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = LuxuryGold)
+                        Row(
+                            modifier = Modifier.padding(24.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(name, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = LuxeTextPrimary)
+                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = LuxeAccentSage)
+                        }
                     }
                 }
             }
@@ -193,69 +237,85 @@ fun ResidentialServiceListScreen(
     viewModel: ResidentialViewModel,
     cartViewModel: CartViewModel
 ) {
-    val sub = ResidentialData.subcategories.find { it.id == subcategoryId }
-    val services = ResidentialData.services.filter { it.subcategory == subcategoryId }
-    val categories = listOf("All", "AC Repair", "Installation", "Others")
+    val services by viewModel.services.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val categories = listOf("All", "Top Rated", "New")
     var selectedCategory by remember { mutableStateOf("All") }
+
+    LaunchedEffect(subcategoryId) {
+        viewModel.fetchServices(subcategoryId)
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(sub?.name ?: "Services", color = LuxuryTextPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge) },
+                title = { Text("Services", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxuryTextPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxuryBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         },
-        containerColor = LuxuryBackground
+        containerColor = LuxeBackground
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            // Horizontal Category Chips
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(categories) { category ->
-                    FilterChip(
-                        selected = selectedCategory == category,
-                        onClick = { selectedCategory = category },
-                        label = { Text(category) },
-                        shape = RoundedCornerShape(20.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = LuxuryGold,
-                            selectedLabelColor = LuxuryBackground,
-                            containerColor = LuxuryCard,
-                            labelColor = LuxuryTextSecondary
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            borderColor = LuxuryBorder,
-                            selectedBorderColor = LuxuryGold,
-                            borderWidth = 1.dp,
-                            selectedBorderWidth = 1.dp,
-                            enabled = true,
-                            selected = selectedCategory == category
-                        )
-                    )
-                }
+        if (isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = LuxeAccentSage)
             }
+        } else {
+            Column(modifier = Modifier.padding(padding)) {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(categories) { category ->
+                        FilterChip(
+                            selected = selectedCategory == category,
+                            onClick = { selectedCategory = category },
+                            label = { Text(category) },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = LuxeAccentSage,
+                                selectedLabelColor = Color.White,
+                                containerColor = LuxeCard,
+                                labelColor = LuxeTextSecondary
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = LuxeBorder,
+                                selectedBorderColor = LuxeAccentSage,
+                                borderWidth = 1.dp,
+                                selectedBorderWidth = 1.dp,
+                                enabled = true,
+                                selected = selectedCategory == category
+                            )
+                        )
+                    }
+                }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(services) { service ->
-                    ResidentialServiceCardDesign(
-                        service = service,
-                        onAdd = { 
-                            viewModel.selectService(service.id)
-                            navController.navigate(Screen.PartnerList(service.id))
+                if (services.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No specific tasks found.", color = LuxeTextSecondary)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(services) { service ->
+                            ResidentialServiceCardDesign(
+                                service = service,
+                                onAdd = { 
+                                    // Map ServiceModel to the booking flow
+                                    // For now, navigate to partner list
+                                    navController.navigate(Screen.PartnerList(service.id))
+                                }
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
@@ -263,48 +323,56 @@ fun ResidentialServiceListScreen(
 }
 
 @Composable
-fun ResidentialServiceCardDesign(service: ResidentialServiceItem, onAdd: () -> Unit) {
-    Card(
+fun ResidentialServiceCardDesign(service: ServiceModel, onAdd: () -> Unit) {
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = LuxuryCard),
-        border = BorderStroke(1.dp, LuxuryBorder)
+        shape = RoundedCornerShape(20.dp),
+        color = LuxeCard,
+        border = BorderStroke(1.dp, LuxeBorder)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Image on the left
             Surface(
-                modifier = Modifier.size(100.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = LuxuryBackground
+                modifier = Modifier.size(80.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = LuxeHighlightChampagne.copy(alpha = 0.5f)
             ) {
-                Icon(
-                    Icons.Default.Air, 
-                    contentDescription = null, 
-                    modifier = Modifier.padding(24.dp),
-                    tint = LuxuryGold.copy(alpha = 0.2f)
-                )
+                if (!service.imageUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(service.imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.Build, 
+                        contentDescription = null, 
+                        modifier = Modifier.padding(24.dp),
+                        tint = LuxeAccentSage
+                    )
+                }
             }
 
             Spacer(Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(service.name, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = LuxuryTextPrimary)
+                Text(service.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxeTextPrimary)
                 Spacer(Modifier.height(4.dp))
-                Text("Starting from", fontSize = 12.sp, color = LuxuryTextSecondary)
-                Text("₹${service.price.toInt()}", fontWeight = FontWeight.Bold, color = LuxuryGold, fontSize = 16.sp)
+                Text("Standard Service", fontSize = 12.sp, color = LuxeTextSecondary)
+                Text("₹${service.price.toInt()}", fontWeight = FontWeight.Black, color = LuxeTextPrimary, fontSize = 16.sp)
             }
 
-            Button(
+            LuxuryButton(
+                text = "ADD",
                 onClick = onAdd,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = LuxuryGold),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Text("ADD", color = LuxuryBackground, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            }
+                modifier = Modifier.width(80.dp).height(36.dp)
+            )
         }
     }
 }
@@ -329,46 +397,47 @@ fun ResidentialPaymentScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Payment Methods", color = LuxuryTextPrimary, fontWeight = FontWeight.ExtraBold) },
-                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LuxuryTextPrimary) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxuryBackground)
+                title = { Text("Payment", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LuxeTextPrimary) } },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         },
-        containerColor = LuxuryBackground
+        containerColor = LuxeBackground
     ) { padding ->
-        Column(Modifier.padding(padding).padding(16.dp)) {
-            Text("Select Payment Option", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = LuxuryTextPrimary)
-            Spacer(Modifier.height(16.dp))
+        Column(Modifier.padding(padding).padding(20.dp)) {
+            Text("Select Method", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = LuxeTextPrimary)
+            Spacer(Modifier.height(20.dp))
             Column(Modifier.selectableGroup()) {
                 options.forEach { option ->
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 6.dp)
+                            .padding(vertical = 8.dp)
                             .selectable(
                                 selected = selectedOption == option.name, 
                                 onClick = { selectedOption = option.name; viewModel.setPaymentMethod(option.name) }, 
                                 role = Role.RadioButton
                             ),
-                        shape = RoundedCornerShape(16.dp),
-                        color = if (selectedOption == option.name) LuxuryGold.copy(alpha = 0.05f) else LuxuryCard,
-                        border = if (selectedOption == option.name) BorderStroke(1.dp, LuxuryGold) else BorderStroke(1.dp, LuxuryBorder),
+                        shape = RoundedCornerShape(20.dp),
+                        color = LuxeCard,
+                        border = BorderStroke(1.dp, if (selectedOption == option.name) LuxeAccentSage else LuxeBorder),
                     ) {
                         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(option.icon, contentDescription = null, tint = if (selectedOption == option.name) LuxuryGold else LuxuryTextSecondary)
+                            Icon(option.icon, contentDescription = null, tint = if (selectedOption == option.name) LuxeAccentSage else LuxeTextSecondary)
                             Spacer(Modifier.width(16.dp))
-                            Text(text = option.name, color = LuxuryTextPrimary, modifier = Modifier.weight(1f), fontWeight = if (selectedOption == option.name) FontWeight.Bold else FontWeight.Medium)
+                            Text(text = option.name, color = LuxeTextPrimary, modifier = Modifier.weight(1f), fontWeight = if (selectedOption == option.name) FontWeight.Bold else FontWeight.Medium)
                             RadioButton(
                                 selected = selectedOption == option.name, 
                                 onClick = null,
-                                colors = RadioButtonDefaults.colors(selectedColor = LuxuryGold, unselectedColor = LuxuryTextSecondary)
+                                colors = RadioButtonDefaults.colors(selectedColor = LuxeAccentSage)
                             )
                         }
                     }
                 }
             }
             Spacer(Modifier.weight(1f))
-            Button(
+            LuxuryButton(
+                text = "PROCEED TO SUMMARY",
                 onClick = { 
                     navController.navigate(
                         Screen.ResidentialOrderSummary(
@@ -377,14 +446,8 @@ fun ResidentialPaymentScreen(
                         )
                     ) 
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = LuxuryGold),
-            ) {
-                Text("Proceed to Summary", color = LuxuryBackground, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Spacer(Modifier.width(8.dp))
-                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = LuxuryBackground, modifier = Modifier.size(18.dp))
-            }
+                modifier = Modifier.height(56.dp)
+            )
         }
     }
 }

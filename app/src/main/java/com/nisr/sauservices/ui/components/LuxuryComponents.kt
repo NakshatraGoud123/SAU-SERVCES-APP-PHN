@@ -110,43 +110,46 @@ fun LuxuryButton(
         colors = listOf(LuxuryGold, LuxuryCream)
     )
 
-    Button(
-        onClick = onClick,
+    Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp),
-        enabled = enabled && !isLoading,
-        shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = containerColor,
-            contentColor = contentColor,
-            disabledContainerColor = containerColor.copy(alpha = 0.5f),
-            disabledContentColor = contentColor.copy(alpha = 0.5f)
-        )
+            .height(56.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(enabled = enabled && !isLoading, onClick = onClick),
+        color = if (enabled) Color.Transparent else containerColor.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(14.dp)
     ) {
-        if (isLoading) {
-            CircularProgressIndicator(
-                color = contentColor,
-                modifier = Modifier.size(24.dp),
-                strokeWidth = 2.dp
-            )
-        } else {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = text,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold
+        Box(
+            modifier = if (enabled) Modifier.background(gradient) else Modifier,
+            contentAlignment = Alignment.Center
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = contentColor,
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp
                 )
-                if (showArrow) {
-                    Spacer(Modifier.width(8.dp))
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = text,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 1.sp,
+                        color = contentColor
                     )
+                    if (showArrow) {
+                        Spacer(Modifier.width(8.dp))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = contentColor
+                        )
+                    }
                 }
             }
         }

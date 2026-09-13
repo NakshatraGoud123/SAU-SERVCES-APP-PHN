@@ -78,20 +78,27 @@ class BookingsViewModel : ViewModel() {
         items: List<CartModel>
     ) {
         viewModelScope.launch {
+            val userId = repository.getCurrentUserId() ?: return@launch
             val order = OrderModel(
-                userId = repository.getCurrentUserId() ?: "",
+                customerId = userId,
                 serviceName = serviceName,
                 category = category,
                 subcategory = subcategory,
-                scheduleDate = date,
-                scheduleTime = time,
                 totalAmount = amount,
-                paymentMethod = paymentMethod,
-                address = address,
-                items = items,
-                status = "pending"
+                deliveryAddress = address,
+                orderType = "service",
+                status = "placed"
             )
-            val result = repository.placeOrder(order)
+            
+            val orderItems = items.map {
+                com.nisr.sauservices.data.model.OrderItem(
+                    name = it.itemName,
+                    quantity = it.quantity,
+                    price = it.price
+                )
+            }
+            
+            val result = repository.placeOrder(order, orderItems)
             _bookingResult.value = result
         }
     }
@@ -104,10 +111,10 @@ class BookingsViewModel : ViewModel() {
                 _bookingsFlow.value = list.map {
                     BookingItem(
                         id = it.id,
-                        serviceName = it.serviceName,
+                        serviceName = it.serviceName ?: "",
                         price = "₹0.0",
-                        date = it.scheduleDate,
-                        time = it.scheduleTime,
+                        date = it.scheduleDate ?: "",
+                        time = it.scheduleTime ?: "",
                         status = it.status
                     )
                 }

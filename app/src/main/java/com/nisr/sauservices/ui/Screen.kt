@@ -19,6 +19,11 @@ sealed class Screen {
     @Serializable data object Search : Screen()
     @Serializable data object Categories : Screen()
     @Serializable data class SearchResults(val query: String) : Screen()
+    @Serializable data class MerchantShop(val vendorId: String) : Screen()
+    @Serializable data object UniversalCheckout : Screen()
+    @Serializable data class Chat(val orderId: String, val receiverId: String, val receiverName: String) : Screen()
+    @Serializable data object Wallet : Screen()
+    @Serializable data class CategoryVendors(val category: String) : Screen()
 
     // Property & Lifestyle Services (PLS)
     @Serializable data object PLSMain : Screen()

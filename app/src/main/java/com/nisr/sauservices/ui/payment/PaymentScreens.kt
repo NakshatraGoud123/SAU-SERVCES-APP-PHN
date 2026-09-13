@@ -1,11 +1,8 @@
 package com.nisr.sauservices.ui.payment
 
 import android.app.Activity
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -27,13 +25,22 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.components.LuxuryButton
 import com.nisr.sauservices.ui.viewmodel.AuthViewModel
 import com.nisr.sauservices.ui.viewmodel.PaymentViewModel
 
-private val DarkBackground = Color(0xFF0D1117)
-private val CardBackground = Color(0xFF161B22)
-private val AccentColor = Color(0xFF00E5FF)
-private val SuccessGreen = Color(0xFF00C853)
+// ============================================================
+// LUXE BRAND COLORS (Local for precision)
+// ============================================================
+private val LuxeBackground = Color(0xFFFDFBFA)
+private val LuxeCard = Color(0xFFFFFFFF)
+private val LuxeTextPrimary = Color(0xFF423F3D)
+private val LuxeTextSecondary = Color(0xFF8D7F77)
+private val LuxeAccentSage = Color(0xFF96A68F)
+private val LuxeHighlightChampagne = Color(0xFFF5E6D3)
+private val LuxeBorder = Color(0xFFEFE9E4)
+private val LuxeGold = Color(0xFFE8C66A)
+private val SuccessGreen = Color(0xFF22C55E)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,16 +58,16 @@ fun PaymentMethodScreen(
     val activity = context as? Activity
 
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = LuxeBackground,
         topBar = {
             TopAppBar(
-                title = { Text("Payment", color = Color.White) },
+                title = { Text("Secure Payment", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         }
     ) { padding ->
@@ -71,18 +78,19 @@ fun PaymentMethodScreen(
                 .padding(20.dp)
         ) {
             Text(
-                "Choose Payment Method",
-                color = Color.White,
+                "Choose Method",
+                color = LuxeTextPrimary,
                 fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Black,
+                fontFamily = FontFamily.Serif
             )
 
-            Spacer(modifier = Modifier.height(25.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            PaymentCard("UPI", "Google Pay • PhonePe • Paytm", Icons.Default.AccountBalanceWallet, "upi", selectedMethod) { selectedMethod = it }
-            PaymentCard("Credit / Debit Card", "Visa • Mastercard • RuPay", Icons.Default.CreditCard, "card", selectedMethod) { selectedMethod = it }
-            PaymentCard("Net Banking", "All major banks", Icons.Default.AccountBalance, "netbanking", selectedMethod) { selectedMethod = it }
-            PaymentCard("Cash Payment", "Pay the partner after service", Icons.Default.Payments, "cash", selectedMethod) { selectedMethod = it }
+            PaymentCard("UPI", "Google Pay, PhonePe, Paytm", Icons.Default.AccountBalanceWallet, "upi", selectedMethod) { selectedMethod = it }
+            PaymentCard("Credit / Debit Card", "Visa, Mastercard, RuPay", Icons.Default.CreditCard, "card", selectedMethod) { selectedMethod = it }
+            PaymentCard("Net Banking", "All major Indian banks", Icons.Default.AccountBalance, "netbanking", selectedMethod) { selectedMethod = it }
+            PaymentCard("Cash Payment", "Pay after service complete", Icons.Default.Payments, "cash", selectedMethod) { selectedMethod = it }
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -90,28 +98,31 @@ fun PaymentMethodScreen(
                 Text(
                     text = viewModel.paymentError!!,
                     color = Color.Red,
-                    modifier = Modifier.padding(bottom = 10.dp)
+                    modifier = Modifier.padding(bottom = 12.dp),
+                    fontSize = 14.sp
                 )
             }
 
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                color = CardBackground
+                color = LuxeCard,
+                border = BorderStroke(1.dp, LuxeBorder)
             ) {
                 Row(
                     modifier = Modifier.padding(20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Total", color = Color.White.copy(alpha = 0.7f), fontSize = 16.sp)
-                    Text("₹${amount.toInt()}", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text("Payable Amount", color = LuxeTextSecondary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text("₹${amount.toInt()}", color = LuxeTextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black)
                 }
             }
 
-            Spacer(modifier = Modifier.height(15.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Button(
+            LuxuryButton(
+                text = if (selectedMethod == "cash") "CONFIRM CASH BOOKING" else "PAY ₹${amount.toInt()}",
                 onClick = {
                     if (selectedMethod == "cash") {
                         viewModel.createCashPayment(bookingId, customerId, partnerId, amount) { paymentId ->
@@ -126,30 +137,15 @@ fun PaymentMethodScreen(
                             partnerId = partnerId,
                             amount = amount,
                             customerEmail = user?.email ?: "customer@example.com",
-                            customerContact = "9999999999" // TODO: Get from user data if available
+                            customerContact = "9999999999"
                         ) {
                             navController.navigate(Screen.PaidSuccess(amount))
                         }
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AccentColor),
-                shape = RoundedCornerShape(18.dp),
-                enabled = !viewModel.isLoading
-            ) {
-                if (viewModel.isLoading) {
-                    CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp))
-                } else {
-                    Text(
-                        if (selectedMethod == "cash") "Confirm Cash Booking" else "Pay ₹${amount.toInt()}",
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                }
-            }
+                isLoading = viewModel.isLoading,
+                modifier = Modifier.height(56.dp)
+            )
         }
     }
 }
@@ -167,32 +163,35 @@ fun PaymentCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp)
+            .padding(bottom = 16.dp)
             .clickable { onSelect(value) },
-        shape = RoundedCornerShape(18.dp),
-        color = if (selected) Color(0xFF17252B) else CardBackground,
-        border = BorderStroke(if (selected) 1.5.dp else 1.dp, if (selected) AccentColor else Color.White.copy(alpha = 0.1f))
+        shape = RoundedCornerShape(20.dp),
+        color = LuxeCard,
+        border = BorderStroke(1.dp, if (selected) LuxeAccentSage else LuxeBorder)
     ) {
         Row(
-            modifier = Modifier.padding(18.dp),
+            modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, tint = if (selected) AccentColor else Color.White.copy(alpha = 0.7f), modifier = Modifier.size(30.dp))
-            Spacer(modifier = Modifier.width(15.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(subtitle, color = Color.White.copy(alpha = 0.5f), fontSize = 13.sp)
-            }
             Box(
                 modifier = Modifier
-                    .size(22.dp)
-                    .border(2.dp, if (selected) AccentColor else Color.White.copy(alpha = 0.38f), CircleShape)
-                    .padding(4.dp)
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(if (selected) LuxeHighlightChampagne else LuxeBorder),
+                contentAlignment = Alignment.Center
             ) {
-                if (selected) {
-                    Box(modifier = Modifier.fillMaxSize().background(AccentColor, CircleShape))
-                }
+                Icon(icon, contentDescription = null, tint = if (selected) LuxeTextPrimary else LuxeTextSecondary, modifier = Modifier.size(22.dp))
             }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, color = LuxeTextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(subtitle, color = LuxeTextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+            }
+            RadioButton(
+                selected = selected,
+                onClick = { onSelect(value) },
+                colors = RadioButtonDefaults.colors(selectedColor = LuxeAccentSage)
+            )
         }
     }
 }
@@ -203,7 +202,7 @@ fun DigitalPaymentSuccessScreen(
     amount: Double
 ) {
     Box(
-        modifier = Modifier.fillMaxSize().background(DarkBackground),
+        modifier = Modifier.fillMaxSize().background(LuxeBackground),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -213,38 +212,43 @@ fun DigitalPaymentSuccessScreen(
             Surface(
                 modifier = Modifier.size(100.dp),
                 shape = CircleShape,
-                color = SuccessGreen
+                color = SuccessGreen.copy(alpha = 0.1f),
+                border = BorderStroke(1.dp, SuccessGreen)
             ) {
-                Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(60.dp).padding(20.dp))
+                Icon(Icons.Default.Check, contentDescription = null, tint = SuccessGreen, modifier = Modifier.size(60.dp).padding(20.dp))
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Text("Payment Successful!", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Payment Successful", 
+                color = LuxeTextPrimary, 
+                fontSize = 26.sp, 
+                fontWeight = FontWeight.Black,
+                fontFamily = FontFamily.Serif
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                "Amount ₹${amount.toInt()} received successfully.",
+                "Your payment of ₹${amount.toInt()} was processed safely.",
                 textAlign = TextAlign.Center,
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 16.sp
+                color = LuxeTextSecondary,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
             )
 
-            Spacer(modifier = Modifier.height(35.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
-            Button(
+            LuxuryButton(
+                text = "CONTINUE TO HOME",
                 onClick = {
                     navController.navigate(Screen.Home) {
                         popUpTo<Screen.Home> { inclusive = true }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(55.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AccentColor)
-            ) {
-                Text("Go to Home", color = Color.Black, fontWeight = FontWeight.Bold)
-            }
+                modifier = Modifier.height(56.dp)
+            )
         }
     }
 }
@@ -256,7 +260,7 @@ fun CashBookingSuccessScreen(
     amount: Double
 ) {
     Box(
-        modifier = Modifier.fillMaxSize().background(DarkBackground),
+        modifier = Modifier.fillMaxSize().background(LuxeBackground),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -266,38 +270,43 @@ fun CashBookingSuccessScreen(
             Surface(
                 modifier = Modifier.size(100.dp),
                 shape = CircleShape,
-                color = SuccessGreen
+                color = LuxeAccentSage.copy(alpha = 0.1f),
+                border = BorderStroke(1.dp, LuxeAccentSage)
             ) {
-                Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(60.dp).padding(20.dp))
+                Icon(Icons.Default.Check, contentDescription = null, tint = LuxeAccentSage, modifier = Modifier.size(60.dp).padding(20.dp))
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Text("Booking Confirmed!", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "Booking Confirmed", 
+                color = LuxeTextPrimary, 
+                fontSize = 26.sp, 
+                fontWeight = FontWeight.Black,
+                fontFamily = FontFamily.Serif
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                "Pay ₹${amount.toInt()} in cash after the service.",
+                "Please pay ₹${amount.toInt()} in cash\nafter your service is complete.",
                 textAlign = TextAlign.Center,
-                color = Color.White.copy(alpha = 0.7f),
-                fontSize = 16.sp
+                color = LuxeTextSecondary,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
             )
 
-            Spacer(modifier = Modifier.height(35.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
-            Button(
+            LuxuryButton(
+                text = "CONTINUE TO HOME",
                 onClick = {
                     navController.navigate(Screen.Home) {
                         popUpTo<Screen.Home> { inclusive = true }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(55.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AccentColor)
-            ) {
-                Text("Go to Home", color = Color.Black, fontWeight = FontWeight.Bold)
-            }
+                modifier = Modifier.height(56.dp)
+            )
         }
     }
 }
@@ -312,16 +321,16 @@ fun CashCollectionScreen(
     viewModel: PaymentViewModel = viewModel()
 ) {
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = LuxeBackground,
         topBar = {
             TopAppBar(
-                title = { Text("Cash Collection", color = Color.White) },
+                title = { Text("Cash Collection", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         }
     ) { padding ->
@@ -334,44 +343,46 @@ fun CashCollectionScreen(
         ) {
             Spacer(modifier = Modifier.height(40.dp))
 
-            Icon(Icons.Default.Payments, contentDescription = null, tint = AccentColor, modifier = Modifier.size(90.dp))
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .background(LuxeHighlightChampagne.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Payments, contentDescription = null, tint = LuxeAccentSage, modifier = Modifier.size(50.dp))
+            }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Text("Amount to Collect", color = Color.White.copy(alpha = 0.7f), fontSize = 16.sp)
+            Text("Amount to Collect", color = LuxeTextSecondary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Text("₹${amount.toInt()}", color = Color.White, fontSize = 42.sp, fontWeight = FontWeight.Bold)
+            Text("₹${amount.toInt()}", color = LuxeTextPrimary, fontSize = 42.sp, fontWeight = FontWeight.Black)
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                "Ask the customer to pay the exact amount in cash.",
+                "Collect the exact amount in cash\nfrom the customer.",
                 textAlign = TextAlign.Center,
-                color = Color.White.copy(alpha = 0.5f),
-                fontSize = 15.sp
+                color = LuxeTextSecondary,
+                fontSize = 15.sp,
+                lineHeight = 22.sp
             )
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Button(
+            LuxuryButton(
+                text = "CASH COLLECTED",
                 onClick = {
                     viewModel.markCashCollected(paymentId) {
                         navController.navigate(Screen.CustomerOtp(paymentId, bookingId, amount))
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(60.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
-                shape = RoundedCornerShape(18.dp),
-                enabled = !viewModel.isLoading
-            ) {
-                if (viewModel.isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                } else {
-                    Text("CASH COLLECTED", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                }
-            }
+                isLoading = viewModel.isLoading,
+                modifier = Modifier.height(56.dp)
+            )
         }
     }
 }
@@ -388,16 +399,16 @@ fun CustomerOtpScreen(
     var otp by remember { mutableStateOf("") }
 
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = LuxeBackground,
         topBar = {
             TopAppBar(
-                title = { Text("Verify Payment", color = Color.White) },
+                title = { Text("Verify Payment", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         }
     ) { padding ->
@@ -408,48 +419,43 @@ fun CustomerOtpScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Enter OTP", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Text("Ask the customer for the OTP shown on their screen", color = Color.White.copy(alpha = 0.5f), fontSize = 14.sp)
+            Text("Enter OTP", color = LuxeTextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif)
+            Text("Ask the customer for the OTP shown on their screen", color = LuxeTextSecondary, fontSize = 14.sp, textAlign = TextAlign.Center)
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
             OutlinedTextField(
                 value = otp,
                 onValueChange = { if (it.length <= 6) otp = it },
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontSize = 24.sp, letterSpacing = 8.sp),
+                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontSize = 24.sp, letterSpacing = 8.sp, fontWeight = FontWeight.Black, color = LuxeTextPrimary),
                 singleLine = true,
+                shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = AccentColor,
-                    unfocusedBorderColor = Color.White.copy(alpha = 0.2f),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
+                    focusedBorderColor = LuxeAccentSage,
+                    unfocusedBorderColor = LuxeBorder,
+                    focusedContainerColor = LuxeCard,
+                    unfocusedContainerColor = LuxeCard
                 )
             )
 
             if (viewModel.paymentError != null) {
-                Text(viewModel.paymentError!!, color = Color.Red, modifier = Modifier.padding(top = 8.dp))
+                Text(viewModel.paymentError!!, color = Color.Red, modifier = Modifier.padding(top = 12.dp), fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Button(
+            LuxuryButton(
+                text = "VERIFY OTP",
                 onClick = {
                     viewModel.verifyOtp(paymentId, otp, bookingId) {
                         navController.navigate(Screen.PaidSuccess(amount))
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(60.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AccentColor),
-                shape = RoundedCornerShape(18.dp),
-                enabled = otp.length == 6 && !viewModel.isLoading
-            ) {
-                if (viewModel.isLoading) {
-                    CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp))
-                } else {
-                    Text("VERIFY OTP", color = Color.Black, fontWeight = FontWeight.Bold)
-                }
-            }
+                enabled = otp.length == 6 && !viewModel.isLoading,
+                isLoading = viewModel.isLoading,
+                modifier = Modifier.height(56.dp)
+            )
         }
     }
 }

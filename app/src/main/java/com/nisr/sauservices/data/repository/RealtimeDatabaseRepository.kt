@@ -11,6 +11,7 @@ import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
@@ -22,7 +23,7 @@ class RealtimeDatabaseRepository {
 
     suspend fun placeOrderDirectly(order: OrderModel): Result<String> = try {
         val userId = getCurrentUserId() ?: "anonymous"
-        val finalOrder = order.copy(userId = userId)
+        val finalOrder = order.copy(customerId = userId)
         
         val inserted = withContext(Dispatchers.IO) {
             postgrest["orders"].insert(finalOrder) {
@@ -50,12 +51,16 @@ class RealtimeDatabaseRepository {
 
     @OptIn(SupabaseExperimental::class)
     fun observeUserActivity(): Flow<List<OrderModel>> {
-        val userId = getCurrentUserId() ?: "anonymous"
+        val userId = getCurrentUserId() ?: return kotlinx.coroutines.flow.flowOf(emptyList())
         return postgrest["orders"]
             .selectAsFlow(
                 primaryKey = OrderModel::id,
-                filter = FilterOperation("user_id", FilterOperator.EQ, userId)
+                filter = FilterOperation("customer_id", FilterOperator.EQ, userId)
             )
+            .catch { 
+                android.util.Log.e("REALTIME_ERROR", "Error in observeUserActivity: ${it.message}")
+                emit(emptyList()) 
+            }
             .flowOn(Dispatchers.IO)
     }
 }

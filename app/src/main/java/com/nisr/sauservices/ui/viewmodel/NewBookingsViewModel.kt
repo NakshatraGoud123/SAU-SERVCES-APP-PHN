@@ -42,9 +42,8 @@ class NewBookingsViewModel : ViewModel() {
                 scheduleTime = time,
                 totalAmount = priceDouble * quantity,
                 paymentMethod = paymentMethod,
-                address = address,
-                status = "success",
-                timestamp = System.currentTimeMillis()
+                deliveryAddress = address,
+                status = "success"
             )
             
             val result = repository.placeOrderDirectly(booking)

@@ -20,14 +20,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.text.font.FontWeight
+import com.nisr.sauservices.ui.components.LuxuryButton
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.*
+import androidx.compose.ui.text.font.FontFamily
+
+// ============================================================
+// LUXE BRAND COLORS (Local for precision)
+// ============================================================
+private val LuxeBackground = Color(0xFFFDFBFA)
+private val LuxeCard = Color(0xFFFFFFFF)
+private val LuxeTextPrimary = Color(0xFF423F3D)
+private val LuxeTextSecondary = Color(0xFF8D7F77)
+private val LuxeAccentSage = Color(0xFF96A68F)
+private val LuxeHighlightChampagne = Color(0xFFF5E6D3)
+private val LuxeBorder = Color(0xFFEFE9E4)
+private val LuxeGold = Color(0xFFE8C66A)
+private val ErrorRed = Color(0xFFEF4444)
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,18 +96,18 @@ fun UnifiedCartScreen(
             TopAppBar(
                 title = { 
                     Column {
-                        Text("My Cart", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = LuxuryTextPrimary)
+                        Text("My Cart", fontWeight = FontWeight.Black, color = LuxeTextPrimary, fontFamily = FontFamily.Serif)
                         if (!isEmpty) {
                             val totalItemsCount = resItems.size + businessItems.size + lifestyleItems.size + 
                                             techItems.size + mensItems.size + womensItems.size + 
                                             healthItems.size + foodItems.size + dbCartItems.size + eduItems.size
-                            Text("$totalItemsCount Items in your basket", style = MaterialTheme.typography.bodySmall, color = LuxuryTextSecondary)
+                            Text("$totalItemsCount Items in your basket", style = MaterialTheme.typography.bodySmall, color = LuxeTextSecondary)
                         }
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxuryTextPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
                     }
                 },
                 actions = {
@@ -111,59 +128,44 @@ fun UnifiedCartScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxuryBackground)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         },
         bottomBar = {
             if (!isEmpty) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 16.dp,
-                    color = LuxuryCard,
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                    border = BorderStroke(1.dp, LuxuryBorder)
+                    shadowElevation = 8.dp,
+                    color = LuxeCard,
+                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                    border = BorderStroke(1.dp, LuxeBorder)
                 ) {
                     Column(modifier = Modifier.padding(20.dp).navigationBarsPadding()) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column {
-                                Text("Total Amount", style = MaterialTheme.typography.bodyMedium, color = LuxuryTextSecondary)
-                                Text("₹$grandTotal", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = LuxuryGold)
+                                Text("Total Amount", style = MaterialTheme.typography.bodyMedium, color = LuxeTextSecondary)
+                                Text("₹$grandTotal", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Black, color = LuxeAccentSage)
                             }
-                            Button(
+                            LuxuryButton(
+                                text = "CHECKOUT",
                                 onClick = { 
-                                    if (dbCartItems.any { it.unit != "Booking" && it.category != "Residential" }) {
-                                        navController.navigate(Screen.HomeEssentialsCheckout)
-                                    } else {
-                                        navController.navigate(
-                                            Screen.ResidentialBookingDetails(
-                                                partnerId = "multi",
-                                                serviceId = "multi"
-                                            )
-                                        )
-                                    }
+                                    navController.navigate(Screen.UniversalCheckout)
                                 },
-                                modifier = Modifier.height(56.dp).widthIn(min = 180.dp),
-                                shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = LuxuryGold),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
-                            ) {
-                                Text("Checkout", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxuryBackground)
-                                Spacer(Modifier.width(8.dp))
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, null, modifier = Modifier.size(18.dp), tint = LuxuryBackground)
-                            }
+                                modifier = Modifier.width(180.dp).height(56.dp)
+                            )
                         }
                     }
                 }
             }
         },
-        containerColor = LuxuryBackground
+        containerColor = LuxeBackground
     ) { padding ->
         if (isEmpty) {
             EmptyCartContent(padding, navController)
         } else {
             LazyColumn(
                 modifier = Modifier.padding(padding).fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
+                contentPadding = PaddingValues(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Service Bookings Group
@@ -290,22 +292,22 @@ fun UnifiedCartScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 16.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(LuxuryCard)
-                            .border(1.dp, LuxuryBorder, RoundedCornerShape(20.dp))
-                            .padding(20.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(LuxeCard)
+                            .border(1.dp, LuxeBorder, RoundedCornerShape(24.dp))
+                            .padding(24.dp)
                     ) {
-                        Text("Bill Summary", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = LuxuryTextPrimary)
+                        Text("Bill Summary", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = LuxeTextPrimary)
                         Spacer(Modifier.height(16.dp))
                         
-                        BillRow("Item Subtotal", "₹$subtotal")
-                        BillRow("Delivery/Service Fee", "₹$deliveryFee")
+                        LuxeBillRow("Item Subtotal", "₹$subtotal")
+                        LuxeBillRow("Delivery/Service Fee", "₹$deliveryFee")
                         
-                        HorizontalDivider(Modifier.padding(vertical = 16.dp), color = LuxuryBorder)
+                        HorizontalDivider(Modifier.padding(vertical = 16.dp), color = LuxeBorder)
                         
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Grand Total", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = LuxuryTextPrimary)
-                            Text("₹$grandTotal", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = LuxuryGold)
+                            Text("Grand Total", fontWeight = FontWeight.Black, fontSize = 18.sp, color = LuxeTextPrimary)
+                            Text("₹$grandTotal", fontWeight = FontWeight.Black, fontSize = 18.sp, color = LuxeAccentSage)
                         }
                     }
                 }
@@ -319,9 +321,9 @@ fun UnifiedCartScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Outlined.Shield, null, tint = LuxuryTextSecondary, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Outlined.Shield, null, tint = LuxeTextSecondary, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("100% Safe & Secure Payments", fontSize = 12.sp, color = LuxuryTextSecondary)
+                        Text("100% Safe & Secure Payments", fontSize = 12.sp, color = LuxeTextSecondary)
                     }
                     Spacer(Modifier.height(80.dp)) // Padding for bottom bar
                 }
@@ -336,9 +338,9 @@ fun CartCategoryHeader(title: String, icon: ImageVector) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
     ) {
-        Icon(icon, null, tint = LuxuryGold, modifier = Modifier.size(18.dp))
+        Icon(icon, null, tint = LuxeAccentSage, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
-        Text(title, fontWeight = FontWeight.Bold, color = LuxuryGold, fontSize = 14.sp)
+        Text(title.uppercase(), fontWeight = FontWeight.Black, color = LuxeTextSecondary, fontSize = 12.sp, letterSpacing = 1.5.sp)
     }
 }
 
@@ -352,22 +354,22 @@ fun CartItemRow(
     onDecrease: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = LuxuryCard),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, LuxuryBorder)
+        color = LuxeCard,
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, LuxeBorder)
     ) {
         Row(
             modifier = Modifier.padding(16.dp), 
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Placeholder for Image or Icon based on category
+            // Icon
             Box(
                 modifier = Modifier
                     .size(50.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(LuxuryGold.copy(alpha = 0.05f)),
+                    .background(LuxeHighlightChampagne.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -380,7 +382,7 @@ fun CartItemRow(
                         else -> Icons.Default.AutoFixHigh
                     },
                     contentDescription = null,
-                    tint = LuxuryGold,
+                    tint = LuxeTextPrimary,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -388,28 +390,28 @@ fun CartItemRow(
             Spacer(Modifier.width(16.dp))
 
             Column(Modifier.weight(1f)) {
-                Text(name, fontWeight = FontWeight.Bold, color = LuxuryTextPrimary, maxLines = 2, fontSize = 15.sp)
-                Text("₹$price", color = LuxuryGold, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                Text(name, fontWeight = FontWeight.Bold, color = LuxeTextPrimary, maxLines = 2, fontSize = 15.sp)
+                Text("₹$price", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontSize = 14.sp)
             }
 
             Column(horizontalAlignment = Alignment.End) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically, 
                     modifier = Modifier
-                        .border(1.dp, LuxuryBorder, RoundedCornerShape(12.dp))
+                        .border(1.dp, LuxeBorder, RoundedCornerShape(12.dp))
                         .padding(horizontal = 4.dp)
                 ) {
                     IconButton(onClick = { if (quantity > 1) onDecrease() else onDelete() }, modifier = Modifier.size(32.dp)) { 
-                        Icon(if (quantity > 1) Icons.Default.Remove else Icons.Default.Delete, null, tint = if (quantity > 1) LuxuryTextPrimary else ErrorRed, modifier = Modifier.size(18.dp)) 
+                        Icon(if (quantity > 1) Icons.Default.Remove else Icons.Default.Delete, null, tint = if (quantity > 1) LuxeTextPrimary else ErrorRed, modifier = Modifier.size(18.dp)) 
                     }
                     Text(
                         quantity.toString(), 
-                        fontWeight = FontWeight.ExtraBold, 
-                        color = LuxuryTextPrimary,
+                        fontWeight = FontWeight.Black, 
+                        color = LuxeTextPrimary,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )
                     IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) { 
-                        Icon(Icons.Default.Add, null, tint = LuxuryTextPrimary, modifier = Modifier.size(18.dp)) 
+                        Icon(Icons.Default.Add, null, tint = LuxeAccentSage, modifier = Modifier.size(18.dp)) 
                     }
                 }
             }
@@ -418,54 +420,55 @@ fun CartItemRow(
 }
 
 @Composable
-fun BillRow(label: String, value: String, isDiscount: Boolean = false) {
+private fun LuxeBillRow(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), 
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, color = LuxuryTextSecondary, style = MaterialTheme.typography.bodyMedium)
-        Text(
-            text = value, 
-            color = if (isDiscount) SuccessGreen else LuxuryTextPrimary, 
-            fontWeight = if (isDiscount) FontWeight.Bold else FontWeight.Medium
-        )
+        Text(label, color = LuxeTextSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+        Text(text = value, color = LuxeTextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
     }
 }
 
 @Composable
 fun EmptyCartContent(padding: PaddingValues, navController: NavController) {
-    Box(Modifier.fillMaxSize().padding(padding).background(LuxuryBackground), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().padding(padding).background(LuxeBackground), contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(32.dp)
         ) {
             Surface(
                 modifier = Modifier.size(120.dp),
-                shape = RoundedCornerShape(60.dp),
-                color = LuxuryGold.copy(alpha = 0.05f)
+                shape = CircleShape,
+                color = LuxeHighlightChampagne.copy(alpha = 0.3f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(48.dp), tint = LuxuryGold)
+                    Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(48.dp), tint = LuxeAccentSage)
                 }
             }
-            Spacer(Modifier.height(24.dp))
-            Text("Your Cart is Empty", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = LuxuryTextPrimary)
+            Spacer(Modifier.height(32.dp))
+            Text(
+                "Your basket is empty", 
+                style = MaterialTheme.typography.headlineSmall, 
+                fontWeight = FontWeight.Black, 
+                color = LuxeTextPrimary,
+                fontFamily = FontFamily.Serif
+            )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Looks like you haven't added anything to your cart yet.",
+                "Let us take care of something\nfor you today.",
                 textAlign = TextAlign.Center,
-                color = LuxuryTextSecondary,
-                style = MaterialTheme.typography.bodyMedium
+                color = LuxeTextSecondary,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                lineHeight = 22.sp
             )
-            Spacer(Modifier.height(32.dp))
-            Button(
+            Spacer(Modifier.height(48.dp))
+            LuxuryButton(
+                text = "DISCOVER SERVICES",
                 onClick = { navController.navigate(Screen.Home) },
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = LuxuryGold),
-                modifier = Modifier.fillMaxWidth().height(56.dp)
-            ) {
-                Text("Start Shopping", fontWeight = FontWeight.Bold, color = LuxuryBackground)
-            }
+                modifier = Modifier.height(56.dp)
+            )
         }
     }
 }

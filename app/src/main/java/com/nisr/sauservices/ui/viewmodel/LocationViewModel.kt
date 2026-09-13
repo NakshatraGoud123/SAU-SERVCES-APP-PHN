@@ -35,6 +35,10 @@ class LocationViewModel : ViewModel() {
         val centerLocation: LatLng = LatLng(20.5937, 78.9629), // Default India
         val address: String = "Fetching address...",
         val landmark: String = "",
+        val street: String = "",
+        val city: String = "",
+        val state: String = "",
+        val pincode: String = "",
         val isFetchingAddress: Boolean = false,
         val isLocationConfirmed: Boolean = false,
     )
@@ -83,11 +87,19 @@ class LocationViewModel : ViewModel() {
                 val address = addresses[0]
                 val fullAddress = address.getAddressLine(0) ?: ""
                 val landmark = address.featureName ?: ""
+                val city = address.locality ?: ""
+                val state = address.adminArea ?: ""
+                val pincode = address.postalCode ?: ""
+                val street = address.thoroughfare ?: ""
                 
                 viewModelScope.launch(Dispatchers.Main) {
                     uiState = uiState.copy(
                         address = fullAddress,
                         landmark = landmark,
+                        street = street,
+                        city = city,
+                        state = state,
+                        pincode = pincode,
                         isFetchingAddress = false,
                     )
                 }
@@ -143,9 +155,9 @@ class LocationViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    // 1. Try to update the 'users' table with the readable address
+                    // 1. Try to update the 'profiles' table with the readable address
                     try {
-                        postgrest["users"].update(
+                        postgrest["profiles"].update(
                             update = {
                                 set("address", uiState.address)
                             },

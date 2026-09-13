@@ -6,7 +6,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
@@ -40,26 +40,24 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
         setContent {
 
             val navController = rememberNavController()
+            val sessionManager = remember { com.nisr.sauservices.data.local.SessionManager(this@MainActivity) }
 
             LaunchedEffect(Unit) {
                 try {
-                    val user = client.auth.currentSessionOrNull()?.user
-                    val sessionManager = com.nisr.sauservices.data.local.SessionManager(this@MainActivity)
+                    // SECURE: Verify session with Supabase directly
+                    val session = client.auth.currentSessionOrNull()
+                    val user = session?.user
                     
-                    if (user != null && !sessionManager.isLoggedIn()) {
+                    if (user != null) {
+                        Log.d("SUPABASE_TEST", "Session Valid: ${user.email}")
                         sessionManager.saveLoginState(true)
+                    } else {
+                        Log.d("SUPABASE_TEST", "No active session")
+                        sessionManager.saveLoginState(false)
                     }
-
-                    Log.d(
-                        "SUPABASE_TEST",
-                        "Current User: ${user?.email ?: "Not logged in"}",
-                    )
                 } catch (e: Exception) {
-
-                    Log.e(
-                        "SUPABASE_TEST",
-                        "Init Error: ${e.message}",
-                    )
+                    Log.e("SUPABASE_TEST", "Session Validation Error: ${e.message}")
+                    // In case of error, rely on local state for UX but restrict sensitive data in viewmodels
                 }
             }
 

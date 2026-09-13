@@ -13,16 +13,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.*
-import com.nisr.sauservices.ui.components.*
+import com.nisr.sauservices.ui.components.LuxuryButton
 import com.nisr.sauservices.ui.viewmodel.*
 import com.nisr.sauservices.ui.partner.PartnerData
 import com.nisr.sauservices.data.model.ResidentialData
+
+// ============================================================
+// LUXE BRAND COLORS (Local for precision)
+// ============================================================
+private val LuxeBackground = Color(0xFFFDFBFA)
+private val LuxeCardColor = Color(0xFFFFFFFF)
+private val LuxeTextPrimary = Color(0xFF423F3D)
+private val LuxeTextSecondary = Color(0xFF8D7F77)
+private val LuxeAccentSage = Color(0xFF96A68F)
+private val LuxeHighlightChampagne = Color(0xFFF5E6D3)
+private val LuxeBorder = Color(0xFFEFE9E4)
+private val LuxeGold = Color(0xFFE8C66A)
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,19 +109,28 @@ fun ResidentialOrderSummaryScreen(
         }
     }
 
-    LuxuryScaffold(
-        title = "Order Summary",
-        onBackClick = { navController.popBackStack() },
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Review Summary", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
+            )
+        },
         bottomBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shadowElevation = 16.dp,
-                color = LuxuryBackground,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                border = BorderStroke(1.dp, LuxuryBorder)
+                shadowElevation = 8.dp,
+                color = LuxeCardColor,
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                border = BorderStroke(1.dp, LuxeBorder)
             ) {
                 LuxuryButton(
-                    text = "Confirm Order",
+                    text = "CONFIRM ORDER",
                     onClick = {
                         bookingsViewModel.placeUnifiedOrder(
                             serviceName = selectedService?.name ?: "Unified Services",
@@ -122,28 +144,35 @@ fun ResidentialOrderSummaryScreen(
                             items = dbCartItems
                         )
                     },
-                    modifier = Modifier.padding(20.dp)
+                    modifier = Modifier.padding(24.dp).height(56.dp)
                 )
             }
-        }
+        },
+        containerColor = LuxeBackground
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // Selected Service & Partner Card
             if (selectedService != null || selectedPartner != null) {
-                LuxuryCard {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    color = LuxeCardColor,
+                    border = BorderStroke(1.dp, LuxeBorder)
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Build, null, tint = LuxuryGold, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Default.Build, null, tint = LuxeAccentSage, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(10.dp))
-                            Text("Service & Partner", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = LuxuryTextPrimary)
+                            Text("Service & Partner", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxeTextPrimary)
                         }
-                        Spacer(Modifier.height(14.dp))
+                        Spacer(Modifier.height(16.dp))
                         if (selectedService != null) {
                             SummaryRow("Service", selectedService.name)
                         }
@@ -152,89 +181,60 @@ fun ResidentialOrderSummaryScreen(
                         }
                     }
                 }
-                Spacer(Modifier.height(16.dp))
             }
 
             // Booking Details Card
-            LuxuryCard {
-                Column(modifier = Modifier.padding(16.dp)) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = LuxeCardColor,
+                border = BorderStroke(1.dp, LuxeBorder)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Event, null, tint = LuxuryGold)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Service Schedule", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxuryTextPrimary)
+                        Icon(Icons.Default.Event, null, tint = LuxeAccentSage, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text("Schedule Details", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxeTextPrimary)
                     }
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(16.dp))
                     SummaryRow("Date", bookingDetails.date)
                     SummaryRow("Time Slot", bookingDetails.timeSlot)
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(20.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.LocationOn, null, tint = LuxuryGold)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Service Location", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxuryTextPrimary)
+                        Icon(Icons.Default.LocationOn, null, tint = LuxeAccentSage, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text("Delivery Address", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxeTextPrimary)
                     }
                     Spacer(Modifier.height(10.dp))
-                    Text(bookingDetails.address, color = LuxuryTextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    Text("Phone: ${bookingDetails.phone}", color = LuxuryTextSecondary, fontSize = 15.sp)
+                    Text(bookingDetails.address, color = LuxeTextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("Phone: ${bookingDetails.phone}", color = LuxeTextSecondary, fontSize = 14.sp)
                 }
             }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Order Items Summary Card
-            LuxuryCard {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.ListAlt, null, tint = LuxuryGold)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Order Items", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxuryTextPrimary)
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    
-                    val totalItemsCount = resItems.size + businessItems.size + lifestyleItems.size + 
-                                        techItems.size + mensItems.size + womensItems.size + 
-                                        healthItems.size + foodItems.size + dbCartItems.size + eduItems.size
-                    
-                    Text("$totalItemsCount Items in your order", fontSize = 15.sp, color = LuxuryTextSecondary, fontWeight = FontWeight.Medium)
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Payment Method Card
-            LuxuryCard {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Payment, null, tint = LuxuryGold)
-                        Spacer(Modifier.width(8.dp))
-                        Text("Payment Method", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxuryTextPrimary)
-                    }
-                    Text(bookingDetails.paymentMethod, fontWeight = FontWeight.Bold, color = LuxuryGold)
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
 
             // Bill Details Card
-            LuxuryCard {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Price Details", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxuryTextPrimary)
-                    Spacer(Modifier.height(12.dp))
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = LuxeCardColor,
+                border = BorderStroke(1.dp, LuxeBorder)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("Payment Summary", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxeTextPrimary)
+                    Spacer(Modifier.height(16.dp))
                     SummaryRow("Subtotal", "₹$subtotal")
                     SummaryRow("Delivery Fee", "₹$deliveryFee")
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = LuxuryBorder)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp), color = LuxeBorder)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Total Amount", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = LuxuryTextPrimary)
-                        Text("₹$totalAmount", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = LuxuryGold)
+                        Text("Total Amount", fontWeight = FontWeight.Black, fontSize = 18.sp, color = LuxeTextPrimary)
+                        Text("₹$totalAmount", fontWeight = FontWeight.Black, fontSize = 18.sp, color = LuxeAccentSage)
                     }
                 }
             }
+            
+            Spacer(Modifier.height(40.dp))
         }
     }
 }
@@ -245,7 +245,7 @@ fun SummaryRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, color = LuxuryTextSecondary, fontSize = 15.sp)
-        Text(value, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = LuxuryTextPrimary)
+        Text(label, color = LuxeTextSecondary, fontSize = 14.sp)
+        Text(value, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = LuxeTextPrimary)
     }
 }

@@ -1,5 +1,8 @@
 package com.nisr.sauservices.data.model
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 data class Order(
     val orderId: String,
     val customerName: String,
@@ -14,8 +17,11 @@ data class Order(
     val address: String = ""
 )
 
+@Serializable
 data class OrderItem(
-    val name: String,
-    val quantity: Int,
-    val price: Double = 0.0
+    @SerialName("id") val id: String = "",
+    @SerialName("order_id") val orderId: String = "",
+    @SerialName("item_name") val name: String,
+    @SerialName("quantity") val quantity: Int,
+    @SerialName("price") val price: Double = 0.0
 )

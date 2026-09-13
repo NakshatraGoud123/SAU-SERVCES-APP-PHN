@@ -24,8 +24,20 @@ fun NavGraphBuilder.bookingNavGraph(
     bookingsViewModel: BookingsViewModel,
     foodCartViewModel: FoodCartViewModel,
     homeCartViewModel: CartViewModel,
-    educationCartViewModel: EducationCartViewModel
+    educationCartViewModel: EducationCartViewModel,
+    profileViewModel: ProfileViewModel,
+    paymentViewModel: PaymentViewModel
 ) {
+    // Universal Checkout
+    composable<Screen.UniversalCheckout> {
+        UniversalCheckoutScreen(
+            navController = navController,
+            cartViewModel = homeCartViewModel,
+            profileViewModel = profileViewModel,
+            paymentViewModel = paymentViewModel
+        )
+    }
+
     // Unified Bookings List
     composable<Screen.Bookings> {
         BookingsScreen(navController, bookingsViewModel)

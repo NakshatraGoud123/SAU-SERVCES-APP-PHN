@@ -124,28 +124,36 @@ class CartViewModel : ViewModel() {
         }
     }
 
-    fun placeOrder(address: String, shopId: String? = null, @Suppress("UNUSED_PARAMETER") paymentMethod: String = "Cash on Delivery") {
+    fun placeOrder(address: String, shopId: String? = null, paymentMethod: String = "Cash on Delivery") {
         viewModelScope.launch {
             val userId = repository.getCurrentUserId() ?: return@launch
-            val items = _dbCartItems.value
-            if (items.isEmpty()) return@launch
+            val cartItems = _dbCartItems.value
+            if (cartItems.isEmpty()) return@launch
 
-            // Fetch latest user profile to ensure backend has real info
-            val profile = repository.getUserProfile(userId).getOrNull()
+            val total = cartItems.sumOf { it.totalPrice }
             
-            val total = items.sumOf { it.totalPrice }
+            // 1. Create the Main Order Object
             val order = OrderModel(
-                userId = userId,
-                userName = profile?.name ?: "Unknown Customer",
-                shopId = shopId,
-                items = items,
+                customerId = userId,
+                vendorId = shopId,
                 totalAmount = total,
-                address = address,
+                deliveryAddress = address,
                 status = "placed",
-                paymentMethod = paymentMethod
+                paymentStatus = "pending",
+                orderType = "grocery"
             )
 
-            repository.placeOrder(order).onSuccess { orderId ->
+            // 2. Map Cart items to Order items for the Bridge table
+            val orderItems = cartItems.map { 
+                com.nisr.sauservices.data.model.OrderItem(
+                    name = it.itemName,
+                    quantity = it.quantity,
+                    price = it.price
+                )
+            }
+
+            // 3. Send to Supabase Bridge
+            repository.placeOrder(order, orderItems).onSuccess { orderId ->
                 cartRepository.clearCart()
                 _orderStatus.value = Result.success(orderId)
             }.onFailure {

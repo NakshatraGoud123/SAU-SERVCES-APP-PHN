@@ -1,9 +1,9 @@
 package com.nisr.sauservices.ui.luxury
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
@@ -12,163 +12,195 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nisr.sauservices.R
-import com.nisr.sauservices.ui.components.CinematicHeading
 import com.nisr.sauservices.ui.theme.*
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import kotlinx.coroutines.launch
 
-@Composable
-fun LuxuryOnboardingScreen1(onNext: () -> Unit, onSkip: () -> Unit) {
-    OnboardingTemplate(
-        imageRes = R.drawable.homescreen_illustration,
-        heading = buildAnnotatedString {
-            append("Everything You Need,\nRight at Your ")
-            withStyle(SpanStyle(color = LuxuryGold)) { append("Doorstep") }
-        },
-        description = "Find trusted professionals for home,\nlifestyle, repair, delivery and more.",
-        pageIndex = 0,
-        onNext = onNext,
-        onSkip = onSkip
+data class OnboardingPage(
+    val title: String,
+    val highlightWord: String,
+    val description: String,
+    val imageUrl: String
+)
+
+private val onboardingPages = listOf(
+    OnboardingPage(
+        title = "Everything at Your ",
+        highlightWord = "Doorstep",
+        description = "Premium home repairs, lifestyle services, and verified professionals—all just a tap away.",
+        imageUrl = "https://images.unsplash.com/photo-1581578731548-c64695cc6958" // High-end house cleaning/service
+    ),
+    OnboardingPage(
+        title = "Freshly Picked & ",
+        highlightWord = "Delivered",
+        description = "The finest groceries and gourmet dining from your favorite local boutiques, delivered with care.",
+        imageUrl = "https://images.unsplash.com/photo-1542838132-92c53300491e" // Fresh luxury produce
+    ),
+    OnboardingPage(
+        title = "Wellness & Personal ",
+        highlightWord = "Care",
+        description = "Experience professional spa, beauty, and healthcare services in the comfort of your sanctuary.",
+        imageUrl = "https://images.unsplash.com/photo-1544161515-4ab6ce6db874" // High-end spa/massage
     )
-}
+)
 
 @Composable
-fun LuxuryOnboardingScreen2(onNext: () -> Unit, onSkip: () -> Unit) {
-    OnboardingTemplate(
-        imageRes = R.drawable.homescreen_illustration,
-        heading = buildAnnotatedString { append("Fast & Reliable") },
-        description = "Book services and track your\nrequests in real time.",
-        pageIndex = 1,
-        onNext = onNext,
-        onSkip = onSkip
-    )
-}
+fun LuxuryOnboardingScreen(onFinished: () -> Unit) {
+    val pagerState = rememberPagerState(pageCount = { onboardingPages.size })
+    val scope = rememberCoroutineScope()
 
-@Composable
-fun LuxuryOnboardingScreen3(onNext: () -> Unit, onSkip: () -> Unit) {
-    OnboardingTemplate(
-        imageRes = R.drawable.homescreen_illustration,
-        heading = buildAnnotatedString { append("Trusted Professionals") },
-        description = "We verify every professional\nso you get the best service.",
-        pageIndex = 2,
-        onNext = onNext,
-        onSkip = onSkip
-    )
-}
-
-@Composable
-private fun OnboardingTemplate(
-    imageRes: Int,
-    heading: CharSequence,
-    description: String,
-    pageIndex: Int,
-    onNext: () -> Unit,
-    onSkip: () -> Unit
-) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(LuxuryBackground)
+            .background(LuxeBackground)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Header
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 32.dp)
+                    .statusBarsPadding(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     "SAU SOLUTIONS",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = LuxuryGold,
+                        color = LuxeAccentSage,
                         fontWeight = FontWeight.Black,
-                        letterSpacing = 1.sp
+                        letterSpacing = 2.sp
                     )
                 )
-                TextButton(onClick = onSkip) {
-                    Text("Skip", color = LuxuryGold, fontWeight = FontWeight.Bold)
+                TextButton(onClick = onFinished) {
+                    Text("Skip", color = LuxeTextSecondary, fontWeight = FontWeight.Bold)
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.weight(1f)
+            ) { pageIndex ->
+                val page = onboardingPages[pageIndex]
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Image Card
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(400.dp)
+                            .shadow(20.dp, RoundedCornerShape(32.dp)),
+                        shape = RoundedCornerShape(32.dp),
+                        color = LuxeCard
+                    ) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(page.imageUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
 
-            Image(
-                painter = painterResource(id = imageRes),
-                contentDescription = null,
-                modifier = Modifier.size(280.dp),
-                contentScale = ContentScale.Fit
-            )
+                    Spacer(modifier = Modifier.height(48.dp))
 
-            Spacer(modifier = Modifier.weight(1f))
+                    // Text Content
+                    Text(
+                        text = buildAnnotatedString {
+                            append(page.title)
+                            withStyle(SpanStyle(color = LuxeAccentSage)) {
+                                append(page.highlightWord)
+                            }
+                        },
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 32.sp,
+                            lineHeight = 40.sp,
+                            color = LuxeTextPrimary
+                        ),
+                        textAlign = TextAlign.Center
+                    )
 
-            if (heading is String) {
-                CinematicHeading(text = heading)
-            } else {
-                Text(
-                    text = heading as androidx.compose.ui.text.AnnotatedString,
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 32.sp,
-                        lineHeight = 40.sp
-                    ),
-                    color = LuxuryTextPrimary
-                )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = page.description,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            color = LuxeTextSecondary,
+                            lineHeight = 24.sp,
+                            textAlign = TextAlign.Center
+                        ),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyLarge,
-                color = LuxuryTextSecondary
-            )
-
-            Spacer(modifier = Modifier.height(48.dp))
-
+            // Footer
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .navigationBarsPadding(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Indicators
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    repeat(3) { index ->
+                    repeat(onboardingPages.size) { index ->
+                        val isSelected = pagerState.currentPage == index
                         Box(
                             modifier = Modifier
-                                .size(if (index == pageIndex) 24.dp else 8.dp, 8.dp)
-                                .background(
-                                    color = if (index == pageIndex) LuxuryGold else LuxuryGold.copy(alpha = 0.2f),
-                                    shape = CircleShape
-                                )
+                                .size(if (isSelected) 32.dp else 8.dp, 8.dp)
+                                .clip(CircleShape)
+                                .background(if (isSelected) LuxeAccentSage else LuxeBorder)
                         )
                     }
                 }
 
+                // Next Button
                 IconButton(
-                    onClick = onNext,
+                    onClick = {
+                        if (pagerState.currentPage < onboardingPages.size - 1) {
+                            val next = pagerState.currentPage + 1
+                            scope.launch { 
+                                pagerState.animateScrollToPage(next) 
+                            }
+                        } else {
+                            onFinished()
+                        }
+                    },
                     modifier = Modifier
-                        .size(56.dp)
-                        .background(LuxuryGold, CircleShape)
+                        .size(64.dp)
+                        .background(LuxeAccentSage, CircleShape)
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "Next",
-                        tint = LuxuryBackground
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
