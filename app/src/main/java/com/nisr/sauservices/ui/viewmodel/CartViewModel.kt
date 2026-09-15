@@ -40,6 +40,7 @@ class CartViewModel : ViewModel() {
         date: String? = null,
         time: String? = null,
         quantity: Int = 1,
+        imageUrl: String? = null,
         onResult: (Result<Unit>) -> Unit = {}
     ) {
         viewModelScope.launch {
@@ -67,6 +68,7 @@ class CartViewModel : ViewModel() {
                     time = time,
                     quantity = quantity,
                     totalPrice = price * quantity,
+                    imageUrl = imageUrl
                 )
                 cartRepository.addToCart(item)
             }
@@ -91,6 +93,7 @@ class CartViewModel : ViewModel() {
                 subcategory = "", 
                 unit = product.unit,
                 productId = product.id,
+                imageUrl = product.imageUrl
             )
         }
     }

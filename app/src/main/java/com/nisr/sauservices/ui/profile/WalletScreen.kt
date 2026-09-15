@@ -19,15 +19,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.nisr.sauservices.data.model.Transaction
 import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.components.LuxuryButton
 import com.nisr.sauservices.ui.viewmodel.WalletViewModel
+import com.nisr.sauservices.ui.viewmodel.ProfileViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,8 +45,12 @@ fun WalletScreen(
     val transactions by viewModel.transactions.collectAsState()
     val isLoading = viewModel.isLoading
     
+    val profileViewModel: ProfileViewModel = viewModel()
+    val userProfile by profileViewModel.userProfile.collectAsState()
+    
     var showTopUpDialog by remember { mutableStateOf(false) }
     var topUpAmount by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -150,7 +159,15 @@ fun WalletScreen(
                     onClick = {
                         val amount = topUpAmount.toDoubleOrNull()
                         if (amount != null && amount > 0) {
-                            viewModel.topUpWallet(amount) {
+                            val activity = context.findActivity()
+                            
+                            if (activity != null) {
+                                viewModel.startRazorpayTopup(
+                                    activity = activity,
+                                    amount = amount,
+                                    email = userProfile?.email ?: "member@sausolutions.com",
+                                    contact = userProfile?.phone ?: "+91 9999999999"
+                                )
                                 showTopUpDialog = false
                                 topUpAmount = ""
                             }
@@ -209,4 +226,13 @@ fun TransactionRow(tx: Transaction) {
             )
         }
     }
+}
+
+private fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
 }

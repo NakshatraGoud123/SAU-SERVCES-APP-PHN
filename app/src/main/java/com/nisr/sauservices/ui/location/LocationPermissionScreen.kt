@@ -60,26 +60,6 @@ fun LocationPermissionScreen(navController: NavController) {
             .background(LuxuryBackground)
             .systemBarsPadding(),
     ) {
-        // Subtle Skip Button
-        TextButton(
-            onClick = { 
-                // Navigate forward even if skipped (Guest mode logic)
-                navController.navigate(Screen.Home) {
-                    popUpTo<Screen.LocationPermission> { inclusive = true }
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp),
-        ) {
-            Text(
-                text = "Skip",
-                color = LuxuryTextSecondary,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.labelLarge
-            )
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()

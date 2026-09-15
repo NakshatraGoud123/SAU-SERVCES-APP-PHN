@@ -1,11 +1,16 @@
 package com.nisr.sauservices.ui.home
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -30,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.nisr.sauservices.R
+import com.nisr.sauservices.data.model.HomeProduct
 import com.nisr.sauservices.data.model.Product
 import com.nisr.sauservices.data.model.Vendor
 import com.nisr.sauservices.data.repository.SupabaseRepository
@@ -60,7 +68,6 @@ fun MerchantShopScreen(
     cartViewModel: CartViewModel
 ) {
     val repository = remember { SupabaseRepository() }
-    val scope = rememberCoroutineScope()
     
     var vendor by remember { mutableStateOf<Vendor?>(null) }
     var products by remember { mutableStateOf<List<Product>>(emptyList()) }
@@ -68,6 +75,24 @@ fun MerchantShopScreen(
 
     val cartItems by cartViewModel.dbCartItems.collectAsState()
     val totalAmount = cartItems.sumOf { it.totalPrice }
+    
+    val scrollState = rememberLazyListState()
+    val headerHeight = 280.dp
+    
+    // Parallax Logic
+    val headerAlpha by remember {
+        derivedStateOf {
+            if (scrollState.firstVisibleItemIndex > 0) 0f
+            else (1f - (scrollState.firstVisibleItemScrollOffset.toFloat() / 500f)).coerceIn(0f, 1f)
+        }
+    }
+    
+    val translationY by remember {
+        derivedStateOf {
+            if (scrollState.firstVisibleItemIndex > 0) 0f
+            else -scrollState.firstVisibleItemScrollOffset.toFloat() * 0.5f
+        }
+    }
 
     LaunchedEffect(vendorId) {
         isLoading = true
@@ -78,7 +103,7 @@ fun MerchantShopScreen(
             vendor = vendorResult.getOrNull()
             products = productsResult.getOrDefault(emptyList())
         } catch (e: Exception) {
-            android.util.Log.e("MERCHANT_SHOP", "Error loading shop: ${e.message}")
+            Log.e("MERCHANT_SHOP", "Error: ${e.message}")
         } finally {
             isLoading = false
         }
@@ -96,72 +121,100 @@ fun MerchantShopScreen(
             }
         }
     ) { padding ->
-        if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = LuxeAccentSage)
-            }
-        } else if (vendor == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Vendor not found", color = LuxeTextPrimary)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(bottom = if (cartItems.isNotEmpty()) 100.dp else 0.dp)
-            ) {
-                // cinematic Header
-                item {
-                    MerchantHeader(vendor!!, onBack = { navController.popBackStack() })
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = LuxeAccentSage)
+                }
+            } else if (vendor == null) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Vendor not found", color = LuxeTextPrimary)
+                }
+            } else {
+                // Parallax Layer
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(headerHeight)
+                        .graphicsLayer {
+                            alpha = headerAlpha
+                            this.translationY = translationY
+                        }
+                ) {
+                    MerchantHeaderContent(vendor!!)
                 }
 
-                item {
-                    Column(Modifier.padding(horizontal = 20.dp, vertical = 24.dp)) {
-                        Text(
-                            text = "AVAILABLE PRODUCTS",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = LuxeTextSecondary,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 2.sp
-                        )
+                LazyColumn(
+                    state = scrollState,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    item {
+                        Spacer(Modifier.height(headerHeight))
                     }
-                }
 
-                // Product List
-                if (products.isNotEmpty()) {
-                    items(products) { product ->
-                        // Luxe Animation: Slide & Fade
-                        var visible by remember { mutableStateOf(false) }
-                        LaunchedEffect(Unit) { visible = true }
-                        
-                        AnimatedVisibility(
-                            visible = visible,
-                            enter = fadeIn(androidx.compose.animation.core.tween(800)) + slideInVertically(animationSpec = androidx.compose.animation.core.tween(600), initialOffsetY = { 50 })
+                    item {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = LuxeBackground,
+                            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                         ) {
+                            Column(Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
+                                Text(
+                                    text = "AVAILABLE SELECTIONS",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = LuxeAccentSage,
+                                    fontWeight = FontWeight.Black,
+                                    letterSpacing = 2.sp
+                                )
+                            }
+                        }
+                    }
+
+                    if (products.isEmpty()) {
+                        item {
+                            Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
+                                Text("No items available at the moment.", color = LuxeTextSecondary)
+                            }
+                        }
+                    } else {
+                        items(products) { product ->
                             ProductItemRow(
                                 product = product,
                                 cartQuantity = cartViewModel.getHomeItemQuantity(product.id),
-                                onAdd = { cartViewModel.addHomeProduct(com.nisr.sauservices.data.model.HomeProduct(
+                                onAdd = { cartViewModel.addHomeProduct(HomeProduct(
                                     id = product.id,
                                     subcategoryId = "",
                                     name = product.name,
                                     price = product.price.toInt(),
                                     unit = product.unit,
-                                    category = product.categoryId ?: ""
+                                    category = product.categoryId ?: "",
+                                    imageUrl = product.imageUrl
                                 )) },
                                 onRemove = { cartViewModel.removeHomeProduct(product.id) }
                             )
-                        }
-                        HorizontalDivider(color = LuxeBorder, thickness = 1.dp, modifier = Modifier.padding(horizontal = 20.dp))
-                    }
-                } else {
-                    item {
-                        Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                            Text("No products available yet.", color = LuxeTextSecondary, fontSize = 14.sp)
+                            HorizontalDivider(color = LuxeBorder, modifier = Modifier.padding(horizontal = 24.dp))
                         }
                     }
+                    
+                    item { Spacer(Modifier.height(120.dp)) }
                 }
-                
-                item {
-                    Spacer(Modifier.height(48.dp))
+            }
+
+            // Floating Header (Fixed Back Button)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color.White.copy(alpha = 0.8f), CircleShape)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LuxeTextPrimary, modifier = Modifier.size(20.dp))
                 }
             }
         }
@@ -169,53 +222,33 @@ fun MerchantShopScreen(
 }
 
 @Composable
-private fun MerchantHeader(vendor: Vendor, onBack: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(280.dp)
-    ) {
-        android.util.Log.d("PHOTO_DEBUG", "Loading merchant header: ${vendor.imageUrl}")
+private fun MerchantHeaderContent(vendor: Vendor) {
+    Box(modifier = Modifier.fillMaxSize()) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(vendor.imageUrl)
                 .crossfade(true)
-                .placeholder(com.nisr.sauservices.R.drawable.sau_logo)
-                .error(com.nisr.sauservices.R.drawable.sau_logo)
                 .build(),
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().background(LuxeHighlightChampagne.copy(alpha = 0.3f)),
             contentScale = ContentScale.Crop
         )
         
-        // Soft Daylight Gradient
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color.Black.copy(alpha = 0.2f), Color.Transparent, LuxeBackground),
+                        colors = listOf(Color.Black.copy(alpha = 0.3f), Color.Transparent, Color.Black.copy(alpha = 0.6f)),
                         startY = 0f
                     )
                 )
         )
 
-        // Back Button
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier
-                .padding(16.dp)
-                .statusBarsPadding()
-                .background(Color.White.copy(alpha = 0.8f), CircleShape)
-        ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LuxeTextPrimary, modifier = Modifier.size(20.dp))
-        }
-
-        // Vendor Info
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(20.dp)
+                .padding(24.dp)
         ) {
             Surface(
                 color = LuxeAccentSage,
@@ -229,11 +262,11 @@ private fun MerchantHeader(vendor: Vendor, onBack: () -> Unit) {
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                 )
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             Text(
                 text = vendor.displayName,
                 style = MaterialTheme.typography.headlineMedium,
-                color = LuxeTextPrimary,
+                color = Color.White,
                 fontWeight = FontWeight.Black,
                 fontFamily = FontFamily.Serif
             )
@@ -241,8 +274,8 @@ private fun MerchantHeader(vendor: Vendor, onBack: () -> Unit) {
                 Icon(Icons.Default.Star, null, tint = LuxeGold, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    text = "${vendor.displayRating} • ${vendor.deliveryTime ?: "20 min"} • ${vendor.distance ?: "1.0 km"}",
-                    color = LuxeTextSecondary,
+                    text = "${vendor.displayRating} • ${vendor.deliveryTime ?: "25 min"}",
+                    color = Color.White.copy(alpha = 0.9f),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -261,55 +294,40 @@ private fun ProductItemRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(20.dp),
+            .padding(24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = product.name,
-                color = LuxeTextPrimary,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = product.unit,
-                color = LuxeTextSecondary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text = "₹${product.price}",
-                color = LuxeTextPrimary,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Black
-            )
+            Text(product.name, color = LuxeTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(product.unit, color = LuxeTextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(12.dp))
+            Text("₹${product.price}", color = LuxeTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Black)
         }
 
         Box(
-            modifier = Modifier
-                .size(100.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(LuxeHighlightChampagne.copy(alpha = 0.3f)),
+            modifier = Modifier.size(110.dp),
             contentAlignment = Alignment.Center
         ) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(product.imageUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
+            Surface(
+                modifier = Modifier.size(100.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = LuxeHighlightChampagne.copy(alpha = 0.3f)
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current).data(product.imageUrl).crossfade(true).build(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
             
             // Add/Qty Controller
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .offset(y = 14.dp)
-                    .shadow(4.dp, RoundedCornerShape(10.dp)),
-                shape = RoundedCornerShape(10.dp),
+                    .offset(y = 12.dp)
+                    .shadow(6.dp, RoundedCornerShape(12.dp)),
+                shape = RoundedCornerShape(12.dp),
                 color = LuxeCard,
                 border = BorderStroke(1.dp, LuxeBorder)
             ) {
@@ -331,13 +349,7 @@ private fun ProductItemRow(
                         IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
                             Icon(Icons.Default.Remove, null, tint = LuxeAccentSage, modifier = Modifier.size(18.dp))
                         }
-                        Text(
-                            text = cartQuantity.toString(),
-                            color = LuxeTextPrimary,
-                            fontWeight = FontWeight.Black,
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(horizontal = 10.dp)
-                        )
+                        Text(cartQuantity.toString(), color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 10.dp))
                         IconButton(onClick = onAdd, modifier = Modifier.size(28.dp)) {
                             Icon(Icons.Default.Add, null, tint = LuxeAccentSage, modifier = Modifier.size(18.dp))
                         }
@@ -355,48 +367,27 @@ fun LuxeCartBar(
     onViewCart: () -> Unit
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier.fillMaxWidth().padding(20.dp),
+        shape = RoundedCornerShape(24.dp),
         color = LuxeAccentSage,
-        shadowElevation = 8.dp
+        shadowElevation = 12.dp
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text(
-                    text = "$itemCount ITEMS",
-                    color = Color.White.copy(alpha = 0.8f),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.sp
-                )
-                Text(
-                    text = "₹$totalAmount",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Black
-                )
+                Text("$itemCount ITEMS", color = Color.White.copy(alpha = 0.8f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                Text("₹$totalAmount", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
             }
-            
-            TextButton(
-                onClick = onViewCart,
-                colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
-            ) {
+            TextButton(onClick = onViewCart) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("VIEW CART", fontWeight = FontWeight.Black, fontSize = 13.sp)
+                    Text("VIEW CART", color = Color.White, fontWeight = FontWeight.Black, fontSize = 14.sp)
                     Spacer(Modifier.width(8.dp))
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(18.dp))
                 }
             }
         }
     }
 }
-
-private val BoxShadow = 8.dp

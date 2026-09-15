@@ -11,6 +11,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import android.app.Activity
+import com.nisr.sauservices.ui.payment.PaymentEvent
+import com.nisr.sauservices.ui.payment.PaymentResultBus
+import org.json.JSONObject
+import com.razorpay.Checkout
 
 class WalletViewModel(
     private val repository: SupabaseRepository = SupabaseRepository()
@@ -25,8 +30,52 @@ class WalletViewModel(
     var isLoading by mutableStateOf(false)
         private set
 
+    private var pendingTopupAmount: Double = 0.0
+
     init {
         fetchWalletData()
+        observePaymentResults()
+    }
+
+    private fun observePaymentResults() {
+        viewModelScope.launch {
+            PaymentResultBus.events.collect { event ->
+                if (event is PaymentEvent.Success) {
+                    if (pendingTopupAmount > 0) {
+                        topUpWallet(pendingTopupAmount) {
+                            pendingTopupAmount = 0.0
+                        }
+                    } else {
+                        fetchWalletData()
+                    }
+                } else if (event is PaymentEvent.Error) {
+                    isLoading = false
+                    pendingTopupAmount = 0.0
+                }
+            }
+        }
+    }
+
+    fun startRazorpayTopup(activity: Activity, amount: Double, email: String, contact: String) {
+        isLoading = true
+        pendingTopupAmount = amount
+        val checkout = Checkout()
+        checkout.setKeyID("rzp_test_TYEz9RMOAJ2nmV")
+
+        try {
+            val options = JSONObject()
+            options.put("name", "SAU SOLUTIONS")
+            options.put("description", "Wallet Top-up")
+            options.put("currency", "INR")
+            options.put("amount", (amount * 100).toInt())
+            options.put("prefill.email", email)
+            options.put("prefill.contact", contact)
+            options.put("theme.color", "#96A68F") // Luxe Sage
+
+            checkout.open(activity, options)
+        } catch (e: Exception) {
+            isLoading = false
+        }
     }
 
     fun fetchWalletData() {

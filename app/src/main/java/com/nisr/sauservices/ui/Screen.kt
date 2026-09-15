@@ -24,6 +24,8 @@ sealed class Screen {
     @Serializable data class Chat(val orderId: String, val receiverId: String, val receiverName: String) : Screen()
     @Serializable data object Wallet : Screen()
     @Serializable data class CategoryVendors(val category: String) : Screen()
+    @Serializable data class SuccessCelebration(val orderId: String) : Screen()
+    @Serializable data object MerchantMap : Screen()
 
     // Property & Lifestyle Services (PLS)
     @Serializable data object PLSMain : Screen()

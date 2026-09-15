@@ -25,6 +25,7 @@ data class CartModel(
     @SerialName("category") val category: String = "",
     @SerialName("subcategory") val subcategory: String = "",
     @SerialName("total_price") val totalPrice: Double = 0.0,
+    @SerialName("image_url") val imageUrl: String? = null,
     @SerialName("date") val date: String? = null,
     @SerialName("time") val time: String? = null,
     @SerialName("timestamp") val timestamp: Long = System.currentTimeMillis()
@@ -41,6 +42,7 @@ data class CartItemInsert(
     @SerialName("category") val category: String,
     @SerialName("subcategory") val subcategory: String,
     @SerialName("total_price") val totalPrice: Double,
+    @SerialName("image_url") val imageUrl: String? = null,
     @SerialName("date") val date: String? = null,
     @SerialName("time") val time: String? = null,
     @SerialName("timestamp") val timestamp: Long = System.currentTimeMillis()

@@ -1,11 +1,12 @@
 package com.nisr.sauservices.navigation
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import com.nisr.sauservices.data.local.SessionManager
 import com.nisr.sauservices.data.repository.UserRepository
 import com.nisr.sauservices.ui.Screen
@@ -37,21 +38,16 @@ fun AppNavHost(navController: NavHostController) {
     val chatViewModel: ChatViewModel = viewModel()
     val homeViewModel: HomeViewModel = viewModel()
 
-    NavHost(navController, startDestination = Screen.LuxurySplash) {
-        
-        composable<Screen.Splash> {
-            SplashScreen(onFinished = {
-                if (sessionManager.isLoggedIn()) {
-                    navController.navigate(Screen.Home) {
-                        popUpTo<Screen.Splash> { inclusive = true }
-                    }
-                } else {
-                    navController.navigate(Screen.Login()) {
-                        popUpTo<Screen.Splash> { inclusive = true }
-                    }
-                }
-            })
-        }
+    NavHost(
+        navController = navController, 
+        startDestination = Screen.LuxurySplash,
+        enterTransition = { fadeIn(animationSpec = tween(500)) + slideInHorizontally(initialOffsetX = { 300 }) },
+        exitTransition = { fadeOut(animationSpec = tween(500)) + slideOutHorizontally(targetOffsetX = { -300 }) },
+        popEnterTransition = { fadeIn(animationSpec = tween(500)) + slideInHorizontally(initialOffsetX = { -300 }) },
+        popExitTransition = { fadeOut(animationSpec = tween(500)) + slideOutHorizontally(targetOffsetX = { 300 }) }
+    ) {
+        // Luxury Screens (Splash, Onboarding, Login are here)
+        luxuryNavGraph(navController)
 
         // Modular Navigation Graphs
         authNavGraph(navController)
@@ -63,7 +59,8 @@ fun AppNavHost(navController: NavHostController) {
             residentialViewModel = residentialViewModel,
             homeViewModel = homeViewModel,
             locationViewModel = locationViewModel,
-            chatViewModel = chatViewModel
+            chatViewModel = chatViewModel,
+            profileViewModel = profileViewModel
         )
         
         servicesNavGraph(

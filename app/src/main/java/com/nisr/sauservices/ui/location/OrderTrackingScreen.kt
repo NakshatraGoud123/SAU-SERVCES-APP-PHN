@@ -26,9 +26,15 @@ import androidx.compose.material.icons.rounded.ElectricBike
 import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import androidx.core.content.res.ResourcesCompat
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -47,6 +53,7 @@ import coil.request.ImageRequest
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
+import com.nisr.sauservices.R
 import com.nisr.sauservices.ui.viewmodel.TrackingViewModel
 import com.nisr.sauservices.ui.theme.*
 import kotlinx.coroutines.launch
@@ -345,11 +352,35 @@ fun OrderTrackingScreen(
                 ),
                 uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)
             ) {
-                // Moving Partner Marker (Luxe Azure Custom Marker)
+                // Professional Bike Marker (Custom Design)
+                val bikeIcon = remember {
+                    val vectorDrawable = ResourcesCompat.getDrawable(context.resources, R.drawable.residential_services, null)
+                    val bitmap = Bitmap.createBitmap(120, 120, Bitmap.Config.ARGB_8888)
+                    val canvas = Canvas(bitmap)
+                    
+                    // Draw Circle Background
+                    val paint = Paint().apply {
+                        color = LuxeAccentSage.toArgb()
+                        style = Paint.Style.FILL
+                    }
+                    canvas.drawCircle(60f, 60f, 50f, paint)
+                    
+                    // Draw Border
+                    paint.color = Color.White.toArgb()
+                    paint.style = Paint.Style.STROKE
+                    paint.strokeWidth = 8f
+                    canvas.drawCircle(60f, 60f, 50f, paint)
+
+                    vectorDrawable?.setBounds(30, 30, 90, 90)
+                    vectorDrawable?.draw(canvas)
+                    BitmapDescriptorFactory.fromBitmap(bitmap)
+                }
+
                 Marker(
                     state = partnerMarkerState,
                     title = "Delivery Partner",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                    icon = bikeIcon,
+                    anchor = Offset(0.5f, 0.5f)
                 )
 
                 // Destination Marker

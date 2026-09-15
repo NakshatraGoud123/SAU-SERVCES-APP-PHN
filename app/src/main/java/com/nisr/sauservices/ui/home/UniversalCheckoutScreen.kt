@@ -3,6 +3,7 @@ package com.nisr.sauservices.ui.home
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
@@ -71,11 +72,13 @@ fun UniversalCheckoutScreen(
     // Handle Order Result
     LaunchedEffect(orderStatus) {
         orderStatus?.onSuccess { orderId ->
-            navController.navigate(Screen.OrderTracking(orderId)) {
+            Log.d("ORDER_DEBUG", "Success! Navigating to celebration for #$orderId")
+            navController.navigate(Screen.SuccessCelebration(orderId)) {
                 popUpTo(Screen.Home) { inclusive = false }
             }
             cartViewModel.resetOrderStatus()
         }?.onFailure {
+            Log.e("ORDER_DEBUG", "Failed to place order: ${it.message}")
             Toast.makeText(context, "Order failed: ${it.message}", Toast.LENGTH_LONG).show()
             cartViewModel.resetOrderStatus()
         }

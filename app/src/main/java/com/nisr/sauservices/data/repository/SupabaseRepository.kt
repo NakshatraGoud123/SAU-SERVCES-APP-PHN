@@ -189,6 +189,57 @@ class SupabaseRepository {
         }
     }
 
+    // --- SEARCH ---
+
+    suspend fun searchVendors(query: String): Result<List<Vendor>> = withContext(Dispatchers.IO) {
+        try {
+            val list = postgrest["vendors"].select {
+                filter { 
+                    or {
+                        ilike("business_name", "%$query%")
+                        ilike("business_type", "%$query%")
+                        ilike("address", "%$query%")
+                    }
+                }
+            }.decodeList<Vendor>()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun searchProducts(query: String): Result<List<Product>> = withContext(Dispatchers.IO) {
+        try {
+            val list = postgrest["products"].select {
+                filter { 
+                    or {
+                        ilike("name", "%$query%")
+                        ilike("description", "%$query%")
+                    }
+                }
+            }.decodeList<Product>()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun searchServices(query: String): Result<List<ServiceModel>> = withContext(Dispatchers.IO) {
+        try {
+            val list = postgrest["services"].select {
+                filter { 
+                    or {
+                        ilike("name", "%$query%")
+                        ilike("description", "%$query%")
+                    }
+                }
+            }.decodeList<ServiceModel>()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     // --- BOOKINGS ---
 
     @OptIn(SupabaseExperimental::class)

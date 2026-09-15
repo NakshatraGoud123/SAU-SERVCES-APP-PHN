@@ -7,6 +7,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.luxury.*
+import com.nisr.sauservices.ui.viewmodel.AuthViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 
 fun NavGraphBuilder.luxuryNavGraph(navController: NavController) {
     composable<Screen.LuxurySplash> {
@@ -15,8 +20,19 @@ fun NavGraphBuilder.luxuryNavGraph(navController: NavController) {
         
         LuxurySplashScreen(onFinished = {
             if (sessionManager.isLoggedIn()) {
-                navController.navigate(Screen.Home) {
-                    popUpTo<Screen.LuxurySplash> { inclusive = true }
+                val hasPermission = ContextCompat.checkSelfPermission(
+                    context, 
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+                
+                if (hasPermission) {
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.LuxurySplash> { inclusive = true }
+                    }
+                } else {
+                    navController.navigate(Screen.LocationPermission) {
+                        popUpTo<Screen.LuxurySplash> { inclusive = true }
+                    }
                 }
             } else {
                 navController.navigate(Screen.LuxuryOnboarding1) {
@@ -64,12 +80,17 @@ fun NavGraphBuilder.luxuryNavGraph(navController: NavController) {
     composable<Screen.LuxurySignOut> {
         val context = androidx.compose.ui.platform.LocalContext.current
         val sessionManager = remember { com.nisr.sauservices.data.local.SessionManager(context) }
+        val authViewModel: AuthViewModel = viewModel()
         
         LuxurySignOutConfirmation(
             onConfirm = { 
+                // SECURE: Sign out from Supabase AND local state
+                authViewModel.signOut()
                 sessionManager.saveLoginState(false)
+                sessionManager.logout() // Clear all encrypted data
+                
                 navController.navigate(Screen.LuxuryLogin) {
-                    popUpTo(0)
+                    popUpTo(0) { inclusive = true }
                 }
             },
             onCancel = { navController.popBackStack() }

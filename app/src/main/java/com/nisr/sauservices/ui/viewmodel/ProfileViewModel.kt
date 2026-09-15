@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nisr.sauservices.data.api.SupabaseClient
@@ -55,19 +56,18 @@ class ProfileViewModel : ViewModel() {
                     val response = postgrest["profiles"].select {
                         filter { eq("id", uid) }
                     }
-                    android.util.Log.d("PROFILE_DEBUG", "Raw Profile Data: ${response.data}")
                     response.decodeSingleOrNull<UserProfile>()
                 }
                 
                 if (profile != null) {
                     _userProfile.value = profile
-                    android.util.Log.d("PROFILE_DEBUG", "Loaded Profile: Name=${profile.name}, Pic=${profile.profilePicUrl}")
+                    Log.d("PROFILE_DEBUG", "Loaded Profile: ${profile.name}")
                 } else {
-                    android.util.Log.e("PROFILE_DEBUG", "Profile not found in database for ID: $uid")
+                    // Fallback to Auth Metadata if profile row is missing
                     val currentAuthUser = auth.currentUserOrNull()
                     val newProfile = UserProfile(
                         id = uid,
-                        name = (currentAuthUser?.userMetadata?.get("full_name") ?: currentAuthUser?.userMetadata?.get("name"))?.toString() ?: "New User",
+                        name = (currentAuthUser?.userMetadata?.get("full_name") ?: currentAuthUser?.userMetadata?.get("name"))?.toString() ?: "User",
                         email = currentAuthUser?.email ?: "",
                         phone = currentAuthUser?.phone ?: "",
                         profilePicUrl = (currentAuthUser?.userMetadata?.get("avatar_url") ?: currentAuthUser?.userMetadata?.get("picture"))?.toString()
@@ -75,8 +75,7 @@ class ProfileViewModel : ViewModel() {
                     _userProfile.value = newProfile
                 }
             } catch (e: Exception) {
-                android.util.Log.e("PROFILE_DEBUG", "Error fetching profile: ${e.message}")
-                _userProfile.value = UserProfile(name = "User", email = auth.currentUserOrNull()?.email ?: "")
+                Log.e("PROFILE_DEBUG", "Error: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
@@ -89,7 +88,6 @@ class ProfileViewModel : ViewModel() {
             _isLoading.value = true
             try {
                 withContext(Dispatchers.IO) {
-                    // Create a serializable profile object to avoid 'Any' serialization error
                     val profileToSave = UserProfile(
                         id = uid,
                         name = name,
@@ -97,14 +95,11 @@ class ProfileViewModel : ViewModel() {
                         profilePicUrl = profilePicUrl ?: _userProfile.value?.profilePicUrl,
                         email = _userProfile.value?.email ?: auth.currentUserOrNull()?.email ?: ""
                     )
-
-                    // UPSERT using the serializable data class
                     postgrest["profiles"].upsert(profileToSave)
                 }
                 fetchUserProfile()
                 onComplete(Result.success(Unit))
             } catch (e: Exception) {
-                android.util.Log.e("DATABASE_ERROR", "Failed to upsert profiles table: ${e.message}")
                 onComplete(Result.failure(e))
             } finally {
                 _isLoading.value = false
@@ -117,7 +112,7 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             _isUploading.value = true
             try {
-                val fileName = "profile_$uid.jpg"
+                val fileName = "avatar_$uid.jpg"
                 val bucket = storage["avatars"]
                 
                 withContext(Dispatchers.IO) {
@@ -126,32 +121,21 @@ class ProfileViewModel : ViewModel() {
                     }
                 }
                 
-                // Construct the direct public URL with a timestamp for cache busting
-                val supabaseUrl = com.nisr.sauservices.data.api.SupabaseClient.SUPABASE_URL
-                val publicUrl = "$supabaseUrl/storage/v1/object/public/avatars/$fileName?t=${System.currentTimeMillis()}"
+                val publicUrl = "${SupabaseClient.SUPABASE_URL}/storage/v1/object/public/avatars/$fileName?t=${System.currentTimeMillis()}"
                 
-                android.util.Log.d("PHOTO_DEBUG", "Final Avatar URL: $publicUrl")
+                // Update local state immediately
+                _userProfile.value = _userProfile.value?.copy(profilePicUrl = publicUrl)
                 
-                // Immediately update local state for fast UI feedback
-                val currentProfile = _userProfile.value
-                if (currentProfile != null) {
-                    _userProfile.value = currentProfile.copy(profilePicUrl = publicUrl)
-                }
-                
-                // Now update the users table in database
+                // Save to database
                 updateProfile(
                     name = _userProfile.value?.name ?: "",
                     phone = _userProfile.value?.phone ?: "",
                     profilePicUrl = publicUrl
-                ) { dbResult ->
-                    if (dbResult.isSuccess) {
-                        onResult(Result.success(publicUrl))
-                    } else {
-                        onResult(Result.failure(Exception("Link failed: ${dbResult.exceptionOrNull()?.message}")))
-                    }
+                ) { result ->
+                    if (result.isSuccess) onResult(Result.success(publicUrl))
+                    else onResult(Result.failure(result.exceptionOrNull()!!))
                 }
             } catch (e: Exception) {
-                android.util.Log.e("PHOTO_DEBUG", "Upload error: ${e.message}")
                 onResult(Result.failure(e))
             } finally {
                 _isUploading.value = false
@@ -178,14 +162,11 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    // Critical Fix: Attach the User ID to the address
                     val addressWithUser = address.copy(id = "", userId = uid)
                     postgrest["addresses"].insert(addressWithUser)
                 }
                 fetchAddresses()
-            } catch (e: Exception) {
-                android.util.Log.e("ADDRESS_ERROR", "Failed to save address: ${e.message}")
-            }
+            } catch (e: Exception) { }
         }
     }
 
@@ -193,9 +174,7 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    postgrest["addresses"].delete {
-                        filter { eq("id", addressId) }
-                    }
+                    postgrest["addresses"].delete { filter { eq("id", addressId) } }
                 }
                 fetchAddresses()
             } catch (e: Exception) { }
@@ -207,18 +186,8 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    // First set all to false
-                    postgrest["addresses"].update({
-                        set("is_default", false)
-                    }) {
-                        filter { eq("user_id", uid) }
-                    }
-                    // Then set specific to true
-                    postgrest["addresses"].update({
-                        set("is_default", true)
-                    }) {
-                        filter { eq("id", addressId) }
-                    }
+                    postgrest["addresses"].update({ set("is_default", false) }) { filter { eq("user_id", uid) } }
+                    postgrest["addresses"].update({ set("is_default", true) }) { filter { eq("id", addressId) } }
                 }
                 fetchAddresses()
             } catch (e: Exception) { }
@@ -230,13 +199,9 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val prefs = withContext(Dispatchers.IO) {
-                    postgrest["notification_preferences"].select {
-                        filter { eq("user_id", uid) }
-                    }.decodeSingleOrNull<NotificationPreferences>()
+                    postgrest["notification_preferences"].select { filter { eq("user_id", uid) } }.decodeSingleOrNull<NotificationPreferences>()
                 }
-                if (prefs != null) {
-                    _notificationPrefs.value = prefs
-                }
+                if (prefs != null) _notificationPrefs.value = prefs
             } catch (e: Exception) { }
         }
     }
@@ -246,14 +211,10 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val list = withContext(Dispatchers.IO) {
-                    postgrest["notifications"].select {
-                        filter { eq("user_id", uid) }
-                    }.decodeList<Notification>()
+                    postgrest["notifications"].select { filter { eq("user_id", uid) } }.decodeList<Notification>()
                 }
                 _notifications.value = list
-            } catch (e: Exception) { 
-                // Fallback to empty list or handle error
-            }
+            } catch (e: Exception) { }
         }
     }
 
@@ -262,10 +223,7 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    postgrest["notification_preferences"].upsert(mapOf(
-                        "user_id" to uid,
-                        key to value
-                    ))
+                    postgrest["notification_preferences"].upsert(mapOf("user_id" to uid, key to value))
                 }
                 fetchNotificationPreferences()
             } catch (e: Exception) { }

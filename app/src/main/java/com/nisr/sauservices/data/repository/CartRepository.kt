@@ -38,6 +38,7 @@ class CartRepository {
             category = item.category,
             subcategory = item.subcategory,
             totalPrice = item.totalPrice,
+            imageUrl = item.imageUrl,
             date = item.date,
             time = item.time,
             timestamp = item.timestamp,
@@ -60,9 +61,18 @@ class CartRepository {
                     }
                 }
             } else {
+                // Fetch the item first to get its unit price
+                val response = postgrest["cart_items"].select {
+                    filter { eq("id", itemId) }
+                }.decodeSingle<CartModel>()
+                
+                val unitPrice = response.price
+                val newTotalPrice = unitPrice * newQuantity
+
                 postgrest["cart_items"].update(
                     update = {
                         set("quantity", newQuantity)
+                        set("total_price", newTotalPrice)
                     },
                 ) {
                     filter {

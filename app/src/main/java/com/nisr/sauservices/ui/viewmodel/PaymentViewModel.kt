@@ -1,6 +1,7 @@
 package com.nisr.sauservices.ui.viewmodel
 
 import android.app.Activity
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -67,23 +68,24 @@ class PaymentViewModel : ViewModel() {
             val razorpayOrderId = event.data?.orderId ?: ""
             val signature = event.data?.signature ?: ""
 
-            val result = razorpayRepository.savePaymentResult(
-                bookingId = data.bookingId,
-                customerId = data.customerId,
-                partnerId = data.partnerId,
-                amount = data.amount,
-                razorpayPaymentId = paymentId,
-                razorpayOrderId = razorpayOrderId,
-                razorpaySignature = signature
-            )
-
-            result.onSuccess {
-                isLoading = false
-                data.onSuccess()
-            }.onFailure {
-                isLoading = false
-                paymentError = it.message ?: "Failed to save payment details"
+            // For Direct Orders, the bookingId is often a temporary "ORDER_xxx" string
+            // We should call onSuccess immediately to place the real order in database
+            data.onSuccess()
+            
+            // Background: Try to save the payment record if it's a real booking
+            if (!data.bookingId.startsWith("ORDER_")) {
+                razorpayRepository.savePaymentResult(
+                    bookingId = data.bookingId,
+                    customerId = data.customerId,
+                    partnerId = data.partnerId,
+                    amount = data.amount,
+                    razorpayPaymentId = paymentId,
+                    razorpayOrderId = razorpayOrderId,
+                    razorpaySignature = signature
+                )
             }
+            
+            isLoading = false
         }
     }
 
@@ -102,32 +104,33 @@ class PaymentViewModel : ViewModel() {
         currentBookingData = BookingData(bookingId, customerId, partnerId, amount, onSuccess)
 
         viewModelScope.launch {
+            // Try to create order on server (Pro Way)
             val orderResult = razorpayRepository.createRazorpayOrder(amount)
             
-            orderResult.onSuccess { orderId ->
-                val checkout = Checkout()
-                // TODO: Replace with your actual Razorpay Key ID
-                checkout.setKeyID("rzp_test_TYEz9RMOAJ2nmV")
+            val checkout = Checkout()
+            checkout.setKeyID("rzp_test_TYEz9RMOAJ2nmV") // Replace with your real Key ID in production
 
-                try {
-                    val options = JSONObject()
-                    options.put("name", "SAU SOLUTIONS")
-                    options.put("description", "Booking Payment")
-                    options.put("theme.color", "#00E5FF")
-                    options.put("currency", "INR")
-                    options.put("order_id", orderId) // VERY IMPORTANT: Use the order_id from backend
-                    options.put("amount", (amount * 100).toInt()) // Amount in paise
-                    options.put("prefill.email", customerEmail)
-                    options.put("prefill.contact", customerContact)
+            try {
+                val options = JSONObject()
+                options.put("name", "SAU SOLUTIONS")
+                options.put("description", "Direct Checkout")
+                options.put("theme.color", "#96A68F") // Luxe Sage
+                options.put("currency", "INR")
+                options.put("amount", (amount * 100).toInt()) // Amount in paise
+                options.put("prefill.email", customerEmail)
+                options.put("prefill.contact", customerContact)
 
+                orderResult.onSuccess { orderId ->
+                    options.put("order_id", orderId)
                     checkout.open(activity, options)
-                } catch (e: Exception) {
-                    isLoading = false
-                    paymentError = "Error starting Razorpay: ${e.message}"
+                }.onFailure {
+                    // Fallback: Start Simple Payment if server function is not setup
+                    Log.w("RAZORPAY", "Falling back to simple payment mode")
+                    checkout.open(activity, options)
                 }
-            }.onFailure {
+            } catch (e: Exception) {
                 isLoading = false
-                paymentError = "Failed to create order on server: ${it.message}"
+                paymentError = "Error starting Razorpay: ${e.message}"
             }
         }
     }

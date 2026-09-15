@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -57,6 +58,8 @@ fun SettingsScreen(navController: NavController) {
         },
         containerColor = LuxeBackground
     ) { padding ->
+        val uriHandler = LocalUriHandler.current
+
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -68,7 +71,7 @@ fun SettingsScreen(navController: NavController) {
             Text(
                 "PREFERENCES",
                 style = MaterialTheme.typography.labelSmall,
-                color = LuxeTextSecondary,
+                color = LuxeAccentSage,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 2.sp,
                 modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
@@ -86,14 +89,18 @@ fun SettingsScreen(navController: NavController) {
             Text(
                 "CONNECT WITH US",
                 style = MaterialTheme.typography.labelSmall,
-                color = LuxeTextSecondary,
+                color = LuxeAccentSage,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 2.sp,
                 modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
             )
             
-            SettingsItem("Follow on Instagram", Icons.Default.Share) { /* Open Link */ }
-            SettingsItem("Rate the App", Icons.Default.Star) { /* Open Store */ }
+            SettingsItem("Follow on Instagram", Icons.Default.Share) { 
+                uriHandler.openUri("https://www.instagram.com/sausolutions") 
+            }
+            SettingsItem("Rate the App", Icons.Default.Star) { 
+                uriHandler.openUri("https://play.google.com/store/apps/details?id=com.nisr.sauservices") 
+            }
             SettingsItem("Help & Support", Icons.Default.Help) {
                 navController.navigate(Screen.ContactUs)
             }
@@ -101,9 +108,9 @@ fun SettingsScreen(navController: NavController) {
             Spacer(Modifier.height(16.dp))
             
             Text(
-                "LEGAL & INFO",
+                "ABOUT SAU SOLUTIONS",
                 style = MaterialTheme.typography.labelSmall,
-                color = LuxeTextSecondary,
+                color = LuxeAccentSage,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 2.sp,
                 modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
@@ -111,21 +118,35 @@ fun SettingsScreen(navController: NavController) {
             
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = LuxeCard,
-                border = BorderStroke(1.dp, LuxeBorder)
+                border = BorderStroke(1.dp, LuxeBorder),
+                shadowElevation = 2.dp
             ) {
-                Column(Modifier.padding(20.dp)) {
-                    InfoRow("Version", "1.0.8 LUXE")
-                    HorizontalDivider(color = LuxeBorder, modifier = Modifier.padding(vertical = 12.dp))
-                    InfoRow("Build", "2026.09.13")
-                    HorizontalDivider(color = LuxeBorder, modifier = Modifier.padding(vertical = 12.dp))
+                Column(Modifier.padding(24.dp)) {
                     Text(
-                        "Developed with care by SAU Solutions. All rights reserved.",
-                        fontSize = 11.sp,
+                        "SAU Solutions is your premium partner for all lifestyle and home management needs. We connect discerning members with verified professionals and local boutiques for a seamless daily experience.",
+                        fontSize = 13.sp,
                         color = LuxeTextSecondary,
+                        lineHeight = 20.sp
+                    )
+                    
+                    Spacer(Modifier.height(24.dp))
+                    
+                    InfoRow("Support Email", "care@sausolutions.com")
+                    HorizontalDivider(color = LuxeBorder, modifier = Modifier.padding(vertical = 12.dp))
+                    InfoRow("Concierge Line", "+91 800-SAU-LUXE")
+                    HorizontalDivider(color = LuxeBorder, modifier = Modifier.padding(vertical = 12.dp))
+                    InfoRow("Version", "1.1.0 LUXE")
+                    
+                    Spacer(Modifier.height(24.dp))
+                    
+                    Text(
+                        "Developed with care for a better tomorrow.\n© 2026 SAU Solutions. All rights reserved.",
+                        fontSize = 11.sp,
+                        color = LuxeTextSecondary.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                     )
                 }
             }

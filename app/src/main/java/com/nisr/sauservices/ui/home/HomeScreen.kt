@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.home
 
+import android.app.Activity
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -7,8 +8,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+  import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -20,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -29,6 +34,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
+import android.speech.RecognizerIntent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -61,11 +70,12 @@ fun SauHomeScreen(
     bookingsViewModel: BookingsViewModel,
     sessionManager: SessionManager,
     locationViewModel: LocationViewModel = viewModel(),
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel(),
+    profileViewModel: ProfileViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val locationUiState = locationViewModel.uiState
-    val user = authViewModel.currentUser
+    val userProfile by profileViewModel.userProfile.collectAsState()
     val context = LocalContext.current
 
     // Greeting logic
@@ -75,133 +85,166 @@ fun SauHomeScreen(
         in 12..16 -> "Good afternoon"
         else -> "Good evening"
     }
-    val userName = (user?.userMetadata?.get("full_name") ?: user?.userMetadata?.get("name"))?.toString()?.split(" ")?.firstOrNull() ?: "User"
-    val userAvatar = (user?.userMetadata?.get("avatar_url") ?: user?.userMetadata?.get("picture"))?.toString()
+    val userName = userProfile?.name?.split(" ")?.firstOrNull() ?: "User"
+    val userAvatar = userProfile?.profilePicUrl
 
     // Location fetching
     LaunchedEffect(Unit) {
-        locationViewModel.getCurrentLocation(context)
+        val currentSavedAddress = sessionManager.getAddress()
+        val isFirstLaunchLocation = currentSavedAddress == "Fetching location..." || currentSavedAddress.isEmpty()
+        
+        locationViewModel.getCurrentLocation(context, autoConfirmIfNew = isFirstLaunchLocation)
+        profileViewModel.fetchUserProfile() // Ensure profile is fresh
+    }
+
+    val voiceLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult(),
+        onResult = { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                val query = data?.get(0) ?: ""
+                if (query.isNotEmpty()) {
+                    navController.navigate(Screen.SearchResults(query))
+                }
+            }
+        }
+    )
+
+    val scrollState = rememberLazyListState()
+    
+    // Parallax & Alpha calculations
+    val headerAlpha by remember {
+        derivedStateOf {
+            if (scrollState.firstVisibleItemIndex > 0) 0f
+            else (1f - (scrollState.firstVisibleItemScrollOffset.toFloat() / 300f)).coerceIn(0f, 1f)
+        }
+    }
+    
+    val headerTranslation by remember {
+        derivedStateOf {
+            if (scrollState.firstVisibleItemIndex > 0) 0f
+            else -scrollState.firstVisibleItemScrollOffset.toFloat() * 0.4f
+        }
     }
 
     Scaffold(
         containerColor = LuxeBackground,
         bottomBar = { BottomNavBar(navController) }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 32.dp)
-        ) {
-            // 1. SMART HEADER (Location & Profile)
-            item {
-                LuxeHomeHeader(
-                    userName = userName,
-                    userAvatar = userAvatar,
-                    currentAddress = if (locationUiState.isFetchingAddress) "Locating..." else locationUiState.address,
-                    greeting = greetingText,
-                    onLocationClick = { navController.navigate(Screen.MapPicker) },
-                    onProfileClick = { navController.navigate(Screen.LuxuryProfile) }
-                )
-            }
-
-            // 2. UNIVERSAL SEARCH (Command Center)
-            item {
-                Box(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-                    LuxeSearchBar(onSearchClick = { navController.navigate(Screen.Search) })
-                }
-            }
-
-            // 3. CORE SHORTCUTS (High-Velocity Entry)
-            item {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    LuxeCircleShortcut("Grocery", R.drawable.home_essentials, LuxeHighlightChampagne) { navController.navigate(Screen.CategoryVendors("Grocery")) }
-                    LuxeCircleShortcut("Dining", R.drawable.home_lifestyle, LuxeHighlightChampagne) { navController.navigate(Screen.CategoryVendors("Dining")) }
-                    LuxeCircleShortcut("Service", R.drawable.residential_services, LuxeHighlightChampagne) { navController.navigate(Screen.CategoryVendors("Service")) }
-                    LuxeCircleShortcut("Health", R.drawable.healthcare_pharmacy, LuxeHighlightChampagne) { navController.navigate(Screen.CategoryVendors("Healthcare")) }
-                }
-            }
-
-            // 4. CONCIERGE HERO (The "Help" card)
-            item {
-                Box(Modifier.padding(horizontal = 20.dp)) {
-                    ConciergeHeroCard(onMakeRequest = { navController.navigate(Screen.Categories) })
-                }
-            }
-
-            // 5. NEIGHBORHOOD PULSE (Lovely local find - removed hardcoded)
-            /* 
-            item {
-                Box(Modifier.padding(horizontal = 20.dp, vertical = 24.dp)) {
-                    DiscoveryMomentCard()
-                }
-            }
-            */
-
-            // 6. TRUSTED NEARBY (Live Shops)
-            item {
-                LuxeSectionHeader("Trusted Nearby", onActionClick = { navController.navigate(Screen.HomeEssentialsMain) })
-                
-                when (val state = uiState) {
-                    is HomeUiState.Loading -> {
-                        Row(Modifier.padding(horizontal = 20.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            repeat(3) { LuxeSkeletonVendorCard() }
-                        }
+        Box(Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = scrollState,
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 32.dp)
+            ) {
+                // 1. SMART HEADER (Location & Profile)
+                item {
+                    Box(Modifier.graphicsLayer { 
+                        alpha = headerAlpha
+                        translationY = headerTranslation 
+                    }) {
+                        LuxeHomeHeader(
+                            userName = userName,
+                            userAvatar = userAvatar,
+                            currentAddress = if (locationUiState.isFetchingAddress) "Locating..." else locationUiState.address,
+                            greeting = greetingText,
+                            onLocationClick = { navController.navigate(Screen.MapPicker) },
+                            onProfileClick = { navController.navigate(Screen.LuxuryProfile) }
+                        )
                     }
-                    is HomeUiState.Success -> {
-                        val vendors = state.vendors
-                        if (vendors.isNotEmpty()) {
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = 20.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                items(vendors, key = { it.id }) { vendor ->
-                                    // Luxe Animation: Fade & Scale in
-                                    var visible by remember { mutableStateOf(false) }
-                                    LaunchedEffect(Unit) { visible = true }
-                                    
-                                    AnimatedVisibility(
-                                        visible = visible,
-                                        enter = fadeIn(tween(1000)) + scaleIn(initialScale = 0.9f, animationSpec = tween(600))
-                                    ) {
-                                        LuxeVendorCard(vendor) { navController.navigate(Screen.MerchantShop(vendor.id)) }
+                }
+
+                // 2. UNIVERSAL SEARCH (Command Center)
+                item {
+                    Box(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+                        LuxeSearchBar(
+                            onSearchClick = { navController.navigate(Screen.Search) },
+                            onMicClick = {
+                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "What can SAU find for you?")
+                                }
+                                voiceLauncher.launch(intent)
+                            }
+                        )
+                    }
+                }
+
+                // 3. CORE SHORTCUTS (High-Velocity Entry)
+                item {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        LuxeCircleShortcut("Grocery", R.drawable.home_essentials, LuxeHighlightChampagne) { navController.navigate(Screen.CategoryVendors("Grocery")) }
+                        LuxeCircleShortcut("Dining", R.drawable.home_lifestyle, LuxeHighlightChampagne) { navController.navigate(Screen.CategoryVendors("Dining")) }
+                        LuxeCircleShortcut("Service", R.drawable.residential_services, LuxeHighlightChampagne) { navController.navigate(Screen.CategoryVendors("Service")) }
+                        LuxeCircleShortcut("Health", R.drawable.healthcare_pharmacy, LuxeHighlightChampagne) { navController.navigate(Screen.CategoryVendors("Healthcare")) }
+                    }
+                }
+
+                // 4. FEATURED OFFERS
+                item {
+                    Box(Modifier.padding(horizontal = 20.dp, vertical = 8.dp).graphicsLayer {
+                        val carouselParallax = if (scrollState.firstVisibleItemIndex == 0) -scrollState.firstVisibleItemScrollOffset.toFloat() * 0.1f else 0f
+                        translationY = carouselParallax
+                    }) {
+                        LuxeFeaturedCarousel()
+                    }
+                }
+
+                // 6. TRUSTED NEARBY (Live Shops)
+                item {
+                    LuxeSectionHeader("Trusted Nearby", onActionClick = { navController.navigate(Screen.HomeEssentialsMain) })
+                    
+                    when (val state = uiState) {
+                        is HomeUiState.Loading -> {
+                            Row(Modifier.padding(horizontal = 20.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                repeat(3) { LuxeSkeletonVendorCard() }
+                            }
+                        }
+                        is HomeUiState.Success -> {
+                            val vendors = state.vendors
+                            if (vendors.isNotEmpty()) {
+                                LazyRow(
+                                    contentPadding = PaddingValues(horizontal = 20.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    items(vendors, key = { it.id }) { vendor ->
+                                        var visible by remember { mutableStateOf(false) }
+                                        LaunchedEffect(Unit) { visible = true }
+                                        
+                                        AnimatedVisibility(
+                                            visible = visible,
+                                            enter = fadeIn(tween(1000)) + scaleIn(initialScale = 0.9f, animationSpec = tween(600))
+                                        ) {
+                                            LuxeVendorCard(vendor) { navController.navigate(Screen.MerchantShop(vendor.id)) }
+                                        }
+                                    }
+                                }
+                            } else {
+                                Box(Modifier.padding(horizontal = 20.dp)) {
+                                    Text("No vendors available in your area.", color = LuxeTextSecondary, fontSize = 14.sp)
+                                }
+                            }
+                        }
+                        is HomeUiState.Error -> {
+                            Box(Modifier.padding(horizontal = 20.dp)) {
+                                Column {
+                                    Text("Unable to load vendors", color = Color.Red, fontSize = 14.sp)
+                                    TextButton(onClick = { viewModel.refresh() }) {
+                                        Text("Retry", color = LuxeAccentSage)
                                     }
                                 }
                             }
-                        } else {
-                            Box(Modifier.padding(horizontal = 20.dp)) {
-                                Text("No vendors available in your area.", color = LuxeTextSecondary, fontSize = 14.sp)
-                            }
-                        }
-                    }
-                    is HomeUiState.Error -> {
-                        Box(Modifier.padding(horizontal = 20.dp)) {
-                            Column {
-                                Text("Unable to load vendors", color = Color.Red, fontSize = 14.sp)
-                                TextButton(onClick = { viewModel.refresh() }) {
-                                    Text("Retry", color = LuxeAccentSage)
-                                }
-                            }
                         }
                     }
                 }
             }
-
-            // 7. YOUR USUALS (One-tap reorder - removed hardcoded)
-            /*
-            item {
-                Spacer(Modifier.height(32.dp))
-                LuxeSectionHeader("Your Usuals")
-                Box(Modifier.padding(horizontal = 20.dp)) {
-                    YourUsualsCard(onReorder = { })
-                }
-            }
-            */
         }
     }
 }
@@ -223,7 +266,6 @@ private fun LuxeHomeHeader(
         verticalAlignment = Alignment.Top
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            // Location
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable(onClick = onLocationClick)
@@ -241,7 +283,6 @@ private fun LuxeHomeHeader(
                 Icon(Icons.Default.KeyboardArrowDown, null, tint = LuxeTextSecondary, modifier = Modifier.size(16.dp))
             }
             Spacer(Modifier.height(8.dp))
-            // Greeting
             Text(
                 text = "$greeting, $userName",
                 style = MaterialTheme.typography.headlineSmall,
@@ -257,7 +298,6 @@ private fun LuxeHomeHeader(
             )
         }
 
-        // Profile Avatar
         Surface(
             modifier = Modifier
                 .size(48.dp)
@@ -266,7 +306,7 @@ private fun LuxeHomeHeader(
             shape = CircleShape,
             color = LuxeHighlightChampagne
         ) {
-            if (userAvatar != null) {
+            if (!userAvatar.isNullOrEmpty()) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(userAvatar)
@@ -278,7 +318,7 @@ private fun LuxeHomeHeader(
                 )
             } else {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(userName.take(1), fontWeight = FontWeight.Bold, color = LuxeTextPrimary)
+                    Text(userName.take(1).uppercase(), fontWeight = FontWeight.Black, color = LuxeTextPrimary)
                 }
             }
         }
@@ -286,7 +326,7 @@ private fun LuxeHomeHeader(
 }
 
 @Composable
-private fun LuxeSearchBar(onSearchClick: () -> Unit) {
+private fun LuxeSearchBar(onSearchClick: () -> Unit, onMicClick: () -> Unit) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -309,7 +349,12 @@ private fun LuxeSearchBar(onSearchClick: () -> Unit) {
                 fontSize = 14.sp,
                 modifier = Modifier.weight(1f)
             )
-            Icon(Icons.Default.Mic, null, tint = LuxeTextSecondary, modifier = Modifier.size(20.dp))
+            IconButton(
+                onClick = onMicClick,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(Icons.Default.Mic, null, tint = LuxeAccentSage, modifier = Modifier.size(20.dp))
+            }
         }
     }
 }
@@ -336,29 +381,41 @@ private fun LuxeCircleShortcut(title: String, imageRes: Int, color: Color, onCli
 }
 
 @Composable
-private fun ConciergeHeroCard(onMakeRequest: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = LuxeCard),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(Modifier.padding(24.dp)) {
-            Text(
-                "What may we take care of?",
-                style = MaterialTheme.typography.titleLarge,
-                color = LuxeTextPrimary,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Serif
-            )
-            Spacer(Modifier.height(16.dp))
-            Button(
-                onClick = onMakeRequest,
-                colors = ButtonDefaults.buttonColors(containerColor = LuxeAccentSage),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.height(44.dp)
-            ) {
-                Text("MAKE A REQUEST", fontWeight = FontWeight.Black, fontSize = 11.sp, letterSpacing = 1.sp)
+private fun LuxeFeaturedCarousel() {
+    val pagerState = rememberPagerState(pageCount = { 3 })
+
+    HorizontalPager(
+        state = pagerState,
+        contentPadding = PaddingValues(end = 32.dp),
+        pageSpacing = 16.dp
+    ) { page ->
+        val banner = when(page) {
+            0 -> "https://images.unsplash.com/photo-1542838132-92c53300491e" to "Premium Grocery"
+            1 -> "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4" to "Exquisite Dining"
+            else -> "https://images.unsplash.com/photo-1581578731548-c64695cc6958" to "Expert Care"
+        }
+        
+        Card(
+            modifier = Modifier.fillMaxWidth().height(160.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = LuxeHighlightChampagne.copy(alpha = 0.5f)),
+            border = BorderStroke(1.dp, LuxeBorder)
+        ) {
+            Box {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(banner.first)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                    alpha = 0.8f
+                )
+                Column(Modifier.align(Alignment.BottomStart).padding(20.dp)) {
+                    Text(banner.second.uppercase(), fontWeight = FontWeight.Black, color = Color.White, fontSize = 12.sp, letterSpacing = 2.sp)
+                    Text("Summer Selection", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                }
             }
         }
     }
@@ -391,28 +448,25 @@ private fun LuxeVendorCard(vendor: Vendor, onClick: () -> Unit) {
         border = BorderStroke(1.dp, LuxeBorder)
     ) {
         Column {
-                 Box {
-                if (vendor.imageUrl != null) {
-                    android.util.Log.d("PHOTO_DEBUG", "Loading shop image: ${vendor.imageUrl}")
+            Box {
+                if (!vendor.imageUrl.isNullOrEmpty()) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(vendor.imageUrl)
                             .crossfade(true)
-                            .placeholder(R.drawable.sau_logo) // Use an existing drawable as placeholder
-                            .error(R.drawable.sau_logo) // Use same for error
                             .build(),
                         contentDescription = null,
-                        modifier = Modifier.fillMaxWidth().height(140.dp),
+                        modifier = Modifier.fillMaxWidth().height(140.dp).background(LuxeHighlightChampagne.copy(alpha = 0.3f)),
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Box(Modifier.fillMaxWidth().height(140.dp).background(LuxeHighlightChampagne), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Store, null, tint = LuxeAccentSage)
+                    Box(Modifier.fillMaxWidth().height(140.dp).background(LuxeHighlightChampagne.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Storefront, null, tint = LuxeAccentSage, modifier = Modifier.size(32.dp))
                     }
                 }
                 
                 if (vendor.isAvailable == false) {
-                    Surface(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f))) {
+                    Surface(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f))) {
                         Box(contentAlignment = Alignment.Center) {
                             Text("CLOSED", color = Color.White, fontWeight = FontWeight.Black)
                         }
@@ -443,4 +497,3 @@ private fun LuxeSkeletonVendorCard() {
         }
     }
 }
-

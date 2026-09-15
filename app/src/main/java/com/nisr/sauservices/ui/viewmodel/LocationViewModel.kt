@@ -44,14 +44,14 @@ class LocationViewModel : ViewModel() {
     )
 
     @SuppressLint("MissingPermission")
-    fun getCurrentLocation(context: Context) {
+    fun getCurrentLocation(context: Context, autoConfirmIfNew: Boolean = false) {
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         
         // Try to get last location first
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             if (location != null) {
                 val latLng = LatLng(location.latitude, location.longitude)
-                updateCenterLocation(latLng, context)
+                updateCenterLocation(latLng, context, autoConfirmIfNew)
             } else {
                 // If last location is null, request a fresh location update
                 val priority = Priority.PRIORITY_HIGH_ACCURACY
@@ -59,26 +59,24 @@ class LocationViewModel : ViewModel() {
                     .addOnSuccessListener { freshLocation ->
                         freshLocation?.let {
                             val latLng = LatLng(it.latitude, it.longitude)
-                            updateCenterLocation(latLng, context)
+                            updateCenterLocation(latLng, context, autoConfirmIfNew)
                         }
                     }
             }
-        }.addOnFailureListener {
-            // Log or handle failure
         }
     }
 
-    fun updateCenterLocation(latLng: LatLng, context: Context) {
+    fun updateCenterLocation(latLng: LatLng, context: Context, autoConfirm: Boolean = false) {
         uiState = uiState.copy(centerLocation = latLng, isFetchingAddress = true)
         
         geocodeJob?.cancel()
         geocodeJob = viewModelScope.launch(Dispatchers.IO) {
             delay(500.milliseconds)
-            reverseGeocode(latLng, context)
+            reverseGeocode(latLng, context, autoConfirm)
         }
     }
 
-    private fun reverseGeocode(latLng: LatLng, context: Context) {
+    private fun reverseGeocode(latLng: LatLng, context: Context, autoConfirm: Boolean = false) {
         try {
             val geocoder = Geocoder(context, Locale.getDefault())
             @Suppress("DEPRECATION")
@@ -102,6 +100,10 @@ class LocationViewModel : ViewModel() {
                         pincode = pincode,
                         isFetchingAddress = false,
                     )
+                    
+                    if (autoConfirm) {
+                        confirmLocation(context) {}
+                    }
                 }
             }
         } catch (_: Exception) {
