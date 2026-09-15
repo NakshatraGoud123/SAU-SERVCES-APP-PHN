@@ -33,6 +33,8 @@ fun AppNavHost(navController: NavHostController) {
     val foodCartViewModel: FoodCartViewModel = viewModel()
     val locationViewModel: LocationViewModel = viewModel()
     val trackingViewModel: TrackingViewModel = viewModel()
+    val paymentViewModel: PaymentViewModel = viewModel()
+    val chatViewModel: ChatViewModel = viewModel()
     val homeViewModel: HomeViewModel = viewModel()
 
     NavHost(navController, startDestination = Screen.LuxurySplash) {
@@ -60,7 +62,8 @@ fun AppNavHost(navController: NavHostController) {
             bookingsViewModel = bookingsViewModel,
             residentialViewModel = residentialViewModel,
             homeViewModel = homeViewModel,
-            locationViewModel = locationViewModel
+            locationViewModel = locationViewModel,
+            chatViewModel = chatViewModel
         )
         
         servicesNavGraph(
@@ -88,10 +91,12 @@ fun AppNavHost(navController: NavHostController) {
             bookingsViewModel = bookingsViewModel,
             foodCartViewModel = foodCartViewModel,
             homeCartViewModel = cartViewModel,
-            educationCartViewModel = educationCartViewModel
+            educationCartViewModel = educationCartViewModel,
+            profileViewModel = profileViewModel,
+            paymentViewModel = paymentViewModel
         )
         
-        profileNavGraph(navController, profileViewModel)
+        profileNavGraph(navController, profileViewModel, locationViewModel)
         
         locationNavGraph(navController, locationViewModel, trackingViewModel)
         

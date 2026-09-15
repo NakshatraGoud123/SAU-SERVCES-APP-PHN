@@ -10,6 +10,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,6 +20,8 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Call
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.rounded.ElectricBike
 import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.material3.*
@@ -30,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -38,13 +43,25 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
-import com.nisr.sauservices.ui.components.SauColors
 import com.nisr.sauservices.ui.viewmodel.TrackingViewModel
 import com.nisr.sauservices.ui.theme.*
 import kotlinx.coroutines.launch
+
+// ============================================================
+// LUXE BRAND COLORS (Local for precision)
+// ============================================================
+private val LuxeBackground = Color(0xFFFDFBFA)
+private val LuxeCard = Color(0xFFFFFFFF)
+private val LuxeTextPrimary = Color(0xFF423F3D)
+private val LuxeTextSecondary = Color(0xFF8D7F77)
+private val LuxeAccentSage = Color(0xFF96A68F)
+private val LuxeHighlightChampagne = Color(0xFFF5E6D3)
+private val LuxeBorder = Color(0xFFEFE9E4)
+private val LuxeGold = Color(0xFFE8C66A)
 
 private const val MAP_STYLE = """
 [
@@ -52,7 +69,7 @@ private const val MAP_STYLE = """
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#212121"
+        "color": "#f5f5f5"
       }
     ]
   },
@@ -68,7 +85,7 @@ private const val MAP_STYLE = """
     "elementType": "labels.text.fill",
     "stylers": [
       {
-        "color": "#757575"
+        "color": "#616161"
       }
     ]
   },
@@ -76,42 +93,25 @@ private const val MAP_STYLE = """
     "elementType": "labels.text.stroke",
     "stylers": [
       {
-        "color": "#212121"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative.country",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#9e9e9e"
+        "color": "#f5f5f5"
       }
     ]
   },
   {
     "featureType": "administrative.land_parcel",
-    "stylers": [
-      {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative.locality",
     "elementType": "labels.text.fill",
     "stylers": [
       {
         "color": "#bdbdbd"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#eeeeee"
       }
     ]
   },
@@ -129,7 +129,7 @@ private const val MAP_STYLE = """
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#181818"
+        "color": "#e5e5e5"
       }
     ]
   },
@@ -138,75 +138,21 @@ private const val MAP_STYLE = """
     "elementType": "labels.text.fill",
     "stylers": [
       {
-        "color": "#616161"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.text.stroke",
-    "stylers": [
-      {
-        "color": "#1b1b1b"
+        "color": "#9e9e9e"
       }
     ]
   },
   {
     "featureType": "road",
-    "elementType": "geometry.fill",
+    "elementType": "geometry",
     "stylers": [
       {
-        "color": "#2c2c2c"
-      }
-    ]
-  },
-  {
-    "featureType": "road",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#8a8a8a"
+        "color": "#ffffff"
       }
     ]
   },
   {
     "featureType": "road.arterial",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#373737"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#3c3c3c"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway.controlled_access",
-    "elementType": "geometry",
-    "stylers": [
-      {
-        "color": "#4e4e4e"
-      }
-    ]
-  },
-  {
-    "featureType": "road.local",
-    "elementType": "labels.text.fill",
-    "stylers": [
-      {
-        "color": "#616161"
-      }
-    ]
-  },
-  {
-    "featureType": "transit",
     "elementType": "labels.text.fill",
     "stylers": [
       {
@@ -215,11 +161,56 @@ private const val MAP_STYLE = """
     ]
   },
   {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#dadada"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.line",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#e5e5e5"
+      }
+    ]
+  },
+  {
+    "featureType": "transit.station",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#eeeeee"
+      }
+    ]
+  },
+  {
     "featureType": "water",
     "elementType": "geometry",
     "stylers": [
       {
-        "color": "#000000"
+        "color": "#c9c9c9"
       }
     ]
   },
@@ -228,7 +219,7 @@ private const val MAP_STYLE = """
     "elementType": "labels.text.fill",
     "stylers": [
       {
-        "color": "#3d3d3d"
+        "color": "#9e9e9e"
       }
     ]
   }
@@ -290,36 +281,57 @@ fun OrderTrackingScreen(
     }
 
     // Sync marker and camera when partner moves
-    LaunchedEffect(uiState.partnerLocation) {
-        partnerMarkerState.position = uiState.partnerLocation
-        cameraPositionState.animate(CameraUpdateFactory.newLatLng(uiState.partnerLocation))
+    val animatedLat by animateFloatAsState(targetValue = uiState.partnerLocation.latitude.toFloat(), label = "lat")
+    val animatedLng by animateFloatAsState(targetValue = uiState.partnerLocation.longitude.toFloat(), label = "lng")
+    val animatedLocation = LatLng(animatedLat.toDouble(), animatedLng.toDouble())
+
+    LaunchedEffect(animatedLocation) {
+        partnerMarkerState.position = animatedLocation
+        
+        // Auto-zoom to fit both locations
+        val boundsBuilder = LatLngBounds.builder()
+        boundsBuilder.include(animatedLocation)
+        uiState.destinationLocation?.let { boundsBuilder.include(it) }
+        
+        try {
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 200),
+                1000
+            )
+        } catch (e: Exception) {
+            // Fallback if bounds calculation fails initially
+            cameraPositionState.animate(CameraUpdateFactory.newLatLng(animatedLocation))
+        }
     }
 
     Scaffold(
-        containerColor = SauColors.Background,
+        containerColor = LuxeBackground,
         topBar = {
             TopAppBar(
                 title = { 
                     Column {
-                        Text("Track Order", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = SauColors.TextDark)
-                        Text("#${orderId.takeLast(6).uppercase()}", fontSize = 12.sp, color = SauColors.TextGrey)
+                        Text("Live Tracking", fontSize = 18.sp, fontWeight = FontWeight.Black, color = LuxeTextPrimary, fontFamily = FontFamily.Serif)
+                        Text("#${orderId.takeLast(6).uppercase()}", fontSize = 11.sp, color = LuxeTextSecondary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = SauColors.TextDark)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
                     }
                 },
                 actions = {
-                    IconButton(onClick = { 
-                        scope.launch {
-                            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(uiState.partnerLocation, 16f))
-                        }
-                    }) {
-                        Icon(Icons.Rounded.MyLocation, null, tint = SauColors.Primary)
+                    IconButton(
+                        onClick = { 
+                            scope.launch {
+                                cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(uiState.partnerLocation, 16f))
+                            }
+                        },
+                        modifier = Modifier.padding(end = 8.dp).background(LuxeHighlightChampagne.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(Icons.Rounded.MyLocation, null, tint = LuxeAccentSage, modifier = Modifier.size(20.dp))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = SauColors.Background)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         }
     ) { padding ->
@@ -333,36 +345,65 @@ fun OrderTrackingScreen(
                 ),
                 uiSettings = MapUiSettings(zoomControlsEnabled = false, myLocationButtonEnabled = false)
             ) {
-                // Moving Partner Marker (Luxury Gold Custom Marker)
+                // Moving Partner Marker (Luxe Azure Custom Marker)
                 Marker(
                     state = partnerMarkerState,
                     title = "Delivery Partner",
-                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
                 )
 
                 // Destination Marker
                 uiState.destinationLocation?.let {
                     Marker(
                         state = rememberMarkerState(position = it),
-                        title = "Delivery Point",
+                        title = "Your Location",
                         icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                     )
                 }
             }
 
-            // Professional Tracking Status Card (Luxury Dark)
+            // Professional Tracking Status Card (Luxe Daylight)
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                color = SauColors.Background,
-                border = BorderStroke(1.dp, SauColors.Border),
-                shadowElevation = 24.dp
+                color = LuxeCard,
+                border = BorderStroke(1.dp, LuxeBorder),
+                shadowElevation = 8.dp
             ) {
-                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 28.dp)) {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp, vertical = 32.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
                     val isCompleted = uiState.isCompleted
                     
+                    // ETA Badge (Animated)
+                    if (!isCompleted && uiState.etaMinutes > 0) {
+                        Surface(
+                            modifier = Modifier.padding(bottom = 20.dp),
+                            color = LuxeHighlightChampagne,
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.dp, LuxeGold.copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.CheckCircle, null, tint = LuxeAccentSage, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "Arriving in ${uiState.etaMinutes} mins",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = LuxeTextPrimary,
+                                    letterSpacing = 1.sp
+                                )
+                            }
+                        }
+                    }
+
                     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
                     val pulseAlpha by infiniteTransition.animateFloat(
                         initialValue = 0.4f,
@@ -378,17 +419,20 @@ fun OrderTrackingScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 24.dp),
+                            .padding(bottom = 28.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            modifier = Modifier.size(56.dp),
+                            modifier = Modifier.size(60.dp),
                             shape = RoundedCornerShape(16.dp),
-                            color = SauColors.Surface,
-                            border = BorderStroke(1.dp, SauColors.Border)
+                            color = LuxeHighlightChampagne,
+                            border = BorderStroke(1.dp, LuxeBorder)
                         ) {
                             AsyncImage(
-                                model = uiState.partnerAvatar,
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(uiState.partnerAvatar)
+                                    .crossfade(true)
+                                    .build(),
                                 contentDescription = "Partner",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
@@ -400,75 +444,101 @@ fun OrderTrackingScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = uiState.partnerName,
-                                color = SauColors.TextDark,
-                                fontSize = 16.sp,
+                                color = LuxeTextPrimary,
+                                fontSize = 17.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Star, null, tint = SauColors.Primary, modifier = Modifier.size(12.dp))
+                                Icon(Icons.Default.Star, null, tint = LuxeGold, modifier = Modifier.size(12.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "${uiState.partnerRating} · Delivery Partner",
-                                    color = SauColors.TextGrey,
-                                    fontSize = 13.sp
+                                    text = "${uiState.partnerRating} · Personal Assistant",
+                                    color = LuxeTextSecondary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium
                                 )
                             }
                         }
                         
                         Row {
-                            IconButton(
-                                onClick = { /* TODO: Call */ },
+                            Surface(
                                 modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(SauColors.Surface)
-                                    .border(1.dp, SauColors.Border, CircleShape)
+                                    .size(44.dp)
+                                    .clickable { /* TODO: Call */ },
+                                shape = CircleShape,
+                                color = LuxeHighlightChampagne.copy(alpha = 0.4f),
+                                border = BorderStroke(1.dp, LuxeBorder)
                             ) {
-                                Icon(Icons.Default.Call, null, tint = SauColors.Primary, modifier = Modifier.size(18.dp))
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Outlined.Call, null, tint = LuxeTextPrimary, modifier = Modifier.size(20.dp))
+                                }
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            IconButton(
-                                onClick = { /* TODO: Chat */ },
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Surface(
                                 modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(SauColors.Surface)
-                                    .border(1.dp, SauColors.Border, CircleShape)
+                                    .size(44.dp)
+                                    .clickable { 
+                                        navController.navigate(com.nisr.sauservices.ui.Screen.Chat(
+                                            orderId = orderId,
+                                            receiverId = "partner_id_here", 
+                                            receiverName = uiState.partnerName
+                                        ))
+                                    },
+                                shape = CircleShape,
+                                color = LuxeHighlightChampagne.copy(alpha = 0.4f),
+                                border = BorderStroke(1.dp, LuxeBorder)
                             ) {
-                                Icon(Icons.Default.Chat, null, tint = SauColors.Primary, modifier = Modifier.size(18.dp))
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Outlined.Chat, null, tint = LuxeTextPrimary, modifier = Modifier.size(20.dp))
+                                }
                             }
                         }
                     }
 
-                    HorizontalDivider(color = SauColors.Border, thickness = 1.dp, modifier = Modifier.padding(bottom = 20.dp))
+                    HorizontalDivider(color = LuxeBorder, thickness = 1.dp, modifier = Modifier.padding(bottom = 24.dp))
 
                     Text(
                         text = uiState.statusTitle,
                         fontWeight = FontWeight.Black,
-                        fontSize = 22.sp,
-                        color = if (isCompleted) SuccessGreen else SauColors.TextDark
+                        fontSize = 24.sp,
+                        color = if (isCompleted) SuccessGreen else LuxeTextPrimary,
+                        fontFamily = FontFamily.Serif
                     )
                     Text(
                         text = uiState.statusSubtitle,
                         fontSize = 14.sp,
-                        color = SauColors.TextGrey,
-                        modifier = Modifier.padding(top = 4.dp)
+                        color = LuxeTextSecondary,
+                        modifier = Modifier.padding(top = 4.dp),
+                        fontWeight = FontWeight.Medium
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
                     
-                    // Themed Progress Bar
+                    // Luxe Progress Bar
                     LinearProgressIndicator(
                         progress = { uiState.progress },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp)),
-                        color = SauColors.Primary,
-                        trackColor = SauColors.Surface,
+                            .height(10.dp)
+                            .clip(RoundedCornerShape(5.dp)),
+                        color = LuxeAccentSage,
+                        trackColor = LuxeBorder,
                     )
                     
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // LIVE TIMELINE
+                    if (uiState.timeline.isNotEmpty()) {
+                        LuxeSectionHeader("Order Journey", null)
+                        Spacer(Modifier.height(16.dp))
+                        uiState.timeline.forEachIndexed { index, item ->
+                            TimelineRow(
+                                item = item,
+                                isLast = index == uiState.timeline.size - 1
+                            )
+                        }
+                        Spacer(Modifier.height(24.dp))
+                    }
                     
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -478,37 +548,81 @@ fun OrderTrackingScreen(
                         if (!isCompleted) {
                             Box(
                                 modifier = Modifier
-                                    .size(8.dp)
+                                    .size(10.dp)
                                     .clip(CircleShape)
-                                    .background(SauColors.Primary)
+                                    .background(LuxeAccentSage)
                                     .graphicsLayer(alpha = pulseAlpha)
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = "Live Tracking Active",
-                                fontSize = 13.sp,
-                                color = SauColors.Primary,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 0.5.sp
+                                text = "LIVE TRACKING ACTIVE",
+                                fontSize = 12.sp,
+                                color = LuxeAccentSage,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 1.sp
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(20.dp),
                                 tint = SuccessGreen
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
                             Text(
-                                text = "Service Delivered Successfully",
-                                fontSize = 13.sp,
+                                text = "DELIVERED SUCCESSFULLY",
+                                fontSize = 12.sp,
                                 color = SuccessGreen,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 1.sp
                             )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TimelineRow(item: com.nisr.sauservices.ui.viewmodel.TimelineStatus, isLast: Boolean) {
+    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .clip(CircleShape)
+                    .background(if (item.isDone) LuxeAccentSage else LuxeBorder)
+                    .border(2.dp, if (item.isCurrent) LuxeGold else Color.Transparent, CircleShape)
+            )
+            if (!isLast) {
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .weight(1f)
+                        .background(if (item.isDone) LuxeAccentSage.copy(alpha = 0.5f) else LuxeBorder)
+                )
+            }
+        }
+        Spacer(Modifier.width(16.dp))
+        Column(modifier = Modifier.padding(bottom = 20.dp)) {
+            Text(
+                text = item.title,
+                fontSize = 14.sp,
+                fontWeight = if (item.isCurrent) FontWeight.Black else FontWeight.Bold,
+                color = if (item.isDone) LuxeTextPrimary else LuxeTextSecondary
+            )
+        }
+    }
+}
+
+@Composable
+private fun LuxeSectionHeader(title: String, onActionClick: (() -> Unit)? = null) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, style = MaterialTheme.typography.labelSmall, color = LuxeTextSecondary, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
     }
 }

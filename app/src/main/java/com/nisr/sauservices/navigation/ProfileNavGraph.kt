@@ -12,7 +12,8 @@ import com.nisr.sauservices.ui.viewmodel.ProfileViewModel
  */
 fun NavGraphBuilder.profileNavGraph(
     navController: NavHostController,
-    profileViewModel: ProfileViewModel
+    profileViewModel: ProfileViewModel,
+    locationViewModel: com.nisr.sauservices.ui.viewmodel.LocationViewModel
 ) {
     composable<Screen.Profile> {
         ProfileScreen(navController, profileViewModel)
@@ -27,7 +28,7 @@ fun NavGraphBuilder.profileNavGraph(
     }
 
     composable<Screen.ShippingAddress> {
-        ShippingAddressScreen(navController, profileViewModel)
+        ShippingAddressScreen(navController, profileViewModel, locationViewModel)
     }
 
     composable<Screen.ChangePassword> {
@@ -44,5 +45,13 @@ fun NavGraphBuilder.profileNavGraph(
 
     composable<Screen.FAQ> {
         FAQScreen(navController)
+    }
+
+    composable<Screen.Wallet> {
+        WalletScreen(navController)
+    }
+
+    composable<Screen.Settings> {
+        SettingsScreen(navController)
     }
 }

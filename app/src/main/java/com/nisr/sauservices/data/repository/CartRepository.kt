@@ -128,10 +128,10 @@ class CartRepository {
     }
 
     @Suppress("unused")
-    suspend fun placeOrder(order: OrderModel): Result<String> {
+    suspend fun placeOrder(order: OrderModel, items: List<com.nisr.sauservices.data.model.OrderItem>): Result<String> {
         return try {
             val userId = getUserId() ?: return Result.failure(Exception("User not logged in"))
-            val finalOrder = order.copy(userId = userId, status = "placed")
+            val finalOrder = order.copy(customerId = userId, status = "placed")
             
             val insertedOrder = withContext(Dispatchers.IO) {
                 postgrest["orders"].insert(finalOrder) {
@@ -139,19 +139,10 @@ class CartRepository {
                 }.decodeSingle<OrderModel>()
             }
 
-            order.items.filter { it.unit == "Booking" }.forEach { cartItem ->
-                val bookingData = BookingModel(
-                    userId = userId,
-                    serviceId = cartItem.productId.toSafeUuid(),
-                    serviceName = cartItem.itemName,
-                    scheduleDate = cartItem.date ?: "",
-                    scheduleTime = cartItem.time ?: "",
-                    status = "pending",
-                    address = order.address
-                )
-                withContext(Dispatchers.IO) {
-                    postgrest["bookings"].insert(bookingData)
-                }
+            // Insert items into the bridge table
+            val orderItems = items.map { it.copy(orderId = insertedOrder.id) }
+            withContext(Dispatchers.IO) {
+                postgrest["order_items"].insert(orderItems)
             }
 
             Result.success(insertedOrder.id)

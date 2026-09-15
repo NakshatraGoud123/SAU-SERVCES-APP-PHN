@@ -212,7 +212,7 @@ private fun DashboardHeroCarousel() {
             ) {
                 Box {
                     Image(
-                        painter = painterResource(id = R.drawable.homescreen_illustration),
+                        painter = painterResource(id = R.drawable.drawable_illustration3),
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -361,7 +361,7 @@ private fun DashboardRecommendedSection(navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
         repeat(3) {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).background(LuxuryCard, RoundedCornerShape(20.dp)).border(1.dp, LuxuryBorder, RoundedCornerShape(20.dp)).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Image(painter = painterResource(id = R.drawable.homescreen_illustration), contentDescription = null, modifier = Modifier.size(70.dp).clip(RoundedCornerShape(14.dp)), contentScale = ContentScale.Crop)
+                Image(painter = painterResource(id = R.drawable.cleaning), contentDescription = null, modifier = Modifier.size(70.dp).clip(RoundedCornerShape(14.dp)), contentScale = ContentScale.Crop)
                 Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Kitchen Cleaning", color = LuxuryTextPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)

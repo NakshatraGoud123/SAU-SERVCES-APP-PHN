@@ -6,7 +6,7 @@ import kotlinx.serialization.SerialName
 @Serializable
 data class UserProfile(
     val id: String = "",
-    @SerialName("full_name") val name: String = "",
+    @SerialName("name") val name: String = "",
     val email: String = "",
     @SerialName("phone_number") val phone: String = "",
     @SerialName("avatar_url") val profilePicUrl: String? = null,
@@ -16,7 +16,7 @@ data class UserProfile(
 @Serializable
 data class Address(
     val id: String = "",
-    @SerialName("full_name") val fullName: String = "",
+    @SerialName("name") val fullName: String = "",
     val phone: String = "",
     @SerialName("house_no") val houseNo: String = "",
     val street: String = "",

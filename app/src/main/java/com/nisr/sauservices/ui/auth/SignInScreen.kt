@@ -264,7 +264,7 @@ fun SignInScreen(
 
             // Footer
             Image(
-                painter = painterResource(id = R.drawable.homescreen_illustration),
+                painter = painterResource(id = R.drawable.  drawable_illustration1),
                 contentDescription = null,
                 modifier = Modifier.fillMaxWidth().height(100.dp).graphicsLayer(alpha = 0.5f),
                 contentScale = ContentScale.Fit

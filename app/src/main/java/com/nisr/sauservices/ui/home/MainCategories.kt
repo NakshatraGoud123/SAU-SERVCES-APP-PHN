@@ -41,8 +41,8 @@ fun CategoriesGrid(
     showAll: Boolean = false
 ) {
     val allCategories = listOf(
-        CategoryItem("Groceries", Screen.HomeEssentialsMain, R.drawable.essential_supplies),
-        CategoryItem("Food", Screen.FoodCategories, R.drawable.food_beverages),
+        CategoryItem("Groceries", Screen.HomeEssentialsMain, R.drawable.home_essentials),
+        CategoryItem("Food", Screen.FoodCategories, R.drawable.home_lifestyle),
         CategoryItem("Services", Screen.ResidentialCategories, R.drawable.residential_services),
         CategoryItem("Pharmacy", Screen.HealthcareMain, R.drawable.healthcare_pharmacy),
         CategoryItem("More", Screen.Categories, null)

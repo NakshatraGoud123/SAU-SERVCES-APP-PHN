@@ -11,6 +11,7 @@ import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.withContext
 
 class SupabaseRepository {
@@ -27,7 +28,7 @@ class SupabaseRepository {
 
     suspend fun registerUser(user: User): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            postgrest["users"].insert(user)
+            postgrest["profiles"].insert(user)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -36,7 +37,7 @@ class SupabaseRepository {
 
     suspend fun getUserProfile(uid: String): Result<User> = withContext(Dispatchers.IO) {
         try {
-            val user = postgrest["users"].select {
+            val user = postgrest["profiles"].select {
                 filter { eq("id", uid) }
             }.decodeSingle<User>()
             Result.success(user)
@@ -47,7 +48,7 @@ class SupabaseRepository {
     
     suspend fun updateUserProfile(user: User): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            postgrest["users"].update(user) {
+            postgrest["profiles"].update(user) {
                 filter { eq("id", user.id) }
             }
             Result.success(Unit)
@@ -58,7 +59,7 @@ class SupabaseRepository {
 
     suspend fun deleteUser(uid: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            postgrest["users"].delete {
+            postgrest["profiles"].delete {
                 filter { eq("id", uid) }
             }
             Result.success(Unit)
@@ -93,16 +94,71 @@ class SupabaseRepository {
 
     suspend fun getCategories(): Result<List<Category>> = withContext(Dispatchers.IO) {
         try {
-            val list = postgrest["categories"].select().decodeList<Category>()
+            val list = postgrest["categories"].select {
+                order("name", io.github.jan.supabase.postgrest.query.Order.ASCENDING)
+            }.decodeList<Category>()
+            Result.success(list)
+        } catch (e: Exception) {
+            android.util.Log.e("REPO_ERROR", "getCategories failed: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getVendors(category: String? = null): Result<List<Vendor>> = withContext(Dispatchers.IO) {
+        try {
+            val list = if (category == null) {
+                postgrest["vendors"].select().decodeList<Vendor>()
+            } else {
+                postgrest["vendors"].select {
+                    filter { ilike("business_type", category) }
+                }.decodeList<Vendor>()
+            }
+            android.util.Log.d("REPO_DEBUG", "Vendors loaded for $category: ${list.size}")
+            Result.success(list)
+        } catch (e: Exception) {
+            android.util.Log.e("REPO_ERROR", "getVendors failed: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getSubcategories(categoryId: String): Result<List<Map<String, String>>> = withContext(Dispatchers.IO) {
+        try {
+            val response = postgrest["subcategories"].select {
+                filter { eq("category_id", categoryId) }
+            }
+            Result.success(response.decodeList<Map<String, String>>())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getServices(subcategoryId: String): Result<List<ServiceModel>> = withContext(Dispatchers.IO) {
+        try {
+            val list = postgrest["services"].select {
+                filter { eq("subcategory_id", subcategoryId) }
+            }.decodeList<ServiceModel>()
             Result.success(list)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    suspend fun getVendors(): Result<List<Vendor>> = withContext(Dispatchers.IO) {
+    suspend fun getVendorDetails(vendorId: String): Result<Vendor> = withContext(Dispatchers.IO) {
         try {
-            val list = postgrest["vendors"].select().decodeList<Vendor>()
+            val vendor = postgrest["vendors"].select {
+                filter { eq("id", vendorId) }
+            }.decodeSingle<Vendor>()
+            Result.success(vendor)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getProductsByVendor(vendorId: String): Result<List<Product>> = withContext(Dispatchers.IO) {
+        try {
+            val list = postgrest["products"].select {
+                filter { eq("vendor_id", vendorId) }
+            }.decodeList<Product>()
             Result.success(list)
         } catch (e: Exception) {
             Result.failure(e)
@@ -139,6 +195,7 @@ class SupabaseRepository {
     fun listenToBookings(userId: String? = null): Flow<List<BookingModel>> {
         val filter = if (userId != null) FilterOperation("user_id", FilterOperator.EQ, userId) else null
         return postgrest["bookings"].selectAsFlow(BookingModel::id, filter = filter)
+            .catch { emit(emptyList()) }
     }
 
     suspend fun bookService(booking: BookingModel): Result<String> = withContext(Dispatchers.IO) {
@@ -156,29 +213,42 @@ class SupabaseRepository {
     @OptIn(SupabaseExperimental::class)
     fun observeMyBookings(userId: String): Flow<List<BookingModel>> {
         return postgrest["bookings"].selectAsFlow(BookingModel::id, filter = FilterOperation("user_id", FilterOperator.EQ, userId))
+            .catch { emit(emptyList()) }
     }
 
     // --- ORDERS ---
 
     @OptIn(SupabaseExperimental::class)
     fun listenToOrders(userId: String? = null): Flow<List<OrderModel>> {
-        val filter = if (userId != null) FilterOperation("user_id", FilterOperator.EQ, userId) else null
+        val filter = if (userId != null) FilterOperation("customer_id", FilterOperator.EQ, userId) else null
         return postgrest["orders"].selectAsFlow(OrderModel::id, filter = filter)
+            .catch { emit(emptyList()) }
     }
-
-    @OptIn(SupabaseExperimental::class)
-    fun listenToCustomerOrders(userId: String): Flow<List<OrderModel>> = listenToOrders(userId)
 
     @OptIn(SupabaseExperimental::class)
     fun listenToCustomerOrder(orderId: String): Flow<List<OrderModel>> {
         return postgrest["orders"].selectAsFlow(OrderModel::id, filter = FilterOperation("id", FilterOperator.EQ, orderId))
+            .catch { emit(emptyList()) }
     }
 
-    suspend fun placeOrder(order: OrderModel): Result<String> = withContext(Dispatchers.IO) {
+    @OptIn(SupabaseExperimental::class)
+    fun listenToPartnerLocation(partnerId: String): Flow<List<PartnerLocation>> {
+        return postgrest["partner_locations"].selectAsFlow(
+            PartnerLocation::partnerId,
+            filter = FilterOperation("partner_id", FilterOperator.EQ, partnerId)
+        ).catch { emit(emptyList()) }
+    }
+
+    suspend fun placeOrder(order: OrderModel, items: List<OrderItem>): Result<String> = withContext(Dispatchers.IO) {
         try {
             val inserted = postgrest["orders"].insert(order) {
                 select()
             }.decodeSingle<OrderModel>()
+            
+            // Insert order items
+            val orderItemsList = items.map { it.copy(orderId = inserted.id) }
+            postgrest["order_items"].insert(orderItemsList)
+            
             Result.success(inserted.id)
         } catch (e: Exception) {
             Result.failure(e)
@@ -189,6 +259,7 @@ class SupabaseRepository {
     fun listenToLocation(id: String, isWorker: Boolean): Flow<List<LiveLocation>> {
         val table = if (isWorker) "worker_locations" else "delivery_locations"
         return postgrest[table].selectAsFlow(LiveLocation::timestamp, filter = FilterOperation("user_id", FilterOperator.EQ, id))
+            .catch { emit(emptyList()) }
     }
 
     // --- PAYMENTS ---
@@ -218,6 +289,7 @@ class SupabaseRepository {
     @OptIn(SupabaseExperimental::class)
     fun getNotifications(userId: String): Flow<List<Notification>> {
         return postgrest["notifications"].selectAsFlow(Notification::id, filter = FilterOperation("user_id", FilterOperator.EQ, userId))
+            .catch { emit(emptyList()) }
     }
 
     // --- REAL-TIME CHAT ---
@@ -236,6 +308,71 @@ class SupabaseRepository {
         return postgrest["messages"].selectAsFlow(
             ChatMessage::id,
             filter = FilterOperation("order_id", FilterOperator.EQ, orderId)
-        )
+        ).catch { emit(emptyList()) }
+    }
+
+    // --- WALLET ---
+
+    suspend fun getTransactions(): Result<List<Transaction>> = withContext(Dispatchers.IO) {
+        val uid = auth.currentUserOrNull()?.id ?: return@withContext Result.failure(Exception("Not logged in"))
+        try {
+            val list = postgrest["transactions"].select {
+                filter { eq("user_id", uid) }
+                order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+            }.decodeList<Transaction>()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getWalletBalance(): Result<Double> = withContext(Dispatchers.IO) {
+        val uid = auth.currentUserOrNull()?.id ?: return@withContext Result.failure(Exception("Not logged in"))
+        try {
+            val response = postgrest["wallet_balances"].select {
+                filter { eq("user_id", uid) }
+            }.decodeSingleOrNull<Map<String, Double>>()
+            Result.success(response?.get("balance") ?: 0.0)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateWalletBalance(amount: Double, type: String): Result<Unit> = withContext(Dispatchers.IO) {
+        val uid = auth.currentUserOrNull()?.id ?: return@withContext Result.failure(Exception("Not logged in"))
+        try {
+            // Get current balance
+            val current = getWalletBalance().getOrDefault(0.0)
+            val newBalance = if (type == "credit") current + amount else current - amount
+            
+            if (newBalance < 0 && type == "debit") {
+                return@withContext Result.failure(Exception("Insufficient wallet balance"))
+            }
+
+            postgrest["wallet_balances"].upsert(mapOf(
+                "user_id" to uid,
+                "balance" to newBalance,
+                "updated_at" to System.currentTimeMillis()
+            ))
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun logTransaction(amount: Double, type: String, description: String): Result<Unit> = withContext(Dispatchers.IO) {
+        val uid = auth.currentUserOrNull()?.id ?: return@withContext Result.failure(Exception("Not logged in"))
+        try {
+            val tx = Transaction(
+                userId = uid,
+                amount = amount,
+                type = type,
+                description = description
+            )
+            postgrest["transactions"].insert(tx)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

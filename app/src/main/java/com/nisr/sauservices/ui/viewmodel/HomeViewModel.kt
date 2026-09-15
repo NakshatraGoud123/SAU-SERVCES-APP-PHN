@@ -8,7 +8,7 @@ import com.nisr.sauservices.data.repository.SupabaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 sealed class HomeUiState {
     data object Loading : HomeUiState()
@@ -34,20 +34,36 @@ class HomeViewModel(
     fun fetchHomeData() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
+            android.util.Log.d("HOME_DATA", "Starting to fetch home data...")
             
-            val categoriesResult = repository.getCategories()
-            val vendorsResult = repository.getVendors()
+            try {
+                coroutineScope {
+                    val categoriesTask = async { repository.getCategories() }
+                    val vendorsTask = async { repository.getVendors() }
 
-            if (categoriesResult.isSuccess) {
-                _uiState.value = HomeUiState.Success(
-                    categories = categoriesResult.getOrDefault(emptyList()),
-                    vendors = vendorsResult.getOrDefault(emptyList())
-                )
-            } else {
-                _uiState.value = HomeUiState.Error(
-                    categoriesResult.exceptionOrNull()?.message ?: "Failed to fetch data"
-                )
+                    val categoriesResult = categoriesTask.await()
+                    val vendorsResult = vendorsTask.await()
+
+                    val categories = categoriesResult.getOrDefault(emptyList())
+                    val vendors = vendorsResult.getOrDefault(emptyList())
+
+                    android.util.Log.d("HOME_DATA", "Loaded ${categories.size} categories and ${vendors.size} vendors")
+                    
+                    if (vendors.isEmpty()) {
+                        android.util.Log.w("HOME_DATA", "WARNING: Vendors list is empty from Supabase!")
+                    }
+                    
+                    _uiState.value = HomeUiState.Success(
+                        categories = categories,
+                        vendors = vendors
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("HOME_DATA", "Crash in fetchHomeData: ${e.message}")
+                _uiState.value = HomeUiState.Error(e.message ?: "An unexpected error occurred")
             }
         }
     }
+
+    fun refresh() = fetchHomeData()
 }

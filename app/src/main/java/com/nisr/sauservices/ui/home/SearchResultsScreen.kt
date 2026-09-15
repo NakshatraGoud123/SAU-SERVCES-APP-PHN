@@ -29,6 +29,7 @@ import com.nisr.sauservices.data.model.HomeEssentialsData
 import com.nisr.sauservices.data.model.HomeProduct
 import com.nisr.sauservices.data.model.GroceryShop
 import com.nisr.sauservices.data.model.ResidentialServiceItem
+import com.nisr.sauservices.data.model.ServiceModel
 import com.nisr.sauservices.ui.viewmodel.ResidentialViewModel
 import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.components.LuxuryCard
@@ -137,7 +138,13 @@ fun SearchResultsScreen(
                     when (result) {
                         is SearchResult.ServiceResult -> {
                             ResidentialServiceCardDesign(
-                                service = result.service,
+                                service = ServiceModel(
+                                    id = result.service.id,
+                                    name = result.service.name,
+                                    price = result.service.price,
+                                    description = result.service.description,
+                                    categoryId = result.service.category
+                                ),
                                 onAdd = { 
                                     residentialViewModel.selectService(result.service.id)
                                     navController.navigate(com.nisr.sauservices.ui.Screen.PartnerList(result.service.id))

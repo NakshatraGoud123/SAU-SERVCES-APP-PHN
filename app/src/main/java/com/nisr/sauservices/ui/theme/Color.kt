@@ -14,6 +14,18 @@ val LuxuryGold = Color(0xFFE8C66A)
 val LuxuryCream = Color(0xFFF3E3B5)
 val LuxuryBorder = Color(0xFF292927)
 
+// ========================================
+// SAU SOLUTIONS - LIGHT & LUXE DESIGN THEME
+// ========================================
+
+val LuxeBackground = Color(0xFFFDFBFA) // Soft Cream
+val LuxeCard = Color(0xFFFFFFFF)       // Clean White
+val LuxeTextPrimary = Color(0xFF423F3D) // Warm Charcoal
+val LuxeTextSecondary = Color(0xFF8D7F77) // Warm Taupe
+val LuxeAccentSage = Color(0xFF96A68F)    // Muted Sage Green
+val LuxeHighlightChampagne = Color(0xFFF5E6D3) // Pale Champagne
+val LuxeBorder = Color(0xFFEFE9E4)    // Soft Whisper
+
 // Semantic Mappings for Global Compatibility
 val PrimaryBlue = LuxuryGold
 val PrimaryDark = LuxuryGold

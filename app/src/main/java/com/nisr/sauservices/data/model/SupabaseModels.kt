@@ -19,6 +19,14 @@ data class LiveLocation(
 )
 
 @Serializable
+data class PartnerLocation(
+    @SerialName("partner_id") val partnerId: String,
+    @SerialName("latitude") val latitude: Double,
+    @SerialName("longitude") val longitude: Double,
+    @SerialName("last_updated") val lastUpdated: String? = null
+)
+
+@Serializable
 data class BookingModel(
     @SerialName("id") val id: String = "",
     @SerialName("user_id") val userId: String = "",
@@ -26,12 +34,12 @@ data class BookingModel(
     @SerialName("user_phone") val userPhone: String = "",
     @SerialName("user_address") val userAddress: String = "",
     @SerialName("service_id") val serviceId: String = "",
-    @SerialName("service_name") val serviceName: String = "",
-    @SerialName("category") val category: String = "",
-    @SerialName("subcategory") val subcategory: String = "",
-    @SerialName("scheduled_date") val scheduleDate: String = "",
-    @SerialName("scheduled_time") val scheduleTime: String = "",
-    @SerialName("time_slot") val timeSlot: String = "",
+    @SerialName("service_name") val serviceName: String? = "",
+    @SerialName("category") val category: String? = "",
+    @SerialName("subcategory") val subcategory: String? = "",
+    @SerialName("scheduled_date") val scheduleDate: String? = "",
+    @SerialName("scheduled_time") val scheduleTime: String? = "",
+    @SerialName("time_slot") val timeSlot: String? = "",
     @SerialName("status") var status: String = "pending",
     @SerialName("provider_id") val providerId: String = "",
     @SerialName("address") val address: String = "",
@@ -44,9 +52,9 @@ data class BookingModel(
     val bookingId: String get() = id
     val orderStatus: String get() = status
     val displayAddress: String get() = address.ifEmpty { userAddress }.ifEmpty { "No address provided" }
-    val displayDate: String get() = scheduleDate.ifEmpty { "TBD" }
-    val displayTime: String get() = scheduleTime.ifEmpty { timeSlot }.ifEmpty { "" }
-    val displayService: String get() = serviceName.ifEmpty { category }.ifEmpty { "Service Request" }
+    val displayDate: String get() = (scheduleDate ?: "").ifEmpty { "TBD" }
+    val displayTime: String get() = (scheduleTime ?: timeSlot ?: "").ifEmpty { "" }
+    val displayService: String get() = (serviceName ?: category ?: "").ifEmpty { "Service Request" }
     
     // UI compatibility fields
     val customerName: String get() = userName
@@ -55,48 +63,42 @@ data class BookingModel(
     
     // Snake case getters for legacy repository code if any
     val user_id: String get() = userId
-    val service_name: String get() = serviceName
-    val scheduled_date: String get() = scheduleDate
-    val scheduled_time: String get() = scheduleTime
+    val service_name: String get() = serviceName ?: ""
+    val scheduled_date: String get() = scheduleDate ?: ""
+    val scheduled_time: String get() = scheduleTime ?: ""
 }
 
-@Serializable
+ @Serializable
 data class OrderModel(
     @SerialName("id") val id: String = "",
-    @SerialName("user_id") val userId: String = "",
-    @SerialName("user_name") val userName: String = "",
-    @SerialName("shop_id") val shopId: String? = null,
-    @SerialName("items") val items: List<CartModel> = emptyList(),
-    @SerialName("total_amount") val totalAmount: Double = 0.0,
-    @SerialName("total_price") val totalPrice: Double = 0.0,
-    @SerialName("address") val address: String = "",
-    @SerialName("pickup_address") val pickupAddress: String = "Shop",
-    @SerialName("drop_address") val dropAddress: String = "",
+    @SerialName("customer_id") val customerId: String = "",
+    @SerialName("vendor_id") val vendorId: String? = null,
     @SerialName("status") var status: String = "placed",
-    @SerialName("delivery_partner_id") val deliveryPartnerId: String? = null,
+    @SerialName("total_amount") val totalAmount: Double = 0.0,
+    @SerialName("delivery_address") val deliveryAddress: String = "",
+    @SerialName("payment_status") val paymentStatus: String = "pending",
+    @SerialName("payment_id") val paymentId: String? = null,
+    @SerialName("partner_id") val partnerId: String? = null,
+    @SerialName("order_type") val orderType: String = "grocery",
     @SerialName("created_at") val createdAt: String? = null,
-    @SerialName("timestamp") val timestamp: Long = System.currentTimeMillis(),
-    @Transient @SerialName("customer_location") val customerLocation: LiveLocation = LiveLocation(),
     
-    // Additional fields for Unified Order/Booking view
-    @SerialName("service_name") val serviceName: String = "",
-    @SerialName("category") val category: String = "",
-    @SerialName("subcategory") val subcategory: String = "",
+    // UI compatibility / Extra Info - Made Nullable to prevent "Expected string literal but 'null'" crash
+    @SerialName("service_name") val serviceName: String? = "",
+    @SerialName("category") val category: String? = "",
+    @SerialName("subcategory") val subcategory: String? = "",
     @SerialName("scheduled_date") val scheduleDate: String? = null,
     @SerialName("scheduled_time") val scheduleTime: String? = null,
-    @SerialName("payment_method") val paymentMethod: String = "Cash"
+    @SerialName("payment_method") val paymentMethod: String? = "Cash",
+    @Transient val timestamp: Long = System.currentTimeMillis()
 ) {
     val orderId: String get() = id
     val orderStatus: String get() = status
-    val amount: Double get() = if (totalPrice > 0) totalPrice else totalAmount
+    val amount: Double get() = totalAmount
+    val totalPrice: Double get() = totalAmount
     
-    // UI compatibility fields
-    val customerName: String get() = userName
-    val deliveryId: String get() = id
-    
-    // Snake case getters
-    val user_id: String get() = userId
-    val total_amount: Double get() = totalAmount
+    // Safe UI getters
+    val displayServiceName: String get() = serviceName ?: "Grocery Order"
+    val displayCategory: String get() = category ?: "General"
 }
 
 @Serializable
@@ -122,11 +124,12 @@ data class Category(
 @Serializable
 data class Product(
     @SerialName("id") val id: String = "",
-    @SerialName("shopkeeper_id") val shopkeeperId: String? = null,
+    @SerialName("vendor_id") val vendorId: String? = null,
     @SerialName("category_id") val categoryId: String? = null,
     @SerialName("name") val name: String = "",
     @SerialName("description") val description: String? = null,
     @SerialName("price") val price: Double = 0.0,
+    @SerialName("unit") val unit: String = "piece",
     @SerialName("stock_quantity") val stockQuantity: Int = 0,
     @SerialName("image_url") val imageUrl: String? = null
 )

@@ -3,15 +3,30 @@ package com.nisr.sauservices.ui.viewmodel
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import com.nisr.sauservices.data.model.BookingDetails
-import com.nisr.sauservices.data.model.ResidentialCartItem
-import com.nisr.sauservices.data.model.ResidentialServiceItem
+import androidx.lifecycle.viewModelScope
+import com.nisr.sauservices.data.model.*
+import com.nisr.sauservices.data.repository.SupabaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
-class ResidentialViewModel : ViewModel() {
+class ResidentialViewModel(
+    private val repository: SupabaseRepository = SupabaseRepository()
+) : ViewModel() {
     private val _cartItems = mutableStateListOf<ResidentialCartItem>()
     val cartItems: List<ResidentialCartItem> get() = _cartItems
+
+    private val _categories = MutableStateFlow<List<Category>>(emptyList())
+    val categories = _categories.asStateFlow()
+
+    private val _subcategories = MutableStateFlow<List<Map<String, String>>>(emptyList())
+    val subcategories = _subcategories.asStateFlow()
+
+    private val _services = MutableStateFlow<List<ServiceModel>>(emptyList())
+    val services = _services.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
 
     private val _bookingDetails = MutableStateFlow(BookingDetails())
     val bookingDetails = _bookingDetails.asStateFlow()
@@ -21,6 +36,43 @@ class ResidentialViewModel : ViewModel() {
 
     var selectedServiceId = mutableStateOf<String?>(null)
         private set
+
+    init {
+        fetchCategories()
+    }
+
+    fun fetchCategories() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.getCategories()
+            if (result.isSuccess) {
+                _categories.value = result.getOrDefault(emptyList())
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun fetchSubcategories(categoryId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.getSubcategories(categoryId)
+            if (result.isSuccess) {
+                _subcategories.value = result.getOrDefault(emptyList())
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun fetchServices(subcategoryId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val result = repository.getServices(subcategoryId)
+            if (result.isSuccess) {
+                _services.value = result.getOrDefault(emptyList())
+            }
+            _isLoading.value = false
+        }
+    }
 
     fun selectPartner(partnerId: String) {
         selectedPartnerId.value = partnerId

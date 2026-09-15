@@ -8,6 +8,7 @@ import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.functions.Functions
 import io.ktor.client.engine.okhttp.OkHttp
+import java.util.concurrent.TimeUnit
 
 object SupabaseClient {
     const val SUPABASE_URL = "https://vpadhrxammaxitlcrauj.supabase.co"
@@ -17,7 +18,12 @@ object SupabaseClient {
         supabaseUrl = SUPABASE_URL,
         supabaseKey = SUPABASE_ANON_KEY
     ) {
-        httpEngine = OkHttp.create()
+        httpEngine = OkHttp.create {
+            config {
+                connectTimeout(30, TimeUnit.SECONDS)
+                readTimeout(30, TimeUnit.SECONDS)
+            }
+        }
         install(Auth)
         install(Postgrest)
         install(Realtime)

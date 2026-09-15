@@ -27,25 +27,14 @@ fun NavGraphBuilder.luxuryNavGraph(navController: NavController) {
     }
     
     composable<Screen.LuxuryOnboarding1> {
-        LuxuryOnboardingScreen1(
-            onNext = { navController.navigate(Screen.LuxuryOnboarding2) },
-            onSkip = { navController.navigate(Screen.LuxuryLogin) }
+        LuxuryOnboardingScreen(
+            onFinished = { navController.navigate(Screen.LuxuryLogin) }
         )
     }
     
-    composable<Screen.LuxuryOnboarding2> {
-        LuxuryOnboardingScreen2(
-            onNext = { navController.navigate(Screen.LuxuryOnboarding3) },
-            onSkip = { navController.navigate(Screen.LuxuryLogin) }
-        )
-    }
-    
-    composable<Screen.LuxuryOnboarding3> {
-        LuxuryOnboardingScreen3(
-            onNext = { navController.navigate(Screen.LuxuryLogin) },
-            onSkip = { navController.navigate(Screen.LuxuryLogin) }
-        )
-    }
+    // Legacy onboarding routes - redirecting to the new unified screen
+    composable<Screen.LuxuryOnboarding2> { navController.navigate(Screen.LuxuryOnboarding1) }
+    composable<Screen.LuxuryOnboarding3> { navController.navigate(Screen.LuxuryOnboarding1) }
     
     composable<Screen.LuxuryLogin> {
         com.nisr.sauservices.ui.auth.LoginScreen(navController)
@@ -66,6 +55,7 @@ fun NavGraphBuilder.luxuryNavGraph(navController: NavController) {
 
     composable<Screen.LuxuryProfile> {
         LuxuryProfileScreen(
+            navController = navController,
             onSignOut = { navController.navigate(Screen.LuxurySignOut) },
             onBack = { navController.popBackStack() }
         )

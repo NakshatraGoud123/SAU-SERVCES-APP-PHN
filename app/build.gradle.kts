@@ -97,6 +97,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.security.crypto)
 
     // Image Loading
     implementation(libs.coil.compose)

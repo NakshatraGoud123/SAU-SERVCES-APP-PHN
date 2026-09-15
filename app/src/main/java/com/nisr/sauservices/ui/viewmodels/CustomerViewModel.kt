@@ -35,7 +35,7 @@ class CustomerViewModel : ViewModel() {
             }
         }
         viewModelScope.launch {
-            repository.listenToCustomerOrders(userId).collect {
+            repository.listenToOrders(userId).collect {
                 _myOrders.value = it
             }
         }

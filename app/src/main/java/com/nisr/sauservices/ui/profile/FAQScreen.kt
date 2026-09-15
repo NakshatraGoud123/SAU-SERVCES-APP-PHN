@@ -20,68 +20,45 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.nisr.sauservices.ui.theme.PinkPrimary
+
+// ============================================================
+// LUXE BRAND COLORS (Local for precision)
+// ============================================================
+private val LuxeBackground = Color(0xFFFDFBFA)
+private val LuxeCard = Color(0xFFFFFFFF)
+private val LuxeTextPrimary = Color(0xFF423F3D)
+private val LuxeTextSecondary = Color(0xFF8D7F77)
+private val LuxeAccentSage = Color(0xFF96A68F)
+private val LuxeHighlightChampagne = Color(0xFFF5E6D3)
+private val LuxeBorder = Color(0xFFEFE9E4)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FAQScreen(navController: NavController) {
-    val faqs = listOf(
-        FAQItem(
-            "How do I book a service?",
-            "To book a service, select a category from the home screen, choose your required service, select date and time, confirm your address, and complete the payment. You will receive a booking confirmation notification instantly."
-        ),
-        FAQItem(
-            "How can I track my order or service?",
-            "Go to “My Orders” in your profile section. You can see live status updates such as Accepted, In Progress, Out for Delivery, or Completed."
-        ),
-        FAQItem(
-            "What is the cancellation policy?",
-            "You can cancel a booking before the service provider starts the service. If canceled early, no charges apply. If canceled after provider dispatch, a small cancellation fee may be deducted."
-        ),
-        FAQItem(
-            "What is the refund policy?",
-            "Refunds are processed in the following cases:\n• Service not delivered\n• Payment deducted but booking failed\n• Verified service issues\nRefunds are credited to the original payment method within 3–7 working days."
-        ),
-        FAQItem(
-            "How do I reschedule a booking?",
-            "Open your booking details under “My Orders,” click “Reschedule,” choose a new date and time, and confirm."
-        ),
-        FAQItem(
-            "What payment methods are supported?",
-            "We support: UPI, Debit Card, Credit Card, Net Banking, Wallets, and Cash on Delivery (selected services). All online transactions are encrypted and secure."
-        ),
-        FAQItem(
-            "How can I contact customer support?",
-            "Go to the “Contact Us” page in your profile and submit a support request form, or use the provided support email and phone number during working hours."
-        ),
-        FAQItem(
-            "How can I join as a Worker, Shopkeeper, or Delivery Partner?",
-            "During signup, select your desired role. Complete profile verification and upload required documents. Once approved, you can start receiving and accepting orders."
-        )
-    )
+    val faqs = emptyList<FAQItem>()
 
     var expandedIndex by remember { mutableIntStateOf(-1) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("FAQ", fontWeight = FontWeight.Bold) },
+                title = { Text("Frequently Asked", fontWeight = FontWeight.Black, color = LuxeTextPrimary) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         },
-        containerColor = Color.White
+        containerColor = LuxeBackground
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(padding),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             itemsIndexed(faqs) { index, faq ->
                 FAQCard(
@@ -100,15 +77,15 @@ fun FAQScreen(navController: NavController) {
 fun FAQCard(faq: FAQItem, isExpanded: Boolean, onToggle: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = Color(0xFFF9F9F9),
-        border = BorderStroke(1.dp, Color(0xFFEEEEEE))
+        shape = RoundedCornerShape(20.dp),
+        color = LuxeCard,
+        border = BorderStroke(1.dp, if (isExpanded) LuxeAccentSage else LuxeBorder)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onToggle() }
-                .padding(16.dp)
+                .padding(20.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -120,12 +97,12 @@ fun FAQCard(faq: FAQItem, isExpanded: Boolean, onToggle: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     modifier = Modifier.weight(1f),
-                    color = Color.Black
+                    color = LuxeTextPrimary
                 )
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                     contentDescription = null,
-                    tint = PinkPrimary
+                    tint = if (isExpanded) LuxeAccentSage else LuxeTextSecondary
                 )
             }
             
@@ -135,12 +112,13 @@ fun FAQCard(faq: FAQItem, isExpanded: Boolean, onToggle: () -> Unit) {
                 exit = shrinkVertically() + fadeOut()
             ) {
                 Column {
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(16.dp))
                     Text(
                         text = faq.answer,
                         fontSize = 14.sp,
-                        color = Color.Gray,
-                        lineHeight = 20.sp
+                        color = LuxeTextSecondary,
+                        lineHeight = 22.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }

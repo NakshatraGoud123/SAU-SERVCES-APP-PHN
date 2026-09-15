@@ -25,11 +25,6 @@ fun ReviewsScreen(navController: NavController, partnerId: String) {
 }
 
 @Composable
-fun SettingsScreen(navController: NavController) {
-    GenericPlaceholder("Settings Screen", navController)
-}
-
-@Composable
 fun GenericPlaceholder(title: String, navController: NavController) {
     Scaffold { padding ->
         Column(

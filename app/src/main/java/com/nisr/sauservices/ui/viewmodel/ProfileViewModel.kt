@@ -52,7 +52,7 @@ class ProfileViewModel : ViewModel() {
             _isLoading.value = true
             try {
                 val profile = withContext(Dispatchers.IO) {
-                    val response = postgrest["users"].select {
+                    val response = postgrest["profiles"].select {
                         filter { eq("id", uid) }
                     }
                     android.util.Log.d("PROFILE_DEBUG", "Raw Profile Data: ${response.data}")
@@ -64,9 +64,9 @@ class ProfileViewModel : ViewModel() {
                     android.util.Log.d("PROFILE_DEBUG", "Loaded Profile: Name=${profile.name}, Pic=${profile.profilePicUrl}")
                 } else {
                     android.util.Log.e("PROFILE_DEBUG", "Profile not found in database for ID: $uid")
-                    // If no row exists, create a basic one from Auth metadata
                     val currentAuthUser = auth.currentUserOrNull()
                     val newProfile = UserProfile(
+                        id = uid,
                         name = (currentAuthUser?.userMetadata?.get("full_name") ?: currentAuthUser?.userMetadata?.get("name"))?.toString() ?: "New User",
                         email = currentAuthUser?.email ?: "",
                         phone = currentAuthUser?.phone ?: "",
@@ -99,12 +99,12 @@ class ProfileViewModel : ViewModel() {
                     )
 
                     // UPSERT using the serializable data class
-                    postgrest["users"].upsert(profileToSave)
+                    postgrest["profiles"].upsert(profileToSave)
                 }
                 fetchUserProfile()
                 onComplete(Result.success(Unit))
             } catch (e: Exception) {
-                android.util.Log.e("DATABASE_ERROR", "Failed to upsert users table: ${e.message}")
+                android.util.Log.e("DATABASE_ERROR", "Failed to upsert profiles table: ${e.message}")
                 onComplete(Result.failure(e))
             } finally {
                 _isLoading.value = false
@@ -132,6 +132,12 @@ class ProfileViewModel : ViewModel() {
                 
                 android.util.Log.d("PHOTO_DEBUG", "Final Avatar URL: $publicUrl")
                 
+                // Immediately update local state for fast UI feedback
+                val currentProfile = _userProfile.value
+                if (currentProfile != null) {
+                    _userProfile.value = currentProfile.copy(profilePicUrl = publicUrl)
+                }
+                
                 // Now update the users table in database
                 updateProfile(
                     name = _userProfile.value?.name ?: "",
@@ -145,6 +151,7 @@ class ProfileViewModel : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("PHOTO_DEBUG", "Upload error: ${e.message}")
                 onResult(Result.failure(e))
             } finally {
                 _isUploading.value = false
@@ -171,10 +178,14 @@ class ProfileViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    postgrest["addresses"].insert(address.copy(id = ""))
+                    // Critical Fix: Attach the User ID to the address
+                    val addressWithUser = address.copy(id = "", userId = uid)
+                    postgrest["addresses"].insert(addressWithUser)
                 }
                 fetchAddresses()
-            } catch (e: Exception) { }
+            } catch (e: Exception) {
+                android.util.Log.e("ADDRESS_ERROR", "Failed to save address: ${e.message}")
+            }
         }
     }
 

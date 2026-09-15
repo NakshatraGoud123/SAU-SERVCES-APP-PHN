@@ -78,7 +78,7 @@ fun HeroBanner(navController: NavController) {
 
             // Illustration on the right
             Image(
-                painter = painterResource(id = R.drawable.essential_supplies),
+                painter = painterResource(id = R.drawable.drawable_illustration2),
                 contentDescription = null,
                 modifier = Modifier
                     .weight(1f)

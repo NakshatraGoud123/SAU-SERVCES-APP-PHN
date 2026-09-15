@@ -145,9 +145,9 @@ class AuthViewModel(
                         val name = (user.userMetadata?.get("full_name") ?: user.userMetadata?.get("name"))?.toString() ?: "Google User"
                         val avatar = (user.userMetadata?.get("avatar_url") ?: user.userMetadata?.get("picture"))?.toString() ?: ""
                         userRepository.saveUserData(user.id, mapOf<String, Any?>(
-                            "full_name" to name, 
+                            "name" to name, 
                             "email" to (user.email ?: ""),
-                            "profile_pic_url" to avatar
+                            "avatar_url" to avatar
                         ))
                         _authState.value = AuthState.Success(user = user)
                     }
@@ -194,7 +194,7 @@ class AuthViewModel(
     }
 
     fun signUp(email: String, password: String, userData: Map<String, Any?>) {
-        val fullName = userData["full_name"] as? String ?: ""
+        val fullName = userData["name"] as? String ?: ""
         
         if (fullName.isBlank() || fullName.length < 3) {
             _authState.value = AuthState.Error("Please enter a valid full name")

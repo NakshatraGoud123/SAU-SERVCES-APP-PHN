@@ -41,7 +41,7 @@ class UserRepository {
                 
                 withContext(Dispatchers.IO) {
                     // Using postgrest to insert profile data
-                    client.postgrest["users"].insert(profileData)
+                    client.postgrest["profiles"].insert(profileData)
                 }
             }
             Result.success(Unit)
@@ -53,7 +53,7 @@ class UserRepository {
     suspend fun registerUser(user: User): Result<Unit> {
         return try {
             withContext(Dispatchers.IO) {
-                client.postgrest["users"].insert(user)
+                client.postgrest["profiles"].insert(user)
             }
             Result.success(Unit)
         } catch (e: Exception) {
@@ -64,7 +64,7 @@ class UserRepository {
     suspend fun getUserData(uid: String): Result<Map<String, String>?> {
         return try {
             val response = withContext(Dispatchers.IO) {
-                client.postgrest["users"].select(Columns.ALL) {
+                client.postgrest["profiles"].select(Columns.ALL) {
                     filter {
                         eq("id", uid)
                     }
@@ -79,7 +79,7 @@ class UserRepository {
     suspend fun saveUserData(uid: String, userData: Map<String, Any?>): Result<Unit> {
         return try {
             withContext(Dispatchers.IO) {
-                client.postgrest["users"].upsert(userData) {
+                client.postgrest["profiles"].upsert(userData) {
                     filter {
                         eq("id", uid)
                     }
