@@ -38,18 +38,6 @@ import com.nisr.sauservices.ui.components.LuxuryButton
 import java.text.SimpleDateFormat
 import java.util.*
 
-// ============================================================
-// LUXE BRAND COLORS (Local for precision)
-// ============================================================
-private val LuxeBackground = Color(0xFFFDFBFA)
-private val LuxeCard = Color(0xFFFFFFFF)
-private val LuxeTextPrimary = Color(0xFF423F3D)
-private val LuxeTextSecondary = Color(0xFF8D7F77)
-private val LuxeAccentSage = Color(0xFF96A68F)
-private val LuxeHighlightChampagne = Color(0xFFF5E6D3)
-private val LuxeBorder = Color(0xFFEFE9E4)
-private val LuxeGold = Color(0xFFE8C66A)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyOrdersScreen(navController: NavController) {
@@ -76,6 +64,7 @@ fun MyOrdersScreen(navController: NavController) {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         },
+        bottomBar = { BottomNavBar(navController) },
         containerColor = LuxeBackground
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
@@ -124,7 +113,6 @@ fun MyOrdersScreen(navController: NavController) {
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
                     items(displayOrders.sortedByDescending { it.createdAt }, key = { it.orderId }) { order ->
-                        // Entrance Animation
                         var visible by remember { mutableStateOf(false) }
                         LaunchedEffect(Unit) { visible = true }
                         
@@ -146,8 +134,9 @@ fun MyOrdersScreen(navController: NavController) {
         }
     }
     
-    if (showReceipt != null) {
-        LuxeReceiptDialog(order = showReceipt!!) { showReceipt = null }
+    val currentReceipt = showReceipt
+    if (currentReceipt != null) {
+        LuxeReceiptDialog(order = currentReceipt) { showReceipt = null }
     }
 }
 

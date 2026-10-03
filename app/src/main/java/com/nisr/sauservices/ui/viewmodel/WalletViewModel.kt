@@ -12,13 +12,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import android.app.Activity
+import android.util.Log
+import com.nisr.sauservices.data.repository.RazorpayRepository
 import com.nisr.sauservices.ui.payment.PaymentEvent
 import com.nisr.sauservices.ui.payment.PaymentResultBus
 import org.json.JSONObject
 import com.razorpay.Checkout
 
 class WalletViewModel(
-    private val repository: SupabaseRepository = SupabaseRepository()
+    private val repository: SupabaseRepository = SupabaseRepository(),
+    private val razorpayRepository: RazorpayRepository = RazorpayRepository()
 ) : ViewModel() {
 
     private val _balance = MutableStateFlow(0.0)
@@ -42,9 +45,7 @@ class WalletViewModel(
             PaymentResultBus.events.collect { event ->
                 if (event is PaymentEvent.Success) {
                     if (pendingTopupAmount > 0) {
-                        topUpWallet(pendingTopupAmount) {
-                            pendingTopupAmount = 0.0
-                        }
+                        verifyTopupOnServer(event)
                     } else {
                         fetchWalletData()
                     }
@@ -94,12 +95,19 @@ class WalletViewModel(
         }
     }
 
-    fun processWalletPayment(amount: Double, description: String, onResult: (Result<Unit>) -> Unit) {
+    fun processWalletPayment(
+        amount: Double, 
+        description: String, 
+        referenceId: String? = null,
+        onResult: (Result<Unit>) -> Unit
+    ) {
         viewModelScope.launch {
             isLoading = true
-            val result = repository.updateWalletBalance(amount, "debit")
+            // Secure: Use server-side RPC for atomic transaction
+            val finalReferenceId = referenceId ?: "DEBIT_${System.currentTimeMillis()}"
+            val result = repository.processWalletTransaction(amount, "debit", finalReferenceId, description)
+            
             if (result.isSuccess) {
-                repository.logTransaction(amount, "debit", description)
                 fetchWalletData()
                 onResult(Result.success(Unit))
             } else {
@@ -109,16 +117,27 @@ class WalletViewModel(
         }
     }
 
-    fun topUpWallet(amount: Double, onResult: (Result<Unit>) -> Unit) {
+    private fun verifyTopupOnServer(event: PaymentEvent.Success) {
+        val paymentId = event.paymentId ?: ""
+        val orderId = event.data?.orderId ?: ""
+        val signature = event.data?.signature ?: ""
+        
         viewModelScope.launch {
             isLoading = true
-            val result = repository.updateWalletBalance(amount, "credit")
+            val result = razorpayRepository.verifyPaymentOnServer(
+                paymentId = paymentId,
+                orderId = orderId,
+                signature = signature,
+                amount = pendingTopupAmount,
+                description = "Wallet Top-up"
+            )
+            
             if (result.isSuccess) {
-                repository.logTransaction(amount, "credit", "Wallet Top-up")
+                pendingTopupAmount = 0.0
                 fetchWalletData()
-                onResult(Result.success(Unit))
             } else {
-                onResult(Result.failure(result.exceptionOrNull() ?: Exception("Top-up failed")))
+                // Handle error
+                Log.e("WALLET_VM", "Server verification failed: ${result.exceptionOrNull()?.message}")
             }
             isLoading = false
         }

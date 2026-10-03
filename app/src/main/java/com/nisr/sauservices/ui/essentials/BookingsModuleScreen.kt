@@ -110,9 +110,10 @@ fun BookingsModuleScreen(navController: NavController, cartViewModel: CartViewMo
             }
         }
 
-        if (selectedCategory != null) {
+        val currentCategory = selectedCategory
+        if (currentCategory != null) {
             LuxuryBookingSubcategoryPopup(
-                category = selectedCategory!!,
+                category = currentCategory,
                 onDismiss = { selectedCategory = null },
                 onSubcategoryClick = { sub ->
                     selectedSubcategory = sub
@@ -120,9 +121,10 @@ fun BookingsModuleScreen(navController: NavController, cartViewModel: CartViewMo
             )
         }
 
-        if (selectedSubcategory != null) {
+        val currentSubcategory = selectedSubcategory
+        if (currentSubcategory != null) {
             LuxuryBookingItemsPopup(
-                subcategory = selectedSubcategory!!,
+                subcategory = currentSubcategory,
                 cartViewModel = cartViewModel,
                 onDismiss = { selectedSubcategory = null },
                 onBookNow = { item ->
@@ -131,27 +133,31 @@ fun BookingsModuleScreen(navController: NavController, cartViewModel: CartViewMo
             )
         }
 
-        if (itemToBook != null) {
+        val currentItemToBook = itemToBook
+        if (currentItemToBook != null) {
+            val catName = selectedCategory?.name ?: "Booking"
+            val subName = selectedSubcategory?.name ?: ""
+            
             LuxurySchedulingPopup(
-                item = itemToBook!!,
+                item = currentItemToBook,
                 onDismiss = { itemToBook = null },
                 onConfirm = { date, time, qty ->
-                    val priceStr = itemToBook!!.priceRange.replace("₹", "").split("–").first().trim()
+                    val priceStr = currentItemToBook.priceRange.replace("₹", "").split("–").first().trim()
                     val price = priceStr.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 0.0
                     
                     cartViewModel.addItemToCart(
-                        name = itemToBook!!.name,
+                        name = currentItemToBook.name,
                         price = price,
-                        category = selectedCategory?.name ?: "Booking",
-                        subcategory = selectedSubcategory?.name ?: "",
+                        category = catName,
+                        subcategory = subName,
                         unit = "Booking",
-                        productId = itemToBook!!.id,
+                        productId = currentItemToBook.id,
                         date = date,
                         time = time,
                         quantity = qty
                     ) { result ->
                         if (result.isSuccess) {
-                            Toast.makeText(context, "${itemToBook!!.name} added to cart", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "${currentItemToBook.name} added to cart", Toast.LENGTH_SHORT).show()
                             navController.navigate(Screen.Cart)
                         } else {
                             Toast.makeText(context, "Failed to add to cart", Toast.LENGTH_SHORT).show()
@@ -397,6 +403,7 @@ fun LuxurySchedulingPopup(
     var selectedDate by remember { mutableStateOf("") }
     var selectedTime by remember { mutableStateOf("") }
     var quantity by remember { mutableIntStateOf(1) }
+    var isSubmitting by remember { mutableStateOf(false) }
     
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
@@ -489,11 +496,14 @@ fun LuxurySchedulingPopup(
                     text = "CONFIRM & PROCEED",
                     onClick = {
                         if (selectedDate.isNotEmpty() && selectedTime.isNotEmpty()) {
+                            isSubmitting = true
                             onConfirm(selectedDate, selectedTime, quantity)
                         } else {
                             Toast.makeText(context, "Please select date and time", Toast.LENGTH_SHORT).show()
                         }
-                    }
+                    },
+                    isLoading = isSubmitting,
+                    enabled = !isSubmitting
                 )
             }
         }

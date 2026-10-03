@@ -94,9 +94,10 @@ fun PaymentMethodScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            if (viewModel.paymentError != null) {
+            val error = viewModel.paymentError
+            if (!error.isNullOrBlank()) {
                 Text(
-                    text = viewModel.paymentError!!,
+                    text = error,
                     color = Color.Red,
                     modifier = Modifier.padding(bottom = 12.dp),
                     fontSize = 14.sp
@@ -439,8 +440,9 @@ fun CustomerOtpScreen(
                 )
             )
 
-            if (viewModel.paymentError != null) {
-                Text(viewModel.paymentError!!, color = Color.Red, modifier = Modifier.padding(top = 12.dp), fontSize = 14.sp)
+            val error = viewModel.paymentError
+            if (!error.isNullOrBlank()) {
+                Text(error, color = Color.Red, modifier = Modifier.padding(top = 12.dp), fontSize = 14.sp)
             }
 
             Spacer(modifier = Modifier.weight(1f))

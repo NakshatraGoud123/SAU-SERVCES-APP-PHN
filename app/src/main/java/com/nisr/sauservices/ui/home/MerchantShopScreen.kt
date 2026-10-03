@@ -30,9 +30,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -40,10 +42,11 @@ import com.nisr.sauservices.R
 import com.nisr.sauservices.data.model.HomeProduct
 import com.nisr.sauservices.data.model.Product
 import com.nisr.sauservices.data.model.Vendor
-import com.nisr.sauservices.data.repository.SupabaseRepository
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.CartViewModel
+import com.nisr.sauservices.ui.viewmodel.MerchantShopUiState
+import com.nisr.sauservices.ui.viewmodel.MerchantShopViewModel
 import com.nisr.sauservices.ui.components.LuxuryButton
 import kotlinx.coroutines.launch
 
@@ -65,13 +68,14 @@ private val LuxeGold = Color(0xFFE8C66A)
 fun MerchantShopScreen(
     navController: NavController,
     vendorId: String,
-    cartViewModel: CartViewModel
+    cartViewModel: CartViewModel,
+    viewModel: MerchantShopViewModel = viewModel()
 ) {
-    val repository = remember { SupabaseRepository() }
-    
-    var vendor by remember { mutableStateOf<Vendor?>(null) }
-    var products by remember { mutableStateOf<List<Product>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(vendorId) {
+        viewModel.loadShopData(vendorId)
+    }
 
     val cartItems by cartViewModel.dbCartItems.collectAsState()
     val totalAmount = cartItems.sumOf { it.totalPrice }
@@ -94,21 +98,6 @@ fun MerchantShopScreen(
         }
     }
 
-    LaunchedEffect(vendorId) {
-        isLoading = true
-        try {
-            val vendorResult = repository.getVendorDetails(vendorId)
-            val productsResult = repository.getProductsByVendor(vendorId)
-            
-            vendor = vendorResult.getOrNull()
-            products = productsResult.getOrDefault(emptyList())
-        } catch (e: Exception) {
-            Log.e("MERCHANT_SHOP", "Error: ${e.message}")
-        } finally {
-            isLoading = false
-        }
-    }
-
     Scaffold(
         containerColor = LuxeBackground,
         bottomBar = {
@@ -121,82 +110,100 @@ fun MerchantShopScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = LuxeAccentSage)
-                }
-            } else if (vendor == null) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Vendor not found", color = LuxeTextPrimary)
-                }
-            } else {
-                // Parallax Layer
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(headerHeight)
-                        .graphicsLayer {
-                            alpha = headerAlpha
-                            this.translationY = translationY
-                        }
-                ) {
-                    MerchantHeaderContent(vendor!!)
-                }
-
-                LazyColumn(
-                    state = scrollState,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    item {
-                        Spacer(Modifier.height(headerHeight))
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+            when (val state = uiState) {
+                is MerchantShopUiState.Loading -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = LuxeAccentSage)
                     }
-
-                    item {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = LuxeBackground,
-                            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+                }
+                is MerchantShopUiState.Error -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(
+                            modifier = Modifier.padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Column(Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
-                                Text(
-                                    text = "AVAILABLE SELECTIONS",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = LuxeAccentSage,
-                                    fontWeight = FontWeight.Black,
-                                    letterSpacing = 2.sp
-                                )
+                            Icon(Icons.Default.ErrorOutline, null, tint = ErrorRed, modifier = Modifier.size(48.dp))
+                            Spacer(Modifier.height(8.dp))
+                            Text(state.message, color = LuxeTextPrimary, textAlign = TextAlign.Center)
+                            TextButton(onClick = { viewModel.loadShopData(vendorId) }) {
+                                Text("RETRY", color = LuxeAccentSage, fontWeight = FontWeight.Bold)
                             }
                         }
+                    }
+                }
+                is MerchantShopUiState.Success -> {
+                    val currentVendor = state.vendor
+                    val products = state.products
+
+                    // Parallax Layer
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(headerHeight)
+                            .graphicsLayer {
+                                alpha = headerAlpha
+                                this.translationY = translationY
+                            }
+                    ) {
+                        MerchantHeaderContent(currentVendor)
                     }
 
-                    if (products.isEmpty()) {
+                    LazyColumn(
+                        state = scrollState,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
                         item {
-                            Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
-                                Text("No items available at the moment.", color = LuxeTextSecondary)
+                            Spacer(Modifier.height(headerHeight))
+                        }
+
+                        item {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = LuxeBackground,
+                                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+                            ) {
+                                Column(Modifier.padding(horizontal = 24.dp, vertical = 24.dp)) {
+                                    Text(
+                                        text = "AVAILABLE SELECTIONS",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = LuxeAccentSage,
+                                        fontWeight = FontWeight.Black,
+                                        letterSpacing = 2.sp
+                                    )
+                                    Spacer(Modifier.height(16.dp))
+                                }
                             }
                         }
-                    } else {
-                        items(products) { product ->
-                            ProductItemRow(
-                                product = product,
-                                cartQuantity = cartViewModel.getHomeItemQuantity(product.id),
-                                onAdd = { cartViewModel.addHomeProduct(HomeProduct(
-                                    id = product.id,
-                                    subcategoryId = "",
-                                    name = product.name,
-                                    price = product.price.toInt(),
-                                    unit = product.unit,
-                                    category = product.categoryId ?: "",
-                                    imageUrl = product.imageUrl
-                                )) },
-                                onRemove = { cartViewModel.removeHomeProduct(product.id) }
-                            )
-                            HorizontalDivider(color = LuxeBorder, modifier = Modifier.padding(horizontal = 24.dp))
+
+                        if (products.isEmpty()) {
+                            item {
+                                Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
+                                    Text("No items available at the moment.", color = LuxeTextSecondary)
+                                }
+                            }
+                        } else {
+                            items(products) { product ->
+                                ProductItemRow(
+                                    product = product,
+                                    cartQuantity = cartViewModel.getHomeItemQuantity(product.id),
+                                    onAdd = { cartViewModel.addHomeProduct(HomeProduct(
+                                        id = product.id,
+                                        subcategoryId = "",
+                                        name = product.name,
+                                        price = product.price.toInt(),
+                                        unit = product.unit,
+                                        category = product.categoryId ?: "",
+                                        imageUrl = product.imageUrl
+                                    )) },
+                                    onRemove = { cartViewModel.removeHomeProduct(product.id) }
+                                )
+                                HorizontalDivider(color = LuxeBorder, modifier = Modifier.padding(horizontal = 24.dp))
+                            }
                         }
+                        
+                        item { Spacer(Modifier.height(120.dp)) }
                     }
-                    
-                    item { Spacer(Modifier.height(120.dp)) }
                 }
             }
 

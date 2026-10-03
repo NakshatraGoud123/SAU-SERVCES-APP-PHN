@@ -1,5 +1,8 @@
 package com.nisr.sauservices.ui.home
 
+import android.app.Activity
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +28,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -70,7 +74,7 @@ fun ResidentialCategoryScreen(navController: NavController, viewModel: Residenti
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Service Categories", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
+                title = { Text("Home Services", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
@@ -109,51 +113,63 @@ fun ResidentialCategoryScreen(navController: NavController, viewModel: Residenti
 
 @Composable
 fun LuxeCategoryCard(category: Category, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(180.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = LuxeCard),
-        border = BorderStroke(1.dp, LuxeBorder)
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(600)) + slideInVertically(initialOffsetY = { 40 }, animationSpec = tween(600))
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (category.imageUrl != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(category.imageUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    alpha = 0.6f
-                )
-                // Bottom Gradient
-                Box(modifier = Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f)),
-                        startY = 100f
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .clickable(onClick = onClick),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = LuxeCard),
+            border = BorderStroke(1.dp, LuxeBorder),
+            elevation = CardDefaults.cardElevation(2.dp)
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (category.imageUrl != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(category.imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        alpha = 0.5f
                     )
-                ))
-            }
-            
-            Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Bottom
-            ) {
-                Text(
-                    category.name, 
-                    fontSize = 16.sp, 
-                    fontWeight = FontWeight.Black, 
-                    color = if (category.imageUrl != null) Color.White else LuxeTextPrimary,
-                    lineHeight = 20.sp
-                )
-                if (category.imageUrl == null) {
-                    Spacer(Modifier.height(4.dp))
-                    Text("Explore", color = LuxeAccentSage, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    // Bottom Gradient
+                    Box(modifier = Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f)),
+                            startY = 80f
+                        )
+                    ))
+                }
+                
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Bottom
+                ) {
+                    Text(
+                        category.name, 
+                        fontSize = 16.sp, 
+                        fontWeight = FontWeight.Black, 
+                        color = if (category.imageUrl != null) Color.White else LuxeTextPrimary,
+                        lineHeight = 20.sp
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        category.description ?: "Professional service",
+                        fontSize = 11.sp,
+                        color = if (category.imageUrl != null) Color.White.copy(alpha = 0.8f) else LuxeTextSecondary,
+                        maxLines = 1
+                    )
                 }
             }
         }
@@ -203,23 +219,82 @@ fun ResidentialSubcategoryScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(subcategories) { sub ->
-                    val id = sub["id"] ?: ""
-                    val name = sub["name"] ?: ""
-                    Surface(
-                        modifier = Modifier.fillMaxWidth().clickable {
-                            navController.navigate(Screen.MerchantShop(id))
-                        },
-                        shape = RoundedCornerShape(20.dp),
-                        color = LuxeCard,
-                        border = BorderStroke(1.dp, LuxeBorder)
+                    val id = sub["id"] ?: "sub_1"
+                    val name = sub["name"] ?: "Service"
+                    val imageUrl = sub["imageUrl"] ?: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&auto=format&fit=crop&q=80"
+                    var visible by remember { mutableStateOf(false) }
+                    LaunchedEffect(Unit) { visible = true }
+
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = fadeIn(tween(500)) + slideInVertically(initialOffsetY = { 40 }, animationSpec = tween(500))
                     ) {
-                        Row(
-                            modifier = Modifier.padding(24.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(110.dp)
+                                .clickable {
+                                    navController.navigate(Screen.ResidentialServices(categoryId, id))
+                                },
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = LuxeCard),
+                            border = BorderStroke(1.dp, LuxeBorder),
+                            elevation = CardDefaults.cardElevation(2.dp)
                         ) {
-                            Text(name, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = LuxeTextPrimary)
-                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = LuxeAccentSage)
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                AsyncImage(
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(imageUrl)
+                                        .crossfade(true)
+                                        .build(),
+                                    contentDescription = name,
+                                    modifier = Modifier.fillMaxSize().alpha(0.3f),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.horizontalGradient(
+                                                colors = listOf(Color.White, Color.White.copy(alpha = 0.85f), Color.Transparent),
+                                                startX = 0f,
+                                                endX = Float.POSITIVE_INFINITY
+                                            )
+                                        )
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                        Surface(
+                                            modifier = Modifier.size(52.dp),
+                                            shape = CircleShape,
+                                            border = BorderStroke(1.5.dp, LuxeBorder),
+                                            color = LuxeHighlightChampagne
+                                        ) {
+                                            AsyncImage(
+                                                model = ImageRequest.Builder(LocalContext.current)
+                                                    .data(imageUrl)
+                                                    .crossfade(true)
+                                                    .build(),
+                                                contentDescription = null,
+                                                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                        }
+                                        Spacer(Modifier.width(16.dp))
+                                        Column {
+                                            Text(name, fontWeight = FontWeight.Black, fontSize = 16.sp, color = LuxeTextPrimary)
+                                            Spacer(Modifier.height(2.dp))
+                                            Text("Expert professional task", fontSize = 12.sp, color = LuxeTextSecondary, fontWeight = FontWeight.Medium)
+                                        }
+                                    }
+                                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = LuxeAccentSage)
+                                }
+                            }
                         }
                     }
                 }
@@ -309,8 +384,6 @@ fun ResidentialServiceListScreen(
                             ResidentialServiceCardDesign(
                                 service = service,
                                 onAdd = { 
-                                    // Map ServiceModel to the booking flow
-                                    // For now, navigate to partner list
                                     navController.navigate(Screen.PartnerList(service.id))
                                 }
                             )
@@ -324,55 +397,65 @@ fun ResidentialServiceListScreen(
 
 @Composable
 fun ResidentialServiceCardDesign(service: ServiceModel, onAdd: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = LuxeCard,
-        border = BorderStroke(1.dp, LuxeBorder)
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(500)) + slideInVertically(initialOffsetY = { 40 }, animationSpec = tween(500))
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            color = LuxeCard,
+            border = BorderStroke(1.dp, LuxeBorder),
+            shadowElevation = 2.dp
         ) {
-            Surface(
-                modifier = Modifier.size(80.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = LuxeHighlightChampagne.copy(alpha = 0.5f)
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (!service.imageUrl.isNullOrEmpty()) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(service.imageUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Icon(
-                        Icons.Default.Build, 
-                        contentDescription = null, 
-                        modifier = Modifier.padding(24.dp),
-                        tint = LuxeAccentSage
-                    )
+                Surface(
+                    modifier = Modifier.size(80.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = LuxeHighlightChampagne.copy(alpha = 0.5f)
+                ) {
+                    if (!service.imageUrl.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(service.imageUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Build, 
+                            contentDescription = null, 
+                            modifier = Modifier.padding(24.dp),
+                            tint = LuxeAccentSage
+                        )
+                    }
                 }
+
+                Spacer(Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(service.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxeTextPrimary)
+                    Spacer(Modifier.height(4.dp))
+                    Text(service.description, fontSize = 12.sp, color = LuxeTextSecondary, maxLines = 1)
+                    Spacer(Modifier.height(4.dp))
+                    Text("₹${service.price.toInt()}", fontWeight = FontWeight.Black, color = LuxeGold, fontSize = 16.sp)
+                }
+
+                LuxuryButton(
+                    text = "BOOK",
+                    onClick = onAdd,
+                    modifier = Modifier.width(80.dp).height(36.dp)
+                )
             }
-
-            Spacer(Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(service.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxeTextPrimary)
-                Spacer(Modifier.height(4.dp))
-                Text("Standard Service", fontSize = 12.sp, color = LuxeTextSecondary)
-                Text("₹${service.price.toInt()}", fontWeight = FontWeight.Black, color = LuxeTextPrimary, fontSize = 16.sp)
-            }
-
-            LuxuryButton(
-                text = "ADD",
-                onClick = onAdd,
-                modifier = Modifier.width(80.dp).height(36.dp)
-            )
         }
     }
 }
@@ -388,63 +471,75 @@ fun ResidentialPaymentScreen(
     val bookingDetails by viewModel.bookingDetails.collectAsState()
     var selectedOption by remember { mutableStateOf(bookingDetails.paymentMethod.ifBlank { "UPI" }) }
     val options = listOf(
-        PaymentOptionData("Cash on Delivery", Icons.Default.Payments),
-        PaymentOptionData("UPI", Icons.Default.AccountBalanceWallet),
-        PaymentOptionData("Debit/Credit Card", Icons.Default.CreditCard),
-        PaymentOptionData("Wallet", Icons.Default.AccountBalance)
+        PaymentOptionData("UPI (GPay / PhonePe / Paytm)", Icons.Default.Payments),
+        PaymentOptionData("Credit / Debit Card", Icons.Default.CreditCard),
+        PaymentOptionData("Cash After Service", Icons.Default.LocalAtm)
     )
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Payment", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
-                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LuxeTextPrimary) } },
+                title = { Text("Payment Method", color = LuxeTextPrimary, fontWeight = FontWeight.Black, fontFamily = FontFamily.Serif) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         },
         containerColor = LuxeBackground
     ) { padding ->
-        Column(Modifier.padding(padding).padding(20.dp)) {
-            Text("Select Method", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = LuxeTextPrimary)
-            Spacer(Modifier.height(20.dp))
-            Column(Modifier.selectableGroup()) {
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text("Select Payment Option", fontWeight = FontWeight.Black, fontSize = 20.sp, color = LuxeTextPrimary)
+                Spacer(Modifier.height(16.dp))
+
                 options.forEach { option ->
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .selectable(
-                                selected = selectedOption == option.name, 
-                                onClick = { selectedOption = option.name; viewModel.setPaymentMethod(option.name) }, 
-                                role = Role.RadioButton
-                            ),
-                        shape = RoundedCornerShape(20.dp),
+                            .padding(vertical = 6.dp)
+                            .clickable { 
+                                selectedOption = option.name
+                                viewModel.setPaymentMethod(option.name)
+                            },
+                        shape = RoundedCornerShape(16.dp),
                         color = LuxeCard,
                         border = BorderStroke(1.dp, if (selectedOption == option.name) LuxeAccentSage else LuxeBorder),
+                        shadowElevation = 2.dp
                     ) {
-                        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(option.icon, contentDescription = null, tint = if (selectedOption == option.name) LuxeAccentSage else LuxeTextSecondary)
-                            Spacer(Modifier.width(16.dp))
-                            Text(text = option.name, color = LuxeTextPrimary, modifier = Modifier.weight(1f), fontWeight = if (selectedOption == option.name) FontWeight.Bold else FontWeight.Medium)
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             RadioButton(
-                                selected = selectedOption == option.name, 
-                                onClick = null,
+                                selected = selectedOption == option.name,
+                                onClick = { 
+                                    selectedOption = option.name
+                                    viewModel.setPaymentMethod(option.name)
+                                },
                                 colors = RadioButtonDefaults.colors(selectedColor = LuxeAccentSage)
                             )
+                            Spacer(Modifier.width(12.dp))
+                            Icon(option.icon, null, tint = LuxeAccentSage)
+                            Spacer(Modifier.width(12.dp))
+                            Text(option.name, fontWeight = FontWeight.Bold, color = LuxeTextPrimary)
                         }
                     }
                 }
             }
-            Spacer(Modifier.weight(1f))
+
             LuxuryButton(
                 text = "PROCEED TO SUMMARY",
-                onClick = { 
-                    navController.navigate(
-                        Screen.ResidentialOrderSummary(
-                            partnerId = partnerId,
-                            serviceId = serviceId
-                        )
-                    ) 
+                onClick = {
+                    navController.navigate(Screen.ResidentialOrderSummary)
                 },
                 modifier = Modifier.height(56.dp)
             )

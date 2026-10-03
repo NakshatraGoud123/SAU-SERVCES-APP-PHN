@@ -1,7 +1,9 @@
 package com.nisr.sauservices.ui
 
+import androidx.annotation.Keep
 import kotlinx.serialization.Serializable
 
+@Keep
 @Serializable
 sealed class Screen {
     @Serializable data class Splash(val id: String = "splash") : Screen()
@@ -84,6 +86,7 @@ sealed class Screen {
     
     // Location
     @Serializable data object LocationPermission : Screen()
+    @Serializable data object ManualLocation : Screen()
     @Serializable data object MapPicker : Screen()
     @Serializable data class OrderTracking(val orderId: String) : Screen()
     
@@ -158,6 +161,7 @@ sealed class Screen {
     
     // Mechanic
     @Serializable data class MechanicSubcategories(val categoryName: String) : Screen()
+    @Serializable data class MechanicServices(val subcategoryId: String, val subcategoryName: String) : Screen()
     @Serializable data object MechanicBooking : Screen()
     @Serializable data object MechanicSuccess : Screen()
     

@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nisr.sauservices.data.model.CartModel
@@ -10,6 +11,7 @@ import com.nisr.sauservices.data.repository.SupabaseRepository
 import com.nisr.sauservices.data.repository.CartRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 class CartViewModel : ViewModel() {
@@ -24,9 +26,13 @@ class CartViewModel : ViewModel() {
 
     init {
         viewModelScope.launch {
-            cartRepository.getCartItems().collect {
-                _dbCartItems.value = it
-            }
+            cartRepository.getCartItems()
+                .catch { e ->
+                    Log.e("CART_ERROR", "Error collecting cart items: ${e.message}")
+                }
+                .collect {
+                    _dbCartItems.value = it
+                }
         }
     }
 
@@ -43,36 +49,48 @@ class CartViewModel : ViewModel() {
         imageUrl: String? = null,
         onResult: (Result<Unit>) -> Unit = {}
     ) {
+        if (productId.isBlank()) {
+            onResult(Result.failure(Exception("Invalid Product ID")))
+            return
+        }
+
         viewModelScope.launch {
-            val userId = repository.getCurrentUserId() ?: run {
-                onResult(Result.failure(Exception("User not logged in")))
-                return@launch
-            }
+            try {
+                val userId = repository.getCurrentUserId() ?: run {
+                    onResult(Result.failure(Exception("User not logged in")))
+                    return@launch
+                }
 
-            val existingItem = _dbCartItems.value.find {
-                it.productId == productId.toSafeUuid() && it.date == date && it.time == time
-            }
+                val safeProductId = productId.toSafeUuid()
 
-            val result = if (existingItem != null) {
-                cartRepository.updateQuantity(existingItem.itemId, existingItem.quantity + quantity)
-            } else {
-                val item = CartModel(
-                    userId = userId,
-                    itemName = name,
-                    price = price,
-                    category = category,
-                    subcategory = subcategory,
-                    unit = unit,
-                    productId = productId.toSafeUuid(),
-                    date = date,
-                    time = time,
-                    quantity = quantity,
-                    totalPrice = price * quantity,
-                    imageUrl = imageUrl
-                )
-                cartRepository.addToCart(item)
+                val existingItem = _dbCartItems.value.find {
+                    it.productId == safeProductId && it.date == date && it.time == time
+                }
+
+                val result = if (existingItem != null) {
+                    cartRepository.updateQuantity(existingItem.itemId, existingItem.quantity + quantity)
+                } else {
+                    val item = CartModel(
+                        userId = userId,
+                        itemName = name,
+                        price = price,
+                        category = category,
+                        subcategory = subcategory,
+                        unit = unit,
+                        productId = safeProductId,
+                        date = date,
+                        time = time,
+                        quantity = quantity,
+                        totalPrice = price * quantity,
+                        imageUrl = imageUrl
+                    )
+                    cartRepository.addToCart(item)
+                }
+                onResult(result)
+            } catch (e: Exception) {
+                Log.e("CART_VM", "Error in addItemToCart: ${e.message}")
+                onResult(Result.failure(e))
             }
-            onResult(result)
         }
     }
 

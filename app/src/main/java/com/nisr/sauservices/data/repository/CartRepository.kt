@@ -1,5 +1,6 @@
 package com.nisr.sauservices.data.repository
 
+import android.util.Log
 import com.nisr.sauservices.data.api.SupabaseClient
 import com.nisr.sauservices.data.model.BookingModel
 import com.nisr.sauservices.data.model.CartModel
@@ -47,23 +48,28 @@ class CartRepository {
             postgrest["cart_items"].insert(insertData)
         }
         Result.success(Unit)
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         android.util.Log.e("CART_REPO", "Add failed: ${e.message}", e)
         Result.failure(e)
     }
 
     suspend fun updateQuantity(itemId: String, newQuantity: Int): Result<Unit> = try {
+        val uid = getUserId() ?: return Result.failure(Exception("Not logged in"))
         withContext(Dispatchers.IO) {
             if (newQuantity <= 0) {
                 postgrest["cart_items"].delete {
                     filter {
                         eq("id", itemId)
+                        eq("user_id", uid)
                     }
                 }
             } else {
-                // Fetch the item first to get its unit price
+                // Fetch the item first to get its unit price - ensure ownership
                 val response = postgrest["cart_items"].select {
-                    filter { eq("id", itemId) }
+                    filter { 
+                        eq("id", itemId) 
+                        eq("user_id", uid)
+                    }
                 }.decodeSingle<CartModel>()
                 
                 val unitPrice = response.price
@@ -77,12 +83,14 @@ class CartRepository {
                 ) {
                     filter {
                         eq("id", itemId)
+                        eq("user_id", uid)
                     }
                 }
             }
         }
         Result.success(Unit)
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
+        Log.e("CART_REPO", "Update failed: ${e.message}", e)
         Result.failure(e)
     }
 
@@ -110,11 +118,13 @@ class CartRepository {
     }
 
     suspend fun removeItem(itemId: String) {
+        val uid = getUserId() ?: return
         withContext(Dispatchers.IO) {
             try {
                 postgrest["cart_items"].delete {
                     filter {
                         eq("id", itemId)
+                        eq("user_id", uid)
                     }
                 }
             } catch (_: Exception) {

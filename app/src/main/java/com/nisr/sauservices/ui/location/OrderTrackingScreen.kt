@@ -317,8 +317,9 @@ fun OrderTrackingScreen(
             TopAppBar(
                 title = { 
                     Column {
+                        val displayId = if (orderId.length >= 6) orderId.takeLast(6).uppercase() else "TRACKING"
                         Text("Live Tracking", fontSize = 18.sp, fontWeight = FontWeight.Black, color = LuxeTextPrimary, fontFamily = FontFamily.Serif)
-                        Text("#${orderId.takeLast(6).uppercase()}", fontSize = 11.sp, color = LuxeTextSecondary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text("#$displayId", fontSize = 11.sp, color = LuxeTextSecondary, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 },
                 navigationIcon = {

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
 import com.nisr.sauservices.data.repository.SupabaseRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,10 +45,17 @@ class TrackingViewModel(
     private val _uiState = MutableStateFlow(TrackingUiState())
     val uiState: StateFlow<TrackingUiState> = _uiState.asStateFlow()
 
+    private var trackingJob: Job? = null
+
     fun startTracking(orderId: String) {
+        if (orderId.isBlank()) return
+        
+        // Cancel any existing tracking session to prevent duplicate listeners
+        trackingJob?.cancel()
+        
         _uiState.update { it.copy(orderId = orderId, isLoading = true) }
         
-        viewModelScope.launch {
+        trackingJob = viewModelScope.launch {
             repository.listenToCustomerOrder(orderId).collectLatest { orders ->
                 val order = orders.firstOrNull() ?: return@collectLatest
                 
@@ -68,26 +76,37 @@ class TrackingViewModel(
                 if (assignedPartnerId.isNotEmpty()) {
                     // Fetch partner profile if not already loaded
                     if (_uiState.value.partnerName == "Assigning...") {
-                        viewModelScope.launch {
-                            repository.getUserProfile(assignedPartnerId).onSuccess { user ->
-                                _uiState.update { it.copy(
-                                    partnerName = user.name,
-                                    partnerAvatar = user.avatarUrl,
-                                    partnerRating = "4.9" // Default mock rating
-                                ) }
-                            }
+                        repository.getUserProfile(assignedPartnerId).onSuccess { user ->
+                            _uiState.update { it.copy(
+                                partnerName = user.name,
+                                partnerAvatar = user.avatarUrl,
+                                partnerRating = "4.9"
+                            ) }
+                        }.onFailure {
+                            _uiState.update { it.copy(partnerName = "Personal Assistant") }
                         }
                     }
                     
+                    // Use a nested launch tied to this emission's lifecycle
                     launch {
                         repository.listenToPartnerLocation(assignedPartnerId).collectLatest { locations ->
                             val loc = locations.firstOrNull() ?: return@collectLatest
-                            _uiState.update { it.copy(partnerLocation = com.google.android.gms.maps.model.LatLng(loc.latitude, loc.longitude)) }
+                            _uiState.update { it.copy(partnerLocation = LatLng(loc.latitude, loc.longitude)) }
                         }
                     }
                 }
             }
         }
+    }
+
+    fun stopTracking() {
+        trackingJob?.cancel()
+        trackingJob = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopTracking()
     }
 
     private fun getTitleForStatus(status: String): String = when(status) {

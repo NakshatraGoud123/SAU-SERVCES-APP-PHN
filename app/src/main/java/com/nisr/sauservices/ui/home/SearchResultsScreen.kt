@@ -1,6 +1,13 @@
 package com.nisr.sauservices.ui.home
 
+import android.Manifest
 import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.speech.RecognizerIntent
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,10 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import android.content.Intent
-import android.speech.RecognizerIntent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -43,18 +47,6 @@ import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.SearchUiState
 import com.nisr.sauservices.ui.viewmodel.SearchViewModel
 
-// ============================================================
-// LUXE BRAND COLORS (Local for precision)
-// ============================================================
-private val LuxeBackground = Color(0xFFFDFBFA)
-private val LuxeCard = Color(0xFFFFFFFF)
-private val LuxeTextPrimary = Color(0xFF423F3D)
-private val LuxeTextSecondary = Color(0xFF8D7F77)
-private val LuxeAccentSage = Color(0xFF96A68F)
-private val LuxeHighlightChampagne = Color(0xFFF5E6D3)
-private val LuxeBorder = Color(0xFFEFE9E4)
-private val LuxeGold = Color(0xFFE8C66A)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchResultsScreen(
@@ -65,6 +57,7 @@ fun SearchResultsScreen(
     var searchQuery by remember { mutableStateOf(initialQuery) }
     val uiState by viewModel.uiState.collectAsState()
     val focusRequester = remember { FocusRequester() }
+    val context = LocalContext.current
 
     val voiceLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
@@ -79,6 +72,28 @@ fun SearchResultsScreen(
             }
         }
     )
+
+    fun startVoiceSearch() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_PROMPT, "What can SAU find for you?")
+        }
+        try {
+            voiceLauncher.launch(intent)
+        } catch (_: Exception) {
+            Toast.makeText(context, "Voice search is not supported on this device", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val micPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            startVoiceSearch()
+        } else {
+            Toast.makeText(context, "Microphone access is required for voice search. Please enable it in Settings.", Toast.LENGTH_LONG).show()
+        }
+    }
 
     LaunchedEffect(Unit) {
         if (initialQuery.isNotEmpty()) {
@@ -100,7 +115,6 @@ fun SearchResultsScreen(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
                 )
                 
-                // Active Search Input
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -132,11 +146,16 @@ fun SearchResultsScreen(
                                 }
                                 IconButton(
                                     onClick = {
-                                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                            putExtra(RecognizerIntent.EXTRA_PROMPT, "What can SAU find for you?")
+                                        val hasMicPermission = ContextCompat.checkSelfPermission(
+                                            context,
+                                            Manifest.permission.RECORD_AUDIO
+                                        ) == PackageManager.PERMISSION_GRANTED
+
+                                        if (hasMicPermission) {
+                                            startVoiceSearch()
+                                        } else {
+                                            micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                         }
-                                        voiceLauncher.launch(intent)
                                     }
                                 ) {
                                     Icon(Icons.Default.Mic, null, tint = LuxeAccentSage, modifier = Modifier.size(20.dp))
@@ -155,6 +174,7 @@ fun SearchResultsScreen(
                 }
             }
         },
+        bottomBar = { BottomNavBar(navController) },
         containerColor = LuxeBackground
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {

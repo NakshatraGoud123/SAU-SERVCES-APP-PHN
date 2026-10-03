@@ -100,7 +100,5 @@ fun AppNavHost(navController: NavHostController) {
         essentialsNavGraph(navController, cartViewModel, bookingsViewModel)
         
         foodNavGraph(navController, foodCartViewModel, bookingsViewModel)
-
-        luxuryNavGraph(navController)
     }
 }

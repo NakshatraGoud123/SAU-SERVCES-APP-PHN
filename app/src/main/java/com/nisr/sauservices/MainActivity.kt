@@ -15,6 +15,9 @@ import com.nisr.sauservices.navigation.AppNavHost
 import com.nisr.sauservices.ui.payment.PaymentEvent
 import com.nisr.sauservices.ui.payment.PaymentResultBus
 import com.nisr.sauservices.ui.theme.AppTheme
+import com.nisr.sauservices.ui.theme.ThemeManager
+import com.nisr.sauservices.data.local.SessionManager
+import androidx.compose.foundation.isSystemInDarkTheme
 import com.razorpay.PaymentData
 import com.razorpay.PaymentResultWithDataListener
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,9 +41,20 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
         val client = SupabaseClient.client
 
         setContent {
-
             val navController = rememberNavController()
-            val sessionManager = remember { com.nisr.sauservices.data.local.SessionManager(this@MainActivity) }
+            val sessionManager = remember { SessionManager(this@MainActivity) }
+            
+            // Initialize Theme
+            LaunchedEffect(Unit) {
+                ThemeManager.initialize(sessionManager)
+            }
+
+            val currentTheme = ThemeManager.themeConfig
+            val isDark = when (currentTheme) {
+                SessionManager.ThemeConfig.LIGHT -> false
+                SessionManager.ThemeConfig.DARK -> true
+                SessionManager.ThemeConfig.SYSTEM -> isSystemInDarkTheme()
+            }
 
             LaunchedEffect(Unit) {
                 try {
@@ -53,7 +67,8 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                         sessionManager.saveLoginState(true)
                     } else {
                         Log.d("SUPABASE_TEST", "No active session")
-                        sessionManager.saveLoginState(false)
+                        // Do not overwrite local session state to false on startup, 
+                        // as Supabase client session restoration may take a moment.
                     }
                 } catch (e: Exception) {
                     Log.e("SUPABASE_TEST", "Session Validation Error: ${e.message}")
@@ -61,7 +76,7 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                 }
             }
 
-            AppTheme {
+            AppTheme(darkTheme = isDark) {
                 // Let AppNavHost handle the Splash screen as its start destination
                 AppNavHost(navController)
             }

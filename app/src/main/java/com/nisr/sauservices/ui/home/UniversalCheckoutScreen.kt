@@ -25,11 +25,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.nisr.sauservices.data.local.SessionManager
 import com.nisr.sauservices.ui.Screen
+import com.nisr.sauservices.ui.components.LuxuryButton
 import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.*
 
@@ -49,7 +52,7 @@ fun UniversalCheckoutScreen(
     val walletBalance by walletViewModel.balance.collectAsState()
     
     val context = LocalContext.current
-    val sessionManager = remember { com.nisr.sauservices.data.local.SessionManager(context) }
+    val sessionManager = remember { SessionManager(context) }
     val sessionAddress = sessionManager.getAddress()
     
     var selectedAddressId by remember { mutableStateOf("") }
@@ -58,6 +61,7 @@ fun UniversalCheckoutScreen(
     val subtotal = cartItems.sumOf { it.totalPrice }
     val deliveryFee = if (cartItems.isEmpty()) 0.0 else 30.0
     val grandTotal = subtotal + deliveryFee
+    val isEmpty = cartItems.isEmpty()
 
     // Initialize selection
     LaunchedEffect(addresses) {
@@ -103,23 +107,24 @@ fun UniversalCheckoutScreen(
                 border = BorderStroke(1.dp, LuxeBorder)
             ) {
                 Column(modifier = Modifier.padding(20.dp).navigationBarsPadding()) {
-                    com.nisr.sauservices.ui.components.LuxuryButton(
+                    val finalAddress = if (useSessionAddress) {
+                        sessionAddress
+                    } else {
+                        addresses.find { it.id == selectedAddressId }?.let { 
+                            "${it.houseNo}, ${it.street}, ${it.city}" 
+                        } ?: ""
+                    }
+                    val isAddressValid = finalAddress.isNotEmpty() && finalAddress != "Fetching location..."
+
+                    LuxuryButton(
                         text = "PAY ₹$grandTotal",
                         onClick = {
-                            if (cartItems.isEmpty()) {
+                            if (isEmpty) {
                                 Toast.makeText(context, "Your cart is empty", Toast.LENGTH_SHORT).show()
                                 return@LuxuryButton
                             }
                             
-                            val finalAddress = if (useSessionAddress) {
-                                sessionAddress
-                            } else {
-                                addresses.find { it.id == selectedAddressId }?.let { 
-                                    "${it.houseNo}, ${it.street}, ${it.city}" 
-                                } ?: ""
-                            }
-
-                            if (finalAddress.isEmpty() || finalAddress == "Fetching location...") {
+                            if (!isAddressValid) {
                                 Toast.makeText(context, "Please select or add an address", Toast.LENGTH_SHORT).show()
                                 return@LuxuryButton
                             }
@@ -145,14 +150,16 @@ fun UniversalCheckoutScreen(
                                 )
                             } else if (selectedPaymentMethod == "Wallet") {
                                 if (walletBalance >= grandTotal) {
+                                    val walletRef = "WAL_PAY_${System.currentTimeMillis()}"
                                     walletViewModel.processWalletPayment(
                                         amount = grandTotal,
-                                        description = "Paid for Order"
+                                        description = "Order Payment",
+                                        referenceId = walletRef
                                     ) { result ->
                                         if (result.isSuccess) {
-                                            cartViewModel.placeOrder(finalAddress, null, "Paid via Wallet")
+                                            cartViewModel.placeOrder(finalAddress, null, "Paid via Wallet (Ref: $walletRef)")
                                         } else {
-                                            Toast.makeText(context, "Wallet payment failed", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Wallet payment failed: ${result.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
                                         }
                                     }
                                 } else {
@@ -163,7 +170,7 @@ fun UniversalCheckoutScreen(
                             }
                         },
                         isLoading = paymentViewModel.isLoading || walletViewModel.isLoading,
-                        enabled = !paymentViewModel.isLoading && !walletViewModel.isLoading
+                        enabled = !paymentViewModel.isLoading && !walletViewModel.isLoading && isAddressValid && !isEmpty
                     )
                 }
             }
@@ -192,6 +199,24 @@ fun UniversalCheckoutScreen(
                                     useSessionAddress = false 
                                 }
                             )
+                        }
+                    }
+                } else if (sessionAddress == "Fetching location..." || sessionAddress.isEmpty()) {
+                    // PROFESSIONAL EMPTY STATE
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        color = LuxeHighlightChampagne.copy(alpha = 0.3f),
+                        border = BorderStroke(1.dp, LuxeBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(Icons.Default.LocationOff, null, tint = LuxeTextSecondary, modifier = Modifier.size(32.dp))
+                            Spacer(Modifier.height(12.dp))
+                            Text("No delivery address selected", color = LuxeTextPrimary, fontWeight = FontWeight.Bold)
+                            Text("Please pin your location or add a saved address to proceed.", color = LuxeTextSecondary, fontSize = 12.sp, textAlign = TextAlign.Center)
                         }
                     }
                 }

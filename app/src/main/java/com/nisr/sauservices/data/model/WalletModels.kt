@@ -9,6 +9,8 @@ data class Transaction(
     @SerialName("user_id") val userId: String,
     @SerialName("amount") val amount: Double,
     @SerialName("type") val type: String, // 'credit', 'debit'
+    @SerialName("reference_id") val referenceId: String,
+    @SerialName("balance_after") val balanceAfter: Double,
     @SerialName("description") val description: String,
     @SerialName("created_at") val createdAt: String? = null
 )

@@ -465,19 +465,20 @@ fun CartItemRow(
                     verticalAlignment = Alignment.CenterVertically, 
                     modifier = Modifier
                         .border(1.dp, LuxeBorder, RoundedCornerShape(12.dp))
-                        .padding(horizontal = 4.dp)
+                        .padding(horizontal = 2.dp)
                 ) {
-                    IconButton(onClick = { if (quantity > 1) onDecrease() else onDelete() }, modifier = Modifier.size(32.dp)) { 
-                        Icon(if (quantity > 1) Icons.Default.Remove else Icons.Default.Delete, null, tint = if (quantity > 1) LuxeTextPrimary else ErrorRed, modifier = Modifier.size(18.dp)) 
+                    IconButton(onClick = { if (quantity > 1) onDecrease() else onDelete() }, modifier = Modifier.size(44.dp)) { 
+                        Icon(if (quantity > 1) Icons.Default.Remove else Icons.Default.Delete, null, tint = if (quantity > 1) LuxeTextPrimary else ErrorRed, modifier = Modifier.size(20.dp)) 
                     }
                     Text(
                         quantity.toString(), 
                         fontWeight = FontWeight.Black, 
                         color = LuxeTextPrimary,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = 4.dp),
+                        fontSize = 15.sp
                     )
-                    IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) { 
-                        Icon(Icons.Default.Add, null, tint = LuxeAccentSage, modifier = Modifier.size(18.dp)) 
+                    IconButton(onClick = onIncrease, modifier = Modifier.size(44.dp)) { 
+                        Icon(Icons.Default.Add, null, tint = LuxeAccentSage, modifier = Modifier.size(20.dp)) 
                     }
                 }
             }

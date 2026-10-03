@@ -1,5 +1,14 @@
 package com.nisr.sauservices.navigation
 
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -13,6 +22,8 @@ import com.nisr.sauservices.ui.lifestyle.*
 import com.nisr.sauservices.ui.essentials.*
 import com.nisr.sauservices.ui.mens.*
 import com.nisr.sauservices.ui.tech.*
+import com.nisr.sauservices.ui.mechanic.*
+import com.nisr.sauservices.ui.mobility.*
 import com.nisr.sauservices.ui.viewmodel.*
 import com.nisr.sauservices.ui.womens.*
 import com.nisr.sauservices.ui.Screen
@@ -78,6 +89,43 @@ fun NavGraphBuilder.servicesNavGraph(
         val route: Screen.TechServices = backStackEntry.toRoute()
         TechServiceListScreen(navController, route.subcategory, techViewModel)
     }
+    composable<Screen.TechCheckout> {
+        TechCheckoutScreen(navController, techViewModel)
+    }
+    composable<Screen.TechPayment> {
+        TechPaymentScreen(navController, techViewModel)
+    }
+    composable<Screen.TechSuccess> {
+        TechBookingSuccessScreen(navController, techViewModel)
+    }
+
+    // --- MECHANIC SERVICES ---
+    composable<Screen.MechanicSubcategories> { backStackEntry ->
+        val route: Screen.MechanicSubcategories = backStackEntry.toRoute()
+        val mechanicViewModel: MechanicViewModel = viewModel()
+        MechanicSubcategoryScreen(navController, route.categoryName, mechanicViewModel)
+    }
+    composable<Screen.MechanicServices> { backStackEntry ->
+        val route: Screen.MechanicServices = backStackEntry.toRoute()
+        val mechanicViewModel: MechanicViewModel = viewModel()
+        MechanicServiceListScreen(navController, route.subcategoryId, route.subcategoryName, mechanicViewModel)
+    }
+    composable<Screen.MechanicBooking> {
+        val mechanicViewModel: MechanicViewModel = viewModel()
+        MechanicBookingScreen(navController, mechanicViewModel)
+    }
+    composable<Screen.MechanicSuccess> {
+        GenericSuccessScreen("Mechanic Service Booked Successfully!", navController)
+    }
+
+    // --- MOBILITY SERVICES ---
+    composable<Screen.MobilityMain> {
+        val mobilityViewModel: MobilityViewModel = viewModel()
+        MobilityMainScreen(navController, mobilityViewModel)
+    }
+    composable<Screen.MobilitySuccess> {
+        GenericSuccessScreen("Ride Booked Successfully!", navController)
+    }
 
     // --- MENS GROOMING ---
     composable<Screen.MensSubcategories> { backStackEntry ->
@@ -137,7 +185,6 @@ fun NavGraphBuilder.servicesNavGraph(
     }
     composable<Screen.HomeEssentialsItems> { backStackEntry ->
         val route: Screen.HomeEssentialsItems = backStackEntry.toRoute()
-        // Map to same screen or implement sub-filter if needed
         HomeEssentialsCategoryScreen(navController, route.subcategoryId, homeCartViewModel)
     }
 
@@ -160,5 +207,29 @@ fun NavGraphBuilder.servicesNavGraph(
     composable<Screen.Reviews> { backStackEntry ->
         val route: Screen.Reviews = backStackEntry.toRoute()
         ReviewsScreen(navController, route.partnerId)
+    }
+}
+
+@Composable
+private fun GenericSuccessScreen(title: String, navController: NavController) {
+    Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(24.dp))
+            Button(
+                onClick = {
+                    navController.navigate(Screen.Home) {
+                        popUpTo<Screen.Home> { inclusive = true }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(50.dp)
+            ) {
+                Text("Back to Home", fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }

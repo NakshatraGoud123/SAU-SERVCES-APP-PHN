@@ -133,7 +133,7 @@ class ProfileViewModel : ViewModel() {
                     profilePicUrl = publicUrl
                 ) { result ->
                     if (result.isSuccess) onResult(Result.success(publicUrl))
-                    else onResult(Result.failure(result.exceptionOrNull()!!))
+                    else onResult(Result.failure(result.exceptionOrNull() ?: Exception("Profile update failed after upload")))
                 }
             } catch (e: Exception) {
                 onResult(Result.failure(e))

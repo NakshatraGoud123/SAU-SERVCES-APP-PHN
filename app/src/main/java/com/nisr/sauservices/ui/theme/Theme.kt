@@ -22,7 +22,27 @@ private val LuxeColorScheme = lightColorScheme(
     onSurface = LuxeTextPrimary,
     outline = LuxeBorder,
     surfaceVariant = LuxeHighlightChampagne.copy(alpha = 0.3f),
-    onSurfaceVariant = LuxeTextSecondary
+    onSurfaceVariant = LuxeTextSecondary,
+    error = ErrorRed,
+    onError = Color.White
+)
+
+private val LuxeDarkColorScheme = darkColorScheme(
+    primary = LuxeAccentSage,
+    onPrimary = Color.White,
+    primaryContainer = LuxuryBorder,
+    onPrimaryContainer = LuxuryTextPrimary,
+    secondary = LuxuryGold,
+    onSecondary = Color.Black,
+    background = LuxuryBackground,
+    onBackground = LuxuryTextPrimary,
+    surface = LuxuryCard,
+    onSurface = LuxuryTextPrimary,
+    outline = LuxuryBorder,
+    surfaceVariant = LuxuryBorder.copy(alpha = 0.5f),
+    onSurfaceVariant = LuxuryTextSecondary,
+    error = ErrorRed,
+    onError = Color.White
 )
 
 @Composable
@@ -31,15 +51,15 @@ fun AppTheme(
     content: @Composable () -> Unit
 ) {
     // For SAU, we prioritize the Luxe Light theme as the signature brand look
-    val colorScheme = LuxeColorScheme
+    val colorScheme = if (darkTheme) LuxeDarkColorScheme else LuxeColorScheme
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            // Use dark icons for the light background (Luxe Theme)
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = true
+            // Adjust system bars based on theme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
             
             // Ensure status bar is transparent
             window.statusBarColor = android.graphics.Color.TRANSPARENT

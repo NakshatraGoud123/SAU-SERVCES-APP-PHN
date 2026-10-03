@@ -45,9 +45,7 @@ class ResidentialViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             val result = repository.getCategories()
-            if (result.isSuccess) {
-                _categories.value = result.getOrDefault(emptyList())
-            }
+            _categories.value = result.getOrDefault(emptyList())
             _isLoading.value = false
         }
     }
@@ -55,10 +53,9 @@ class ResidentialViewModel(
     fun fetchSubcategories(categoryId: String) {
         viewModelScope.launch {
             _isLoading.value = true
+            _subcategories.value = emptyList()
             val result = repository.getSubcategories(categoryId)
-            if (result.isSuccess) {
-                _subcategories.value = result.getOrDefault(emptyList())
-            }
+            _subcategories.value = result.getOrDefault(emptyList())
             _isLoading.value = false
         }
     }
@@ -66,10 +63,9 @@ class ResidentialViewModel(
     fun fetchServices(subcategoryId: String) {
         viewModelScope.launch {
             _isLoading.value = true
+            _services.value = emptyList()
             val result = repository.getServices(subcategoryId)
-            if (result.isSuccess) {
-                _services.value = result.getOrDefault(emptyList())
-            }
+            _services.value = result.getOrDefault(emptyList())
             _isLoading.value = false
         }
     }
