@@ -12,9 +12,13 @@ import com.nisr.sauservices.ui.home.*
 import com.nisr.sauservices.ui.pls.*
 import com.nisr.sauservices.ui.dashboard.CustomerHomeScreen
 import com.nisr.sauservices.ui.viewmodel.BookingsViewModel
+import com.nisr.sauservices.ui.viewmodel.ChatViewModel
+import com.nisr.sauservices.ui.viewmodel.ProfileViewModel
 import com.nisr.sauservices.ui.viewmodel.ResidentialViewModel
 import com.nisr.sauservices.ui.viewmodel.HomeViewModel
 import com.nisr.sauservices.ui.viewmodel.LocationViewModel
+import com.nisr.sauservices.ui.viewmodel.SearchViewModel
+import com.nisr.sauservices.ui.viewmodel.VendorsViewModel
 import com.nisr.sauservices.ui.viewmodels.PropertyLifestyleViewModel
 
 fun NavGraphBuilder.homeNavGraph(
@@ -24,7 +28,8 @@ fun NavGraphBuilder.homeNavGraph(
     residentialViewModel: ResidentialViewModel,
     homeViewModel: HomeViewModel,
     locationViewModel: LocationViewModel,
-    chatViewModel: com.nisr.sauservices.ui.viewmodel.ChatViewModel
+    chatViewModel: ChatViewModel,
+    profileViewModel: ProfileViewModel
 ) {
     composable<Screen.Home> {
         SauHomeScreen(
@@ -32,12 +37,14 @@ fun NavGraphBuilder.homeNavGraph(
             viewModel = homeViewModel, 
             bookingsViewModel = bookingsViewModel, 
             sessionManager = sessionManager,
-            locationViewModel = locationViewModel
+            locationViewModel = locationViewModel,
+            profileViewModel = profileViewModel
         )
     }
 
     composable<Screen.Search> {
-        SearchResultsScreen(navController, "", residentialViewModel)
+        val searchViewModel: SearchViewModel = viewModel()
+        SearchResultsScreen(navController, "", searchViewModel)
     }
 
     composable<Screen.Categories> {
@@ -46,8 +53,9 @@ fun NavGraphBuilder.homeNavGraph(
 
     composable<Screen.SearchResults> { backStackEntry ->
         val route: Screen.SearchResults = backStackEntry.toRoute()
-        SearchResultsScreen(navController, route.query, residentialViewModel)
-        }
+        val searchViewModel: SearchViewModel = viewModel()
+        SearchResultsScreen(navController, route.query, searchViewModel)
+    }
 
     composable<Screen.MerchantShop> { backStackEntry ->
         val route: Screen.MerchantShop = backStackEntry.toRoute()
@@ -63,6 +71,20 @@ fun NavGraphBuilder.homeNavGraph(
     composable<Screen.CategoryVendors> { backStackEntry ->
         val route: Screen.CategoryVendors = backStackEntry.toRoute()
         CategoryVendorListScreen(navController, route.category)
+    }
+
+    composable<Screen.SuccessCelebration> { backStackEntry ->
+        val route: Screen.SuccessCelebration = backStackEntry.toRoute()
+        SuccessAnimationScreen {
+            navController.navigate(Screen.OrderTracking(route.orderId)) {
+                popUpTo(Screen.Home) { inclusive = false }
+            }
+        }
+    }
+
+    composable<Screen.MerchantMap> {
+        val vendorsViewModel: VendorsViewModel = viewModel()
+        MerchantMapScreen(navController, vendorsViewModel)
     }
     
     // Property & Lifestyle Services (PLS)

@@ -16,6 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.nisr.sauservices.ui.components.NotificationPermissionHandler
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.components.*
@@ -25,6 +26,8 @@ fun BookingSuccessScreen(
     navController: NavController,
     message: String = "Your service booking has been confirmed. Our professional will reach out to you shortly."
 ) {
+    NotificationPermissionHandler()
+
     Column(
         modifier = Modifier
             .fillMaxSize()

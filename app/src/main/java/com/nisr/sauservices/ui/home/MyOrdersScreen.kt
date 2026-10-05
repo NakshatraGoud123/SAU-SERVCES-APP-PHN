@@ -1,5 +1,7 @@
 package com.nisr.sauservices.ui.home
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,23 +12,23 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Replay
-import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import com.nisr.sauservices.data.model.OrderModel
 import com.nisr.sauservices.data.repository.RealtimeDatabaseRepository
@@ -36,18 +38,6 @@ import com.nisr.sauservices.ui.components.LuxuryButton
 import java.text.SimpleDateFormat
 import java.util.*
 
-// ============================================================
-// LUXE BRAND COLORS (Local for precision)
-// ============================================================
-private val LuxeBackground = Color(0xFFFDFBFA)
-private val LuxeCard = Color(0xFFFFFFFF)
-private val LuxeTextPrimary = Color(0xFF423F3D)
-private val LuxeTextSecondary = Color(0xFF8D7F77)
-private val LuxeAccentSage = Color(0xFF96A68F)
-private val LuxeHighlightChampagne = Color(0xFFF5E6D3)
-private val LuxeBorder = Color(0xFFEFE9E4)
-private val LuxeGold = Color(0xFFE8C66A)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyOrdersScreen(navController: NavController) {
@@ -56,6 +46,8 @@ fun MyOrdersScreen(navController: NavController) {
     
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Active", "History")
+    
+    var showReceipt by remember { mutableStateOf<OrderModel?>(null) }
 
     val activeOrders = orders.filter { (it.status ?: "placed").lowercase() !in listOf("delivered", "completed", "cancelled", "success") }
     val historyOrders = orders.filter { (it.status ?: "placed").lowercase() in listOf("delivered", "completed", "cancelled", "success") }
@@ -63,7 +55,7 @@ fun MyOrdersScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Activity", fontWeight = FontWeight.Black, color = LuxeTextPrimary) },
+                title = { Text("MY ACTIVITY", fontWeight = FontWeight.Black, color = LuxeTextPrimary, letterSpacing = 2.sp, fontFamily = FontFamily.Serif) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
@@ -72,6 +64,7 @@ fun MyOrdersScreen(navController: NavController) {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         },
+        bottomBar = { BottomNavBar(navController) },
         containerColor = LuxeBackground
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
@@ -83,7 +76,8 @@ fun MyOrdersScreen(navController: NavController) {
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
                         Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = LuxeAccentSage
+                        color = LuxeAccentSage,
+                        height = 3.dp
                     )
                 },
                 divider = { HorizontalDivider(color = LuxeBorder) }
@@ -94,9 +88,10 @@ fun MyOrdersScreen(navController: NavController) {
                         onClick = { selectedTab = index },
                         text = {
                             Text(
-                                text = title,
-                                fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Medium,
-                                fontSize = 14.sp,
+                                text = title.uppercase(),
+                                fontWeight = if (selectedTab == index) FontWeight.Black else FontWeight.Bold,
+                                fontSize = 12.sp,
+                                letterSpacing = 1.sp,
                                 color = if (selectedTab == index) LuxeAccentSage else LuxeTextSecondary
                             )
                         }
@@ -109,22 +104,98 @@ fun MyOrdersScreen(navController: NavController) {
             if (displayOrders.isEmpty()) {
                 EmptyActivityState(
                     icon = if (selectedTab == 0) Icons.Default.NotificationsActive else Icons.Default.History,
-                    message = if (selectedTab == 0) "No active orders right now" else "No past activity found"
+                    message = if (selectedTab == 0) "Your schedule is currently clear." else "No past luxury experiences found."
                 )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    items(displayOrders.sortedByDescending { it.createdAt }) { order ->
-                        LuxuryOrderCard(order, onClick = {
-                            navController.navigate(Screen.OrderTracking(order.orderId))
-                        })
+                    items(displayOrders.sortedByDescending { it.createdAt }, key = { it.orderId }) { order ->
+                        var visible by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) { visible = true }
+                        
+                        AnimatedVisibility(
+                            visible = visible,
+                            enter = fadeIn(tween(800)) + slideInVertically(animationSpec = tween(600), initialOffsetY = { 50 })
+                        ) {
+                            LuxuryOrderCard(order, onClick = {
+                                if (selectedTab == 1) {
+                                    showReceipt = order
+                                } else {
+                                    navController.navigate(Screen.OrderTracking(order.orderId))
+                                }
+                            })
+                        }
                     }
                 }
             }
         }
+    }
+    
+    val currentReceipt = showReceipt
+    if (currentReceipt != null) {
+        LuxeReceiptDialog(order = currentReceipt) { showReceipt = null }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LuxeReceiptDialog(order: OrderModel, onDismiss: () -> Unit) {
+    BasicAlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.padding(24.dp).fillMaxWidth(),
+        content = {
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                border = BorderStroke(1.dp, LuxeBorder)
+            ) {
+                Column(
+                    modifier = Modifier.padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(Modifier.size(60.dp).background(LuxeAccentSage.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Check, null, tint = LuxeAccentSage, modifier = Modifier.size(32.dp))
+                    }
+                    Spacer(Modifier.height(20.dp))
+                    Text("Digital Receipt", fontWeight = FontWeight.Black, fontSize = 20.sp, color = LuxeTextPrimary, fontFamily = FontFamily.Serif)
+                    Text("Official SAU Transaction", fontSize = 11.sp, color = LuxeAccentSage, letterSpacing = 2.sp, fontWeight = FontWeight.Black)
+                    
+                    Spacer(Modifier.height(32.dp))
+                    
+                    HorizontalDivider(color = LuxeBorder, thickness = 1.dp, modifier = Modifier.padding(bottom = 24.dp))
+                    
+                    ReceiptRow("Order ID", "#${order.orderId.takeLast(6).uppercase()}")
+                    ReceiptRow("Status", order.status.uppercase())
+                    ReceiptRow("Date", order.createdAt ?: "Today")
+                    
+                    Spacer(Modifier.height(24.dp))
+                    HorizontalDivider(color = LuxeBorder, thickness = 1.dp, modifier = Modifier.padding(bottom = 24.dp))
+                    
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("TOTAL AMOUNT", fontWeight = FontWeight.Black, fontSize = 14.sp, color = LuxeTextPrimary)
+                        Text("₹${order.totalAmount}", fontWeight = FontWeight.Black, fontSize = 18.sp, color = LuxeAccentSage)
+                    }
+                    
+                    Spacer(Modifier.height(40.dp))
+                    
+                    LuxuryButton(text = "CLOSE", onClick = onDismiss, modifier = Modifier.height(50.dp))
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun ReceiptRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, color = LuxeTextSecondary, fontSize = 13.sp)
+        Text(value, color = LuxeTextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
     }
 }
 

@@ -33,64 +33,203 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.compose.ui.text.font.FontFamily
-import com.nisr.sauservices.data.model.HomeCategory
-import com.nisr.sauservices.data.model.HomeEssentialsData
-import com.nisr.sauservices.data.model.HomeProduct
-import com.nisr.sauservices.data.model.GroceryShop
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.ContentScale
+import com.nisr.sauservices.R
+import com.nisr.sauservices.data.model.*
+import com.nisr.sauservices.data.repository.SupabaseRepository
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.components.*
 import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.CartViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.nisr.sauservices.ui.viewmodel.VendorsUiState
+import com.nisr.sauservices.ui.viewmodel.VendorsViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeEssentialsMainScreen(navController: NavController, cartViewModel: CartViewModel) {
-    val shops = HomeEssentialsData.shops
+fun HomeEssentialsMainScreen(
+    navController: NavController, 
+    cartViewModel: CartViewModel,
+    viewModel: VendorsViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
 
-    LuxuryScaffold(
-        title = "Choose Shop",
-        onBackClick = { navController.popBackStack() }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Nearby Shops", fontWeight = FontWeight.Black, color = LuxeTextPrimary, fontFamily = FontFamily.Serif) },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = LuxeTextPrimary)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
+            )
+        },
+        containerColor = LuxeBackground
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            // Luxury Search Bar
+        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+            // Luxe Search Bar
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
-                    .clickable { navController.navigate(Screen.Search) },
+                    .padding(20.dp)
+                    .height(54.dp)
+                    .clickable { navController.navigate(Screen.Search) }
+                    .shadow(4.dp, RoundedCornerShape(16.dp), spotColor = LuxeTextSecondary.copy(alpha = 0.2f)),
                 shape = RoundedCornerShape(16.dp),
-                color = LuxuryCard,
-                border = BorderStroke(1.dp, LuxuryBorder)
+                color = LuxeCard,
+                border = BorderStroke(1.dp, LuxeBorder)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Outlined.Search, null, tint = LuxuryGold)
+                    Icon(Icons.Outlined.Search, null, tint = LuxeAccentSage)
                     Spacer(Modifier.width(12.dp))
-                    Text("Search for shops or milk...", color = LuxuryTextSecondary, fontSize = 14.sp)
+                    Text("Search for shops or services...", color = LuxeTextSecondary, fontSize = 14.sp)
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                item {
-                    Text(
-                        "Available Grocery Stores",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = LuxuryTextSecondary,
-                        modifier = Modifier.padding(bottom = 8.dp)
+            when (val state = uiState) {
+                is VendorsUiState.Loading -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        items(5) { LuxeSkeletonWideCard() }
+                    }
+                }
+                is VendorsUiState.Error -> {
+                    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.ErrorOutline, null, tint = ErrorRed, modifier = Modifier.size(64.dp))
+                            Spacer(Modifier.height(16.dp))
+                            Text("Oops! Connection failed", color = LuxeTextPrimary, fontWeight = FontWeight.Bold)
+                            Text(state.message, color = LuxeTextSecondary, textAlign = TextAlign.Center)
+                            TextButton(onClick = { viewModel.fetchAllVendors() }) {
+                                Text("Retry", color = LuxeAccentSage)
+                            }
+                        }
+                    }
+                }
+                is VendorsUiState.Success -> {
+                    val vendors = state.vendors
+                    if (vendors.isEmpty()) {
+                        Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.Storefront, null, tint = LuxeHighlightChampagne, modifier = Modifier.size(80.dp))
+                                Spacer(Modifier.height(16.dp))
+                                Text("No shops found near you.", color = LuxeTextSecondary, textAlign = TextAlign.Center)
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(24.dp)
+                        ) {
+                            item {
+                                   Text(
+                                    "EXPLORE ALL VENDORS",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = LuxeTextSecondary,
+                                    fontWeight = FontWeight.Black,
+                                    letterSpacing = 2.sp,
+                                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                                )
+                            }
+                            
+                            items(vendors, key = { it.id }) { vendor ->
+                                LuxeWideVendorCard(vendor) {
+                                    navController.navigate(Screen.MerchantShop(vendor.id))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LuxeSkeletonWideCard() {
+    Surface(
+        modifier = Modifier.fillMaxWidth().height(240.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = LuxeHighlightChampagne.copy(alpha = 0.3f),
+        border = BorderStroke(1.dp, LuxeBorder)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = LuxeAccentSage, strokeWidth = 2.dp)
+        }
+    }
+}
+
+@Composable
+fun LuxeWideVendorCard(vendor: Vendor, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = LuxeCard),
+        border = BorderStroke(1.dp, LuxeBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column {
+            Box {
+                if (!vendor.imageUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(vendor.imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth().height(160.dp).background(LuxeHighlightChampagne.copy(alpha = 0.3f)),
+                        contentScale = ContentScale.Crop
                     )
+                } else {
+                    Box(Modifier.fillMaxWidth().height(160.dp).background(LuxeHighlightChampagne.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Storefront, null, tint = LuxeAccentSage, modifier = Modifier.size(48.dp))
+                    }
                 }
                 
-                items(shops) { shop ->
-                    GroceryShopCard(shop) {
-                        navController.navigate(Screen.HomeEssentialsCategory(categoryId = "veg_fruits", shopId = shop.id)) 
+                if (vendor.isAvailable == false) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = Color.Black.copy(alpha = 0.5f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("CLOSED", color = Color.White, fontWeight = FontWeight.Black)
+                        }
                     }
+                }
+            }
+            
+            Column(Modifier.padding(20.dp)) {
+                Text(
+                    text = vendor.displayName, 
+                    fontWeight = FontWeight.Bold, 
+                    fontSize = 18.sp, 
+                    color = LuxeTextPrimary
+                )
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Star, null, tint = LuxeGold, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "${vendor.displayRating} • ${vendor.deliveryTime ?: "20 min"} • ${vendor.distance ?: "1.0 km"}",
+                        color = LuxeTextSecondary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }

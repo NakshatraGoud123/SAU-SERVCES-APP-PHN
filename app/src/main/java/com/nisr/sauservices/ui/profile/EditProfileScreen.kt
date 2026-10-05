@@ -1,6 +1,9 @@
 package com.nisr.sauservices.ui.profile
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,6 +38,7 @@ import com.nisr.sauservices.ui.components.*
 import com.nisr.sauservices.ui.viewmodel.ProfileViewModel
 import io.github.jan.supabase.auth.auth
 import androidx.compose.ui.text.font.FontFamily
+import java.io.ByteArrayOutputStream
 
 // ============================================================
 // LUXE BRAND COLORS (Local for precision)
@@ -80,19 +84,49 @@ fun EditProfileScreen(
     ) { uri: Uri? ->
         uri?.let {
             try {
+                // RESIZE & COMPRESS for Memory Safety
                 val inputStream = context.contentResolver.openInputStream(it)
-                val byteArray = inputStream?.readBytes()
-                byteArray?.let { bytes ->
-                    viewModel.uploadProfilePicture(bytes) { result ->
+                val originalBitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream?.close()
+                
+                if (originalBitmap != null) {
+                    val maxDimension = 1024
+                    val width = originalBitmap.width
+                    val height = originalBitmap.height
+                    
+                    val resizedBitmap = if (width > maxDimension || height > maxDimension) {
+                        val ratio = width.toFloat() / height.toFloat()
+                        val newWidth = if (ratio > 1) maxDimension else (maxDimension * ratio).toInt()
+                        val newHeight = if (ratio > 1) (maxDimension / ratio).toInt() else maxDimension
+                        Bitmap.createScaledBitmap(originalBitmap, newWidth, newHeight, true)
+                    } else {
+                        originalBitmap
+                    }
+                    
+                    val outputStream = ByteArrayOutputStream()
+                    resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+                    val byteArray = outputStream.toByteArray()
+                    outputStream.close()
+                    
+                    // Cleanup bitamp memory
+                    if (resizedBitmap != originalBitmap) {
+                        resizedBitmap.recycle()
+                    }
+                    originalBitmap.recycle()
+                    
+                    viewModel.uploadProfilePicture(byteArray) { result ->
                         if (result.isSuccess) {
                             Toast.makeText(context, "Profile picture updated!", Toast.LENGTH_SHORT).show()
                         } else {
                             Toast.makeText(context, "Upload failed: ${result.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
                         }
                     }
+                } else {
+                    Toast.makeText(context, "Invalid image format", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "Failed to read image", Toast.LENGTH_SHORT).show()
+                Log.e("EDIT_PROFILE", "Image process error: ${e.message}")
+                Toast.makeText(context, "Failed to process image", Toast.LENGTH_SHORT).show()
             }
         }
     }

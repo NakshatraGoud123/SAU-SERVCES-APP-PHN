@@ -111,9 +111,10 @@ fun EssentialSuppliesScreen(navController: NavController, viewModel: CartViewMod
             }
         }
 
-        if (selectedCategory != null) {
+        val currentCategory = selectedCategory
+        if (currentCategory != null) {
             SubcategoryLuxuryPopup(
-                category = selectedCategory!!,
+                category = currentCategory,
                 cartViewModel = viewModel,
                 onDismiss = { selectedCategory = null },
                 onAddToCart = { sub ->
@@ -122,7 +123,7 @@ fun EssentialSuppliesScreen(navController: NavController, viewModel: CartViewMod
                     viewModel.addItemToCart(
                         name = sub.name,
                         price = price,
-                        category = selectedCategory?.name ?: "",
+                        category = currentCategory.name,
                         subcategory = sub.name,
                         unit = sub.itemType,
                         productId = sub.id

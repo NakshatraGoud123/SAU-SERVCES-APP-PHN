@@ -26,7 +26,11 @@ import com.nisr.sauservices.ui.components.LuxuryButton
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.viewmodel.*
 import androidx.compose.ui.text.font.FontFamily
@@ -43,8 +47,6 @@ private val LuxeHighlightChampagne = Color(0xFFF5E6D3)
 private val LuxeBorder = Color(0xFFEFE9E4)
 private val LuxeGold = Color(0xFFE8C66A)
 private val ErrorRed = Color(0xFFEF4444)
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -178,6 +180,7 @@ fun UnifiedCartScreen(
                             price = item.price.toInt(),
                             quantity = item.quantity,
                             category = "Service",
+                            imageUrl = item.imageUrl,
                             onIncrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) },
                             onDecrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) },
                             onDelete = { homeCartViewModel.updateQuantity(item.itemId, 0) }
@@ -197,7 +200,7 @@ fun UnifiedCartScreen(
                             category = "Residential",
                             onIncrease = { residentialViewModel.updateQty(item.service.id, true) },
                             onDecrease = { residentialViewModel.updateQty(item.service.id, false) },
-                            onDelete = { residentialViewModel.updateQty(item.service.id, false) }
+                            onDelete = { residentialViewModel.removeFromCart(item.service.id) }
                         )
                     }
                     items(dbResItems) { item ->
@@ -206,6 +209,7 @@ fun UnifiedCartScreen(
                             price = item.price.toInt(),
                             quantity = item.quantity,
                             category = "Residential",
+                            imageUrl = item.imageUrl,
                             onIncrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) },
                             onDecrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) },
                             onDelete = { homeCartViewModel.updateQuantity(item.itemId, 0) }
@@ -223,6 +227,7 @@ fun UnifiedCartScreen(
                             price = item.price.toInt(),
                             quantity = item.quantity,
                             category = "Essential",
+                            imageUrl = item.imageUrl,
                             onIncrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity + 1) },
                             onDecrease = { homeCartViewModel.updateQuantity(item.itemId, item.quantity - 1) },
                             onDelete = { homeCartViewModel.updateQuantity(item.itemId, 0) }
@@ -267,22 +272,70 @@ fun UnifiedCartScreen(
                     item { CartCategoryHeader("Other Services", Icons.Default.BusinessCenter) }
                     
                     items(businessItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Business", { businessViewModel.increaseQty(item.id) }, { businessViewModel.decreaseQty(item.id) }, { businessViewModel.removeFromCart(item.id) })
+                        CartItemRow(
+                            name = item.name, 
+                            price = item.price.toInt(), 
+                            quantity = item.quantity, 
+                            category = "Business", 
+                            onIncrease = { businessViewModel.increaseQty(item.id) }, 
+                            onDecrease = { businessViewModel.decreaseQty(item.id) }, 
+                            onDelete = { businessViewModel.removeFromCart(item.id) }
+                        )
                     }
                     items(lifestyleItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Lifestyle", { lifestyleViewModel.increaseQty(item.id) }, { lifestyleViewModel.decreaseQty(item.id) }, { lifestyleViewModel.removeFromCart(item.id) })
+                        CartItemRow(
+                            name = item.name, 
+                            price = item.price.toInt(), 
+                            quantity = item.quantity, 
+                            category = "Lifestyle", 
+                            onIncrease = { lifestyleViewModel.increaseQty(item.id) }, 
+                            onDecrease = { lifestyleViewModel.decreaseQty(item.id) }, 
+                            onDelete = { lifestyleViewModel.removeFromCart(item.id) }
+                        )
                     }
                     items(techItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Tech", { techViewModel.increaseQty(item.id) }, { techViewModel.decreaseQty(item.id) }, { techViewModel.removeFromCart(item.id) })
+                        CartItemRow(
+                            name = item.name, 
+                            price = item.price.toInt(), 
+                            quantity = item.quantity, 
+                            category = "Tech", 
+                            onIncrease = { techViewModel.increaseQty(item.id) }, 
+                            onDecrease = { techViewModel.decreaseQty(item.id) }, 
+                            onDelete = { techViewModel.removeFromCart(item.id) }
+                        )
                     }
                     items(mensItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Grooming", { mensGroomingViewModel.increaseQty(item.id) }, { mensGroomingViewModel.decreaseQty(item.id) }, { mensGroomingViewModel.removeFromCart(item.id) })
+                        CartItemRow(
+                            name = item.name, 
+                            price = item.price.toInt(), 
+                            quantity = item.quantity, 
+                            category = "Grooming", 
+                            onIncrease = { mensGroomingViewModel.increaseQty(item.id) }, 
+                            onDecrease = { mensGroomingViewModel.decreaseQty(item.id) }, 
+                            onDelete = { mensGroomingViewModel.removeFromCart(item.id) }
+                        )
                     }
                     items(womensItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Beauty", { womensBeautyViewModel.updateQty(item.id, true) }, { womensBeautyViewModel.updateQty(item.id, false) }, { womensBeautyViewModel.removeFromCart(item.id) })
+                        CartItemRow(
+                            name = item.name, 
+                            price = item.price.toInt(), 
+                            quantity = item.quantity, 
+                            category = "Beauty", 
+                            onIncrease = { womensBeautyViewModel.updateQty(item.id, true) }, 
+                            onDecrease = { womensBeautyViewModel.updateQty(item.id, false) }, 
+                            onDelete = { womensBeautyViewModel.removeFromCart(item.id) }
+                        )
                     }
                     items(healthItems) { item ->
-                        CartItemRow(item.name, item.price.toInt(), item.quantity, "Healthcare", { healthcareViewModel.updateQty(item.id, true) }, { healthcareViewModel.updateQty(item.id, false) }, { healthcareViewModel.removeFromCart(item.id) })
+                        CartItemRow(
+                            name = item.name, 
+                            price = item.price.toInt(), 
+                            quantity = item.quantity, 
+                            category = "Healthcare", 
+                            onIncrease = { healthcareViewModel.updateQty(item.id, true) }, 
+                            onDecrease = { healthcareViewModel.updateQty(item.id, false) }, 
+                            onDelete = { healthcareViewModel.removeFromCart(item.id) }
+                        )
                     }
                 }
 
@@ -352,7 +405,8 @@ fun CartItemRow(
     category: String,
     onIncrease: () -> Unit, 
     onDecrease: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    imageUrl: String? = null
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -364,27 +418,39 @@ fun CartItemRow(
             modifier = Modifier.padding(16.dp), 
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icon
+            // Image/Icon
             Box(
                 modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .size(60.dp)
+                    .clip(RoundedCornerShape(14.dp))
                     .background(LuxeHighlightChampagne.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = when(category) {
-                        "Food" -> Icons.Default.Fastfood
-                        "Residential" -> Icons.Default.Build
-                        "Essential" -> Icons.Default.ShoppingBasket
-                        "Service" -> Icons.Default.CalendarToday
-                        "Education" -> Icons.Default.School
-                        else -> Icons.Default.AutoFixHigh
-                    },
-                    contentDescription = null,
-                    tint = LuxeTextPrimary,
-                    modifier = Modifier.size(24.dp)
-                )
+                if (!imageUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(imageUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                        imageVector = when(category) {
+                            "Food" -> Icons.Default.Fastfood
+                            "Residential" -> Icons.Default.Build
+                            "Essential" -> Icons.Default.ShoppingBasket
+                            "Service" -> Icons.Default.CalendarToday
+                            "Education" -> Icons.Default.School
+                            else -> Icons.Default.AutoFixHigh
+                        },
+                        contentDescription = null,
+                        tint = LuxeTextPrimary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
             Spacer(Modifier.width(16.dp))
@@ -399,19 +465,20 @@ fun CartItemRow(
                     verticalAlignment = Alignment.CenterVertically, 
                     modifier = Modifier
                         .border(1.dp, LuxeBorder, RoundedCornerShape(12.dp))
-                        .padding(horizontal = 4.dp)
+                        .padding(horizontal = 2.dp)
                 ) {
-                    IconButton(onClick = { if (quantity > 1) onDecrease() else onDelete() }, modifier = Modifier.size(32.dp)) { 
-                        Icon(if (quantity > 1) Icons.Default.Remove else Icons.Default.Delete, null, tint = if (quantity > 1) LuxeTextPrimary else ErrorRed, modifier = Modifier.size(18.dp)) 
+                    IconButton(onClick = { if (quantity > 1) onDecrease() else onDelete() }, modifier = Modifier.size(44.dp)) { 
+                        Icon(if (quantity > 1) Icons.Default.Remove else Icons.Default.Delete, null, tint = if (quantity > 1) LuxeTextPrimary else ErrorRed, modifier = Modifier.size(20.dp)) 
                     }
                     Text(
                         quantity.toString(), 
                         fontWeight = FontWeight.Black, 
                         color = LuxeTextPrimary,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = 4.dp),
+                        fontSize = 15.sp
                     )
-                    IconButton(onClick = onIncrease, modifier = Modifier.size(32.dp)) { 
-                        Icon(Icons.Default.Add, null, tint = LuxeAccentSage, modifier = Modifier.size(18.dp)) 
+                    IconButton(onClick = onIncrease, modifier = Modifier.size(44.dp)) { 
+                        Icon(Icons.Default.Add, null, tint = LuxeAccentSage, modifier = Modifier.size(20.dp)) 
                     }
                 }
             }

@@ -1,13 +1,28 @@
 package com.nisr.sauservices.ui.dashboard
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Scaffold
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.LocalTaxi
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.data.local.SessionManager
@@ -51,6 +66,37 @@ fun CustomerHomeScreen(
             Spacer(Modifier.height(24.dp))
             
             CategoriesGrid(navController = navController)
+
+            Spacer(Modifier.height(24.dp))
+            
+            // Expert & Utility Services Shortcuts
+            Text(
+                text = "EXPERT & UTILITY SERVICES",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Black,
+                color = LuxeTextPrimary,
+                letterSpacing = 1.5.sp
+            )
+            
+            Spacer(Modifier.height(12.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ServiceShortcutCard("Mechanic", Icons.Default.Build, Modifier.weight(1f)) {
+                    showMechanicSheet = true
+                }
+                ServiceShortcutCard("Mobility", Icons.Default.LocalTaxi, Modifier.weight(1f)) {
+                    showMobilitySheet = true
+                }
+                ServiceShortcutCard("Tech", Icons.Default.Devices, Modifier.weight(1f)) {
+                    showTechSheet = true
+                }
+                ServiceShortcutCard("Education", Icons.Default.School, Modifier.weight(1f)) {
+                    showEduSheet = true
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
             
@@ -106,5 +152,43 @@ fun CustomerHomeScreen(
             navController = navController,
             onDismiss = { showMobilitySheet = false }
         )
+    }
+}
+
+@Composable
+fun ServiceShortcutCard(title: String, icon: ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(
+        modifier = modifier
+            .height(90.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = LuxeCard,
+        border = BorderStroke(1.dp, LuxeBorder),
+        shadowElevation = 1.dp
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(LuxeHighlightChampagne.copy(alpha = 0.6f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, null, tint = LuxeAccentSage, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = title,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = LuxeTextPrimary,
+                maxLines = 1,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }

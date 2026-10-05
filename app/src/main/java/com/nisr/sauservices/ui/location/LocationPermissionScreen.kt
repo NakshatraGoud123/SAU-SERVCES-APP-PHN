@@ -1,5 +1,9 @@
 package com.nisr.sauservices.ui.location
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -17,14 +21,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.nisr.sauservices.ui.Screen
-import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.components.*
+import com.nisr.sauservices.ui.theme.*
+import com.nisr.sauservices.ui.viewmodel.LocationViewModel
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -33,18 +44,56 @@ import kotlin.time.Duration.Companion.milliseconds
  * Features a custom radar-pulse illustration and staggered content animations.
  */
 @Composable
-fun LocationPermissionScreen(navController: NavController) {
+fun LocationPermissionScreen(
+    navController: NavController,
+    viewModel: LocationViewModel = viewModel()
+) {
+    val context = LocalContext.current
+    val uiState = viewModel.uiState
+    val lifecycleOwner = LocalLifecycleOwner.current
     var visible by remember { mutableStateOf(value = false) }
+
+    // Re-check GPS status when user returns to app
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.checkGpsStatus(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // Auto-navigate to Home if both Permission and GPS are active
+    LaunchedEffect(uiState.isGpsEnabled) {
+        if (uiState.isGpsEnabled) {
+            val hasPermission = ContextCompat.checkSelfPermission(
+                context, 
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+            
+            if (hasPermission) {
+                navController.navigate(Screen.Home) {
+                    popUpTo<Screen.LocationPermission> { inclusive = true }
+                }
+            }
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
     ) { permissions ->
-        val isGranted = permissions.getOrDefault(android.Manifest.permission.ACCESS_FINE_LOCATION, defaultValue = false) ||
-                        permissions.getOrDefault(android.Manifest.permission.ACCESS_COARSE_LOCATION, defaultValue = false)
+        val isGranted = permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, defaultValue = false) ||
+                        permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, defaultValue = false)
         
         if (isGranted) {
-            navController.navigate(Screen.Home) {
-                popUpTo<Screen.LocationPermission> { inclusive = true }
+            viewModel.checkGpsStatus(context)
+            if (viewModel.uiState.isGpsEnabled) {
+                navController.navigate(Screen.Home) {
+                    popUpTo<Screen.LocationPermission> { inclusive = true }
+                }
             }
         }
     }
@@ -52,6 +101,7 @@ fun LocationPermissionScreen(navController: NavController) {
     LaunchedEffect(Unit) {
         delay(300.milliseconds)
         visible = true
+        viewModel.checkGpsStatus(context)
     }
 
     Box(
@@ -60,26 +110,6 @@ fun LocationPermissionScreen(navController: NavController) {
             .background(LuxuryBackground)
             .systemBarsPadding(),
     ) {
-        // Subtle Skip Button
-        TextButton(
-            onClick = { 
-                // Navigate forward even if skipped (Guest mode logic)
-                navController.navigate(Screen.Home) {
-                    popUpTo<Screen.LocationPermission> { inclusive = true }
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp),
-        ) {
-            Text(
-                text = "Skip",
-                color = LuxuryTextSecondary,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.labelLarge
-            )
-        }
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -100,7 +130,7 @@ fun LocationPermissionScreen(navController: NavController) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Enable Location Services",
+                        text = if (!uiState.isGpsEnabled) "Enable Location Services" else "Location Permission",
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.ExtraBold,
                             color = LuxuryTextPrimary,
@@ -112,7 +142,11 @@ fun LocationPermissionScreen(navController: NavController) {
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = "Allow SAU Solutions to access your location to discover expert service partners nearby and provide real-time tracking.",
+                        text = if (!uiState.isGpsEnabled) {
+                            "Location Services are turned off. Please turn them on to discover expert service partners nearby."
+                        } else {
+                            "Allow SAU Solutions to access your location to discover expert service partners nearby and provide real-time tracking."
+                        },
                         style = MaterialTheme.typography.bodyLarge.copy(
                             color = LuxuryTextSecondary,
                             textAlign = TextAlign.Center,
@@ -130,17 +164,58 @@ fun LocationPermissionScreen(navController: NavController) {
                 enter = slideInVertically { 80 } + fadeIn(animationSpec = tween(800, delayMillis = 200)),
                 label = "button_entrance"
             ) {
-                LuxuryButton(
-                    text = "Allow Location Access",
-                    onClick = { 
-                        permissionLauncher.launch(
-                            arrayOf(
-                                android.Manifest.permission.ACCESS_FINE_LOCATION,
-                                android.Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
+                if (!uiState.isGpsEnabled) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "Location Services are turned off",
+                            color = ErrorRed,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 16.dp)
                         )
+                        LuxuryButton(
+                            text = "Turn On Location",
+                            onClick = { 
+                                context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                            }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        TextButton(onClick = { navController.navigate(Screen.ManualLocation) }) {
+                            Text(
+                                "Continue Manually",
+                                color = LuxuryGold,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 1.sp
+                            )
+                        }
                     }
-                )
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        LuxuryButton(
+                            text = "Allow Location Access",
+                            onClick = { 
+                                permissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
+                            }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        TextButton(onClick = { navController.navigate(Screen.ManualLocation) }) {
+                            Text(
+                                "Continue Manually",
+                                color = LuxuryGold,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 1.sp
+                            )
+                        }
+                    }
+                }
             }
         }
     }

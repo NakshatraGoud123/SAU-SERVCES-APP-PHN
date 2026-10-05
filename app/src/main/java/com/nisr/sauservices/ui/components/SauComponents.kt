@@ -5,17 +5,26 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import com.nisr.sauservices.ui.theme.*
 
 // Centralized Brand Colors
@@ -169,5 +178,61 @@ fun SauTextField(
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)
             )
         }
+    }
+}
+
+/**
+ * Contextual Notification Permission Handler for Android 13+
+ */
+@Composable
+fun NotificationPermissionHandler() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+    val context = LocalContext.current
+    var showDialog by remember { mutableStateOf(false) }
+    
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ -> 
+        // User responded to system dialog, no further action needed here
+    }
+
+    LaunchedEffect(Unit) {
+        val permission = Manifest.permission.POST_NOTIFICATIONS
+        val isGranted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+        if (!isGranted) {
+            showDialog = true
+        }
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDialog = false
+                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }) {
+                    Text("ALLOW", color = SauColors.Primary, fontWeight = FontWeight.Black)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("NOT NOW", color = Color.Gray)
+                }
+            },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.NotificationsActive, null, tint = SauColors.Primary)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Stay Updated", fontWeight = FontWeight.Black)
+                }
+            },
+            text = {
+                Text("Allow notifications to receive important order updates and real-time tracking alerts.")
+            },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = Color.White
+        )
     }
 }

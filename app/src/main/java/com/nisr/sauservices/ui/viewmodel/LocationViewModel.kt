@@ -3,6 +3,8 @@ package com.nisr.sauservices.ui.viewmodel
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Geocoder
+import android.location.LocationManager
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,6 +14,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
 import com.nisr.sauservices.data.api.SupabaseClient
+import com.nisr.sauservices.data.local.SessionManager
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.Dispatchers
@@ -41,17 +44,40 @@ class LocationViewModel : ViewModel() {
         val pincode: String = "",
         val isFetchingAddress: Boolean = false,
         val isLocationConfirmed: Boolean = false,
+        val isGpsEnabled: Boolean = true,
+        val errorMessage: String? = null
     )
 
+    fun loadSavedAddress(context: Context) {
+        val sessionManager = SessionManager(context)
+        val savedAddress = sessionManager.getAddress()
+        if (savedAddress != "Fetching location..." && savedAddress.isNotEmpty()) {
+            uiState = uiState.copy(address = savedAddress)
+        }
+    }
+
+    fun checkGpsStatus(context: Context) {
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val isEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                        locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        uiState = uiState.copy(isGpsEnabled = isEnabled)
+    }
+
     @SuppressLint("MissingPermission")
-    fun getCurrentLocation(context: Context) {
+    fun getCurrentLocation(context: Context, autoConfirmIfNew: Boolean) {
+        checkGpsStatus(context)
+        if (!uiState.isGpsEnabled) {
+            uiState = uiState.copy(isFetchingAddress = false, errorMessage = "GPS is disabled")
+            return
+        }
+
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         
         // Try to get last location first
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             if (location != null) {
                 val latLng = LatLng(location.latitude, location.longitude)
-                updateCenterLocation(latLng, context)
+                updateCenterLocation(latLng, context, autoConfirmIfNew)
             } else {
                 // If last location is null, request a fresh location update
                 val priority = Priority.PRIORITY_HIGH_ACCURACY
@@ -59,26 +85,31 @@ class LocationViewModel : ViewModel() {
                     .addOnSuccessListener { freshLocation ->
                         freshLocation?.let {
                             val latLng = LatLng(it.latitude, it.longitude)
-                            updateCenterLocation(latLng, context)
+                            updateCenterLocation(latLng, context, autoConfirmIfNew)
+                        } ?: run {
+                            uiState = uiState.copy(isFetchingAddress = false, errorMessage = "Location unavailable")
                         }
                     }
+                    .addOnFailureListener { e ->
+                        uiState = uiState.copy(isFetchingAddress = false, errorMessage = e.message ?: "Failed to get fresh location")
+                    }
             }
-        }.addOnFailureListener {
-            // Log or handle failure
+        }.addOnFailureListener { e ->
+            uiState = uiState.copy(isFetchingAddress = false, errorMessage = e.message ?: "Location request failed")
         }
     }
 
-    fun updateCenterLocation(latLng: LatLng, context: Context) {
+    fun updateCenterLocation(latLng: LatLng, context: Context, autoConfirm: Boolean = false) {
         uiState = uiState.copy(centerLocation = latLng, isFetchingAddress = true)
         
         geocodeJob?.cancel()
         geocodeJob = viewModelScope.launch(Dispatchers.IO) {
             delay(500.milliseconds)
-            reverseGeocode(latLng, context)
+            reverseGeocode(latLng, context, autoConfirm)
         }
     }
 
-    private fun reverseGeocode(latLng: LatLng, context: Context) {
+    private fun reverseGeocode(latLng: LatLng, context: Context, autoConfirm: Boolean = false) {
         try {
             val geocoder = Geocoder(context, Locale.getDefault())
             @Suppress("DEPRECATION")
@@ -102,6 +133,10 @@ class LocationViewModel : ViewModel() {
                         pincode = pincode,
                         isFetchingAddress = false,
                     )
+                    
+                    if (autoConfirm) {
+                        confirmLocation(context) {}
+                    }
                 }
             }
         } catch (_: Exception) {
@@ -113,6 +148,7 @@ class LocationViewModel : ViewModel() {
 
     fun searchLocation(query: String, context: Context) {
         if (query.isBlank()) return
+        uiState = uiState.copy(isFetchingAddress = true)
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val geocoder = Geocoder(context, Locale.getDefault())
@@ -121,18 +157,30 @@ class LocationViewModel : ViewModel() {
                 if (!addresses.isNullOrEmpty()) {
                     val address = addresses[0]
                     val latLng = LatLng(address.latitude, address.longitude)
+                    val fullAddress = address.getAddressLine(0) ?: query
+                    
                     viewModelScope.launch(Dispatchers.Main) {
-                        updateCenterLocation(latLng, context)
+                        uiState = uiState.copy(
+                            centerLocation = latLng,
+                            address = fullAddress,
+                            isFetchingAddress = false
+                        )
+                    }
+                } else {
+                    viewModelScope.launch(Dispatchers.Main) {
+                        uiState = uiState.copy(address = "Error fetching address", isFetchingAddress = false)
                     }
                 }
             } catch (_: Exception) {
-                // Handle search error
+                viewModelScope.launch(Dispatchers.Main) {
+                    uiState = uiState.copy(address = "Error fetching address", isFetchingAddress = false)
+                }
             }
         }
     }
 
     fun confirmLocation(context: Context, onSuccess: () -> Unit) {
-        val sessionManager = com.nisr.sauservices.data.local.SessionManager(context)
+        val sessionManager = SessionManager(context)
         
         // Prevent saving invalid addresses
         if ((uiState.address == "Fetching address...") || uiState.isFetchingAddress) return
@@ -184,7 +232,7 @@ class LocationViewModel : ViewModel() {
                 // If network update fails, we still have local data saved above
                 withContext(Dispatchers.Main) {
                     // Show a more helpful message
-                    android.widget.Toast.makeText(context, "Location updated successfully", android.widget.Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Location updated successfully", Toast.LENGTH_SHORT).show()
                     onSuccess()
                 }
             }

@@ -25,6 +25,8 @@ val LuxeTextSecondary = Color(0xFF8D7F77) // Warm Taupe
 val LuxeAccentSage = Color(0xFF96A68F)    // Muted Sage Green
 val LuxeHighlightChampagne = Color(0xFFF5E6D3) // Pale Champagne
 val LuxeBorder = Color(0xFFEFE9E4)    // Soft Whisper
+val LuxeGold = Color(0xFFE8C66A)      // Warm Gold (Synced with LuxuryGold)
+
 
 // Semantic Mappings for Global Compatibility
 val PrimaryBlue = LuxuryGold

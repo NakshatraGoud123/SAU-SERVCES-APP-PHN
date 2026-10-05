@@ -10,6 +10,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.*
@@ -24,13 +26,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.nisr.sauservices.data.local.WishlistManager
 import com.nisr.sauservices.data.model.Vendor
-import com.nisr.sauservices.data.repository.SupabaseRepository
 import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.theme.*
+import com.nisr.sauservices.ui.viewmodel.VendorsUiState
+import com.nisr.sauservices.ui.viewmodel.VendorsViewModel
 
 // ============================================================
 // LUXE BRAND COLORS (Local for precision)
@@ -48,17 +53,13 @@ private val LuxeGold = Color(0xFFE8C66A)
 @Composable
 fun CategoryVendorListScreen(
     navController: NavController,
-    category: String
+    category: String,
+    viewModel: VendorsViewModel = viewModel()
 ) {
-    val repository = remember { SupabaseRepository() }
-    var vendors by remember { mutableStateOf<List<Vendor>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
+    val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(category) {
-        isLoading = true
-        val result = repository.getVendors(category)
-        vendors = result.getOrDefault(emptyList())
-        isLoading = false
+        viewModel.fetchVendors(category)
     }
 
     Scaffold(
@@ -82,27 +83,42 @@ fun CategoryVendorListScreen(
         },
         containerColor = LuxeBackground
     ) { padding ->
-        if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = LuxeAccentSage)
-            }
-        } else if (vendors.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Default.Storefront, null, tint = LuxeHighlightChampagne, modifier = Modifier.size(80.dp))
-                    Spacer(Modifier.height(16.dp))
-                    Text("No vendors available in this category yet.", color = LuxeTextSecondary, fontSize = 14.sp)
+        when (val state = uiState) {
+            is VendorsUiState.Loading -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = LuxeAccentSage)
                 }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.padding(padding).fillMaxSize(),
-                contentPadding = PaddingValues(20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                items(vendors) { vendor ->
-                    LuxeWideVendorCard(vendor) {
-                        navController.navigate(Screen.MerchantShop(vendor.id))
+            is VendorsUiState.Error -> {
+                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.Storefront, null, tint = LuxeHighlightChampagne, modifier = Modifier.size(80.dp))
+                        Spacer(Modifier.height(16.dp))
+                        Text(state.message, color = LuxeTextSecondary, fontSize = 14.sp)
+                    }
+                }
+            }
+            is VendorsUiState.Success -> {
+                val vendors = state.vendors
+                if (vendors.isEmpty()) {
+                    Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Default.Storefront, null, tint = LuxeHighlightChampagne, modifier = Modifier.size(80.dp))
+                            Spacer(Modifier.height(16.dp))
+                            Text("No vendors available in this category yet.", color = LuxeTextSecondary, fontSize = 14.sp)
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.padding(padding).fillMaxSize(),
+                        contentPadding = PaddingValues(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        items(vendors) { vendor ->
+                            LuxeWideVendorCard(vendor) {
+                                navController.navigate(Screen.MerchantShop(vendor.id))
+                            }
+                        }
                     }
                 }
             }
@@ -112,6 +128,10 @@ fun CategoryVendorListScreen(
 
 @Composable
 fun LuxeWideVendorCard(vendor: Vendor, onClick: () -> Unit) {
+    val context = LocalContext.current
+    val wishlistManager = remember { WishlistManager(context) }
+    var isFav by remember { mutableStateOf(wishlistManager.isFavorite(vendor.id)) }
+
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(24.dp),
@@ -130,6 +150,25 @@ fun LuxeWideVendorCard(vendor: Vendor, onClick: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().height(160.dp),
                     contentScale = ContentScale.Crop
                 )
+
+                IconButton(
+                    onClick = {
+                        val updated = wishlistManager.toggleFavorite(vendor.id)
+                        isFav = updated.contains(vendor.id)
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(12.dp)
+                        .size(36.dp)
+                        .background(Color.White.copy(alpha = 0.8f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = if (isFav) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Favorite",
+                        tint = if (isFav) Color.Red else LuxeTextPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
                 
                 if (vendor.isAvailable == false) {
                     Surface(

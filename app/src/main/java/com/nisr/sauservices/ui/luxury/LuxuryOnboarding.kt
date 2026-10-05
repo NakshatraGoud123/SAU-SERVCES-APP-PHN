@@ -20,6 +20,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nisr.sauservices.ui.theme.*
+import com.nisr.sauservices.R
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
@@ -41,19 +42,19 @@ private val onboardingPages = listOf(
         title = "Everything at Your ",
         highlightWord = "Doorstep",
         description = "Premium home repairs, lifestyle services, and verified professionals—all just a tap away.",
-        imageUrl = "https://images.unsplash.com/photo-1581578731548-c64695cc6958" // High-end house cleaning/service
+        imageUrl = "https://images.unsplash.com/photo-1581578731548-c64695cc6958?q=80&w=1000"
     ),
     OnboardingPage(
         title = "Freshly Picked & ",
         highlightWord = "Delivered",
         description = "The finest groceries and gourmet dining from your favorite local boutiques, delivered with care.",
-        imageUrl = "https://images.unsplash.com/photo-1542838132-92c53300491e" // Fresh luxury produce
+        imageUrl = "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1000"
     ),
     OnboardingPage(
         title = "Wellness & Personal ",
         highlightWord = "Care",
         description = "Experience professional spa, beauty, and healthcare services in the comfort of your sanctuary.",
-        imageUrl = "https://images.unsplash.com/photo-1544161515-4ab6ce6db874" // High-end spa/massage
+        imageUrl = "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=1000"
     )
 )
 
@@ -114,6 +115,8 @@ fun LuxuryOnboardingScreen(onFinished: () -> Unit) {
                             model = ImageRequest.Builder(LocalContext.current)
                                 .data(page.imageUrl)
                                 .crossfade(true)
+                                .placeholder(R.drawable.residential_services) // Local fallback
+                                .error(R.drawable.residential_services)
                                 .build(),
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),

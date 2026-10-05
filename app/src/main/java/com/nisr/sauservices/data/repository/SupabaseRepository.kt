@@ -6,6 +6,7 @@ import com.nisr.sauservices.data.model.toSafeUuid
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.rpc
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.selectAsFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonElement
 
 class SupabaseRepository {
 
@@ -106,17 +108,17 @@ class SupabaseRepository {
 
     suspend fun getVendors(category: String? = null): Result<List<Vendor>> = withContext(Dispatchers.IO) {
         try {
-            val list = if (category == null) {
-                postgrest["vendors"].select().decodeList<Vendor>()
+            val allVendors = postgrest["vendors"].select().decodeList<Vendor>()
+            val filteredList = if (category.isNullOrBlank()) {
+                allVendors
             } else {
-                postgrest["vendors"].select {
-                    filter { ilike("business_type", category) }
-                }.decodeList<Vendor>()
+                allVendors.filter { vendor ->
+                    vendor.displayCategory.equals(category, ignoreCase = true) ||
+                    vendor.displayName.contains(category, ignoreCase = true)
+                }
             }
-            android.util.Log.d("REPO_DEBUG", "Vendors loaded for $category: ${list.size}")
-            Result.success(list)
+            Result.success(filteredList)
         } catch (e: Exception) {
-            android.util.Log.e("REPO_ERROR", "getVendors failed: ${e.message}")
             Result.failure(e)
         }
     }
@@ -184,6 +186,85 @@ class SupabaseRepository {
                 filter { eq("id", productId) }
             }.decodeSingle<Product>()
             Result.success(product)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getVendorsByIds(ids: List<String>): Result<List<Vendor>> = withContext(Dispatchers.IO) {
+        if (ids.isEmpty()) return@withContext Result.success(emptyList())
+        try {
+            val list = postgrest["vendors"].select {
+                filter { 
+                    FilterOperation("id", FilterOperator.IN, ids)
+                }
+            }.decodeList<Vendor>()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getServicesByIds(ids: List<String>): Result<List<ServiceModel>> = withContext(Dispatchers.IO) {
+        if (ids.isEmpty()) return@withContext Result.success(emptyList())
+        try {
+            val list = postgrest["services"].select {
+                filter { 
+                    FilterOperation("id", FilterOperator.IN, ids)
+                }
+            }.decodeList<ServiceModel>()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // --- SEARCH ---
+
+    suspend fun searchVendors(query: String): Result<List<Vendor>> = withContext(Dispatchers.IO) {
+        try {
+            val list = postgrest["vendors"].select {
+                filter { 
+                    or {
+                        ilike("business_name", "%$query%")
+                        ilike("business_type", "%$query%")
+                        ilike("address", "%$query%")
+                    }
+                }
+            }.decodeList<Vendor>()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun searchProducts(query: String): Result<List<Product>> = withContext(Dispatchers.IO) {
+        try {
+            val list = postgrest["products"].select {
+                filter { 
+                    or {
+                        ilike("name", "%$query%")
+                        ilike("description", "%$query%")
+                    }
+                }
+            }.decodeList<Product>()
+            Result.success(list)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun searchServices(query: String): Result<List<ServiceModel>> = withContext(Dispatchers.IO) {
+        try {
+            val list = postgrest["services"].select {
+                filter { 
+                    or {
+                        ilike("name", "%$query%")
+                        ilike("description", "%$query%")
+                    }
+                }
+            }.decodeList<ServiceModel>()
+            Result.success(list)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -316,7 +397,7 @@ class SupabaseRepository {
     suspend fun getTransactions(): Result<List<Transaction>> = withContext(Dispatchers.IO) {
         val uid = auth.currentUserOrNull()?.id ?: return@withContext Result.failure(Exception("Not logged in"))
         try {
-            val list = postgrest["transactions"].select {
+            val list = postgrest["wallet_transactions"].select {
                 filter { eq("user_id", uid) }
                 order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
             }.decodeList<Transaction>()
@@ -338,39 +419,34 @@ class SupabaseRepository {
         }
     }
 
-    suspend fun updateWalletBalance(amount: Double, type: String): Result<Unit> = withContext(Dispatchers.IO) {
-        val uid = auth.currentUserOrNull()?.id ?: return@withContext Result.failure(Exception("Not logged in"))
+    suspend fun processWalletTransaction(
+        amount: Double,
+        type: String,
+        referenceId: String,
+        description: String
+    ): Result<Double> = withContext(Dispatchers.IO) {
         try {
-            // Get current balance
-            val current = getWalletBalance().getOrDefault(0.0)
-            val newBalance = if (type == "credit") current + amount else current - amount
-            
-            if (newBalance < 0 && type == "debit") {
-                return@withContext Result.failure(Exception("Insufficient wallet balance"))
-            }
-
-            postgrest["wallet_balances"].upsert(mapOf(
-                "user_id" to uid,
-                "balance" to newBalance,
-                "updated_at" to System.currentTimeMillis()
-            ))
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun logTransaction(amount: Double, type: String, description: String): Result<Unit> = withContext(Dispatchers.IO) {
-        val uid = auth.currentUserOrNull()?.id ?: return@withContext Result.failure(Exception("Not logged in"))
-        try {
-            val tx = Transaction(
-                userId = uid,
-                amount = amount,
-                type = type,
-                description = description
+            val response = postgrest.rpc(
+                function = "process_wallet_transaction",
+                parameters = mapOf(
+                    "p_amount" to amount,
+                    "p_type" to type,
+                    "p_reference_id" to referenceId,
+                    "p_description" to description
+                )
             )
-            postgrest["transactions"].insert(tx)
-            Result.success(Unit)
+            
+            // Expected response: {"is_success": true, "balance": 150.0} or error
+            val json = response.decodeAs<Map<String, JsonElement>>()
+            val isSuccess = json["is_success"]?.toString()?.toBoolean() ?: false
+            
+            if (isSuccess) {
+                val newBalance = json["balance"]?.toString()?.toDouble() ?: 0.0
+                Result.success(newBalance)
+            } else {
+                val message = json["message"]?.toString()?.removeSurrounding("\"") ?: "Transaction failed"
+                Result.failure(Exception(message))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

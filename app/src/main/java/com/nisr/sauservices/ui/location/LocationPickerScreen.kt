@@ -71,7 +71,7 @@ fun LocationPickerScreen(
         val isGranted = permissions.values.any { it }
         hasLocationPermission = isGranted
         if (isGranted) {
-            viewModel.getCurrentLocation(context)
+            viewModel.getCurrentLocation(context, false)
         }
     }
 
@@ -84,7 +84,7 @@ fun LocationPickerScreen(
                 )
             )
         } else {
-            viewModel.getCurrentLocation(context)
+            viewModel.getCurrentLocation(context, false)
         }
     }
 
@@ -163,7 +163,7 @@ fun LocationPickerScreen(
             // My Location FAB
             FloatingActionButton(
                 onClick = { 
-                    if (hasLocationPermission) viewModel.getCurrentLocation(context) 
+                    if (hasLocationPermission) viewModel.getCurrentLocation(context, false) 
                     else launcher.launch(
                         arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
                     )

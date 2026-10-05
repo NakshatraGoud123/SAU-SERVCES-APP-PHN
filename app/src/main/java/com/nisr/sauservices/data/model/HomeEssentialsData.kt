@@ -21,6 +21,7 @@ data class HomeProduct(
     val unit: String,
     val category: String,
     val imageRes: Int? = null,
+    val imageUrl: String? = null,
     val shopId: String = "our_shop"
 )
 

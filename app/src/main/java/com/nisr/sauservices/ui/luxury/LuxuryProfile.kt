@@ -1,5 +1,6 @@
 package com.nisr.sauservices.ui.luxury
 
+import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -35,10 +36,12 @@ import coil.request.ImageRequest
 import com.nisr.sauservices.ui.components.*
 import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.viewmodel.ProfileViewModel
+import com.nisr.sauservices.ui.home.BottomNavBar
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.compose.ui.text.font.FontFamily
+import com.nisr.sauservices.ui.Screen
 
 // ============================================================
 // LUXE BRAND COLORS (Local for precision)
@@ -71,9 +74,8 @@ fun LuxuryProfileScreen(
                 val inputStream = context.contentResolver.openInputStream(it)
                 val bytes = inputStream?.readBytes()
                 bytes?.let { b ->
-                    // Professional Check: Limit to 5MB (5 * 1024 * 1024 bytes)
                     if (b.size > 5 * 1024 * 1024) {
-                        android.widget.Toast.makeText(context, "Image is too large. Please select a photo under 5MB.", android.widget.Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "Image is too large. Please select a photo under 5MB.", Toast.LENGTH_LONG).show()
                         return@let
                     }
                     
@@ -83,7 +85,7 @@ fun LuxuryProfileScreen(
                             val friendlyMsg = if (error.contains("size", true)) 
                                 "This photo is too high-resolution. Please try a smaller one." 
                                 else error
-                            android.widget.Toast.makeText(context, friendlyMsg, android.widget.Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, friendlyMsg, Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -91,9 +93,16 @@ fun LuxuryProfileScreen(
         }
     )
 
-    Box(modifier = Modifier.fillMaxSize().background(LuxeBackground)) {
+    Scaffold(
+        bottomBar = { BottomNavBar(navController) },
+        containerColor = LuxeBackground
+    ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -119,22 +128,22 @@ fun LuxuryProfileScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 LuxuryMenuItem(icon = Icons.Default.AccountBalanceWallet, label = "My Wallet") {
-                    navController.navigate(com.nisr.sauservices.ui.Screen.Wallet)
+                    navController.navigate(Screen.Wallet)
                 }
                 LuxuryMenuItem(icon = Icons.Default.ShoppingBag, label = "My Bookings") {
-                    navController.navigate(com.nisr.sauservices.ui.Screen.MyBookings)
+                    navController.navigate(Screen.MyBookings)
                 }
                 LuxuryMenuItem(icon = Icons.Default.LocationOn, label = "My Addresses") {
-                    navController.navigate(com.nisr.sauservices.ui.Screen.ShippingAddress)
+                    navController.navigate(Screen.ShippingAddress)
                 }
                 LuxuryMenuItem(icon = Icons.Default.CreditCard, label = "Payment Methods") {
-                    navController.navigate(com.nisr.sauservices.ui.Screen.ResidentialPayment("multi", "multi"))
+                    navController.navigate(Screen.ResidentialPayment("multi", "multi"))
                 }
                 LuxuryMenuItem(icon = Icons.Default.Help, label = "Help & Support") {
-                    navController.navigate(com.nisr.sauservices.ui.Screen.ContactUs)
+                    navController.navigate(Screen.ContactUs)
                 }
                 LuxuryMenuItem(icon = Icons.Default.Settings, label = "Settings") {
-                    navController.navigate(com.nisr.sauservices.ui.Screen.Settings)
+                    navController.navigate(Screen.Settings)
                 }
             }
 
@@ -210,7 +219,7 @@ fun LuxurySignOutConfirmation(onConfirm: () -> Unit, onCancel: () -> Unit) {
 
                     LuxuryButton(
                         text = "Sign Out",
-                        onClick = onConfirm,
+                        onClick = { onConfirm() },
                         modifier = Modifier.weight(1f).height(50.dp)
                     )
                 }
@@ -240,7 +249,6 @@ private fun ProfileHeader(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 if (!avatarUrl.isNullOrEmpty()) {
-                    // Force refresh with a timestamp
                     val imageUrl = if (avatarUrl.contains("?")) "$avatarUrl&t=${System.currentTimeMillis()}" else "$avatarUrl?t=${System.currentTimeMillis()}"
                     
                     AsyncImage(

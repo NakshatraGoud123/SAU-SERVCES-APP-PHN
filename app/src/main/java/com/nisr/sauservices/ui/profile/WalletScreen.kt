@@ -19,15 +19,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.navigation.NavController
 import com.nisr.sauservices.data.model.Transaction
 import com.nisr.sauservices.ui.theme.*
 import com.nisr.sauservices.ui.components.LuxuryButton
 import com.nisr.sauservices.ui.viewmodel.WalletViewModel
+import com.nisr.sauservices.ui.viewmodel.ProfileViewModel
+import com.nisr.sauservices.ui.home.BottomNavBar
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,13 +48,17 @@ fun WalletScreen(
     val transactions by viewModel.transactions.collectAsState()
     val isLoading = viewModel.isLoading
     
+    val profileViewModel: ProfileViewModel = viewModel()
+    val userProfile by profileViewModel.userProfile.collectAsState()
+    
     var showTopUpDialog by remember { mutableStateOf(false) }
     var topUpAmount by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Wallet", fontWeight = FontWeight.Black, color = LuxeTextPrimary, fontFamily = androidx.compose.ui.text.font.FontFamily.Serif) },
+                title = { Text("My Wallet", fontWeight = FontWeight.Black, color = LuxeTextPrimary, fontFamily = FontFamily.Serif) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = LuxeTextPrimary)
@@ -55,6 +67,7 @@ fun WalletScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = LuxeBackground)
             )
         },
+        bottomBar = { BottomNavBar(navController) },
         containerColor = LuxeBackground
     ) { padding ->
         if (isLoading && balance == 0.0) {
@@ -82,7 +95,7 @@ fun WalletScreen(
                             style = MaterialTheme.typography.displayMedium,
                             fontWeight = FontWeight.Black,
                             color = LuxeTextPrimary,
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Serif
+                            fontFamily = FontFamily.Serif
                         )
                         Spacer(Modifier.height(32.dp))
                         LuxuryButton(
@@ -125,7 +138,7 @@ fun WalletScreen(
         AlertDialog(
             onDismissRequest = { showTopUpDialog = false },
             containerColor = LuxeCard,
-            title = { Text("Top Up Wallet", fontWeight = FontWeight.Black, color = LuxeTextPrimary, fontFamily = androidx.compose.ui.text.font.FontFamily.Serif) },
+            title = { Text("Top Up Wallet", fontWeight = FontWeight.Black, color = LuxeTextPrimary, fontFamily = FontFamily.Serif) },
             text = {
                 Column {
                     Text("Enter the amount you wish to add to your luxury balance.", color = LuxeTextSecondary, fontSize = 14.sp)
@@ -135,7 +148,7 @@ fun WalletScreen(
                         onValueChange = { if (it.all { char -> char.isDigit() }) topUpAmount = it },
                         label = { Text("Amount (₹)", color = LuxeAccentSage) },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -150,7 +163,15 @@ fun WalletScreen(
                     onClick = {
                         val amount = topUpAmount.toDoubleOrNull()
                         if (amount != null && amount > 0) {
-                            viewModel.topUpWallet(amount) {
+                            val activity = context.findActivity()
+                            
+                            if (activity != null) {
+                                viewModel.startRazorpayTopup(
+                                    activity = activity,
+                                    amount = amount,
+                                    email = userProfile?.email ?: "member@sausolutions.com",
+                                    contact = userProfile?.phone ?: "+91 9999999999"
+                                )
                                 showTopUpDialog = false
                                 topUpAmount = ""
                             }
@@ -209,4 +230,13 @@ fun TransactionRow(tx: Transaction) {
             )
         }
     }
+}
+
+private fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
 }
