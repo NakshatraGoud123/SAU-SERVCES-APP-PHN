@@ -503,7 +503,7 @@ fun SauHomeScreen(
                             onItemClick = { item ->
                                 when (item.type) {
                                     ReorderType.VENDOR -> navController.navigate(Screen.MerchantShop(item.id))
-                                    ReorderType.SERVICE -> navController.navigate(Screen.PartnerList(item.id))
+                                    ReorderType.SERVICE -> navController.navigate(Screen.ResidentialBookingDetails("", item.id))
                                 }
                             }
                         )

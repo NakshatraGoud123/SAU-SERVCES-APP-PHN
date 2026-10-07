@@ -59,7 +59,10 @@ fun ResidentialOrderSummaryScreen(
     val dbCartItems by homeCartViewModel.dbCartItems.collectAsState()
 
     val selectedPartner = PartnerData.getPartnerById(partnerId)
-    val selectedService = ResidentialData.services.find { it.id == serviceId }
+    val selectedServiceModel = viewModel.selectedService.value
+    val selectedResidentialItem = ResidentialData.services.find { it.id == serviceId }
+    val servicePrice = selectedServiceModel?.price ?: selectedResidentialItem?.price ?: 750.0
+    val serviceName = selectedServiceModel?.name ?: selectedResidentialItem?.name ?: "Professional Service"
     
     val resItems = viewModel.cartItems
     val businessItems = businessViewModel.cartItems
@@ -71,7 +74,7 @@ fun ResidentialOrderSummaryScreen(
     val foodItems = foodCartViewModel.cartItems
     val eduItems = educationViewModel.cartItems
 
-    val subtotal = (selectedService?.price ?: 0.0) +
+    val subtotal = servicePrice +
                    viewModel.calculateTotal() + 
                    businessViewModel.getTotalPrice() +
                    lifestyleViewModel.getTotalPrice() +
@@ -87,9 +90,10 @@ fun ResidentialOrderSummaryScreen(
     val totalAmount = subtotal + deliveryFee
 
     val bookingResult by bookingsViewModel.bookingResult.collectAsState()
+    val isSubmitting by bookingsViewModel.isSubmitting.collectAsState()
 
     LaunchedEffect(bookingResult) {
-        bookingResult?.onSuccess {
+        bookingResult?.onSuccess { bookingId ->
             // Clear all carts after success
             viewModel.clearCart()
             businessViewModel.clearCart()
@@ -102,7 +106,7 @@ fun ResidentialOrderSummaryScreen(
             educationViewModel.clearCart()
             homeCartViewModel.clearHomeCart()
             
-            navController.navigate(Screen.ResidentialSuccess) {
+            navController.navigate(Screen.OrderTracking(bookingId)) {
                 popUpTo<Screen.Home> { inclusive = false }
             }
             bookingsViewModel.resetResult()
@@ -130,20 +134,25 @@ fun ResidentialOrderSummaryScreen(
                 border = BorderStroke(1.dp, LuxeBorder)
             ) {
                 LuxuryButton(
-                    text = "CONFIRM ORDER",
+                    text = if (isSubmitting) "PLACING BOOKING..." else "CONFIRM ORDER",
                     onClick = {
-                        bookingsViewModel.placeUnifiedOrder(
-                            serviceName = selectedService?.name ?: "Unified Services",
-                            category = "Residential",
-                            subcategory = selectedService?.subcategory ?: "Unified",
-                            date = bookingDetails.date,
-                            time = bookingDetails.timeSlot,
-                            amount = totalAmount,
-                            paymentMethod = bookingDetails.paymentMethod,
-                            address = bookingDetails.address,
-                            items = dbCartItems
-                        )
+                        if (!isSubmitting) {
+                            bookingsViewModel.placeUnifiedOrder(
+                                serviceId = serviceId,
+                                serviceName = serviceName,
+                                category = "Residential",
+                                subcategory = "General",
+                                date = bookingDetails.date,
+                                time = bookingDetails.timeSlot,
+                                amount = totalAmount,
+                                paymentMethod = bookingDetails.paymentMethod,
+                                address = bookingDetails.address,
+                                items = dbCartItems
+                            )
+                        }
                     },
+                    isLoading = isSubmitting,
+                    enabled = !isSubmitting,
                     modifier = Modifier.padding(24.dp).height(56.dp)
                 )
             }
@@ -159,7 +168,7 @@ fun ResidentialOrderSummaryScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // Selected Service & Partner Card
-            if (selectedService != null || selectedPartner != null) {
+            if (selectedServiceModel != null || selectedResidentialItem != null || selectedPartner != null) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
@@ -173,9 +182,7 @@ fun ResidentialOrderSummaryScreen(
                             Text("Service & Partner", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxeTextPrimary)
                         }
                         Spacer(Modifier.height(16.dp))
-                        if (selectedService != null) {
-                            SummaryRow("Service", selectedService.name)
-                        }
+                        SummaryRow("Service", serviceName)
                         if (selectedPartner != null) {
                             SummaryRow("Partner", selectedPartner.name)
                         }

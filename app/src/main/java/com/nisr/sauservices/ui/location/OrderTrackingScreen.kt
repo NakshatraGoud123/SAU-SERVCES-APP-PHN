@@ -29,6 +29,7 @@ import androidx.compose.runtime.*
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.widget.Toast
 import androidx.core.content.res.ResourcesCompat
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.Alignment
@@ -54,6 +55,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.maps.android.compose.*
 import com.nisr.sauservices.R
+import com.nisr.sauservices.ui.Screen
 import com.nisr.sauservices.ui.viewmodel.TrackingViewModel
 import com.nisr.sauservices.ui.theme.*
 import kotlinx.coroutines.launch
@@ -510,11 +512,16 @@ fun OrderTrackingScreen(
                                 modifier = Modifier
                                     .size(44.dp)
                                     .clickable { 
-                                        navController.navigate(com.nisr.sauservices.ui.Screen.Chat(
-                                            orderId = orderId,
-                                            receiverId = "partner_id_here", 
-                                            receiverName = uiState.partnerName
-                                        ))
+                                        if (uiState.partnerId.isNotEmpty()) {
+                                            navController.navigate(
+                                                Screen.Chat(
+                                                orderId = orderId,
+                                                receiverId = uiState.partnerId, 
+                                                receiverName = uiState.partnerName
+                                            ))
+                                        } else {
+                                            Toast.makeText(context, "Partner not assigned yet. Please wait.", Toast.LENGTH_SHORT).show()
+                                        }
                                     },
                                 shape = CircleShape,
                                 color = LuxeHighlightChampagne.copy(alpha = 0.4f),

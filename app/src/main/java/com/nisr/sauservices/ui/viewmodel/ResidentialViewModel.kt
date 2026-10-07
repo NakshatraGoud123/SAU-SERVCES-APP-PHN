@@ -37,6 +37,14 @@ class ResidentialViewModel(
     var selectedServiceId = mutableStateOf<String?>(null)
         private set
 
+    var selectedService = mutableStateOf<ServiceModel?>(null)
+        private set
+
+    fun selectService(service: ServiceModel) {
+        selectedService.value = service
+        selectedServiceId.value = service.id
+    }
+
     init {
         fetchCategories()
     }
@@ -55,7 +63,10 @@ class ResidentialViewModel(
             _isLoading.value = true
             _subcategories.value = emptyList()
             val result = repository.getSubcategories(categoryId)
-            _subcategories.value = result.getOrDefault(emptyList())
+            val list = result.getOrDefault(emptyList()).map { map ->
+                map.mapValues { it.value ?: "" }
+            }
+            _subcategories.value = list
             _isLoading.value = false
         }
     }

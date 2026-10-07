@@ -12,3 +12,18 @@ data class ChatMessage(
     @SerialName("content") val content: String,
     @SerialName("created_at") val timestamp: String = ""
 )
+
+@Serializable
+data class ChatInsertDto(
+    @SerialName("order_id") val orderId: String,
+    @SerialName("sender_id") val senderId: String,
+    @SerialName("receiver_id") val receiverId: String,
+    @SerialName("content") val content: String
+)
+
+fun ChatMessage.toInsertDto() = ChatInsertDto(
+    orderId = orderId,
+    senderId = senderId,
+    receiverId = receiverId,
+    content = content
+)

@@ -31,6 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import android.widget.Toast
 import com.nisr.sauservices.data.model.MechanicData
 import com.nisr.sauservices.data.model.MechanicServiceItem
 import com.nisr.sauservices.data.model.MechanicSubcategory
@@ -311,6 +312,27 @@ fun MechanicBookingScreen(
     val uiState by viewModel.bookingState
     var step by remember { mutableIntStateOf(1) }
     val context = LocalContext.current
+    val bookingResult by bookingsViewModel.bookingResult.collectAsState()
+    val isSubmitting by bookingsViewModel.isSubmitting.collectAsState()
+
+    LaunchedEffect(bookingResult) {
+        bookingResult?.onSuccess {
+            val selectedService = uiState.selectedService
+            val serviceName = selectedService?.name ?: "Mechanic Service"
+            NotificationHelper.showNotification(
+                context,
+                "Mechanic Booked! 🔧",
+                "Your $serviceName has been confirmed."
+            )
+            navController.navigate(Screen.MechanicSuccess) {
+                popUpTo<Screen.Home> { inclusive = false }
+            }
+            bookingsViewModel.resetResult()
+        }?.onFailure { err ->
+            Toast.makeText(context, "Booking failed: ${err.message}", Toast.LENGTH_LONG).show()
+            bookingsViewModel.resetResult()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -481,35 +503,36 @@ fun MechanicBookingScreen(
                     Spacer(Modifier.height(32.dp))
                     Button(
                         onClick = {
-                            val selectedService = uiState.selectedService
-                            val serviceName = selectedService?.name ?: "Mechanic Service (${uiState.vehicleType})"
-                            val amount = selectedService?.price ?: 750.0
-                            
-                            bookingsViewModel.placeUnifiedOrder(
-                                serviceName = serviceName,
-                                category = "Mechanic",
-                                subcategory = uiState.vehicleType,
-                                date = "Today",
-                                time = "As soon as possible",
-                                amount = amount,
-                                paymentMethod = uiState.paymentMethod,
-                                address = uiState.location.ifBlank { "Hyderabad" },
-                                items = emptyList()
-                            )
-
-                            NotificationHelper.showNotification(
-                                context,
-                                "Mechanic Booked! 🔧",
-                                "Your $serviceName has been confirmed."
-                            )
-
-                            navController.navigate(Screen.MechanicSuccess)
+                            if (!isSubmitting) {
+                                val selectedService = uiState.selectedService
+                                val serviceId = selectedService?.id ?: ""
+                                val serviceName = selectedService?.name ?: "Mechanic Service (${uiState.vehicleType})"
+                                val amount = selectedService?.price ?: 750.0
+                                
+                                bookingsViewModel.placeUnifiedOrder(
+                                    serviceId = serviceId,
+                                    serviceName = serviceName,
+                                    category = "Mechanic",
+                                    subcategory = uiState.vehicleType,
+                                    date = "Today",
+                                    time = "As soon as possible",
+                                    amount = amount,
+                                    paymentMethod = uiState.paymentMethod,
+                                    address = uiState.location.ifBlank { "Hyderabad" },
+                                    items = emptyList()
+                                )
+                            }
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = LuxeAccentSage)
+                        colors = ButtonDefaults.buttonColors(containerColor = LuxeAccentSage),
+                        enabled = !isSubmitting
                     ) {
-                        Text("Confirm Booking", fontWeight = FontWeight.Black, fontSize = 15.sp)
+                        if (isSubmitting) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                        } else {
+                            Text("Confirm Booking", fontWeight = FontWeight.Black, fontSize = 15.sp)
+                        }
                     }
                 }
             }

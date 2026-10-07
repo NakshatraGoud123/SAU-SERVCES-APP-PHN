@@ -384,7 +384,8 @@ fun ResidentialServiceListScreen(
                             ResidentialServiceCardDesign(
                                 service = service,
                                 onAdd = { 
-                                    navController.navigate(Screen.PartnerList(service.id))
+                                    viewModel.selectService(service)
+                                    navController.navigate(Screen.ResidentialBookingDetails("", service.id))
                                 }
                             )
                         }
@@ -445,7 +446,7 @@ fun ResidentialServiceCardDesign(service: ServiceModel, onAdd: () -> Unit) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(service.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LuxeTextPrimary)
                     Spacer(Modifier.height(4.dp))
-                    Text(service.description, fontSize = 12.sp, color = LuxeTextSecondary, maxLines = 1)
+                    Text(service.displayDescription, fontSize = 12.sp, color = LuxeTextSecondary, maxLines = 1)
                     Spacer(Modifier.height(4.dp))
                     Text("₹${service.price.toInt()}", fontWeight = FontWeight.Black, color = LuxeGold, fontSize = 16.sp)
                 }
@@ -539,7 +540,12 @@ fun ResidentialPaymentScreen(
             LuxuryButton(
                 text = "PROCEED TO SUMMARY",
                 onClick = {
-                    navController.navigate(Screen.ResidentialOrderSummary)
+                    navController.navigate(
+                        Screen.ResidentialOrderSummary(
+                            partnerId = partnerId,
+                            serviceId = serviceId
+                        )
+                    )
                 },
                 modifier = Modifier.height(56.dp)
             )

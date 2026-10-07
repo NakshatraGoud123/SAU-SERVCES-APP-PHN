@@ -1,6 +1,7 @@
 package com.nisr.sauservices.data.repository
 
 import com.nisr.sauservices.data.api.SupabaseClient
+import com.nisr.sauservices.data.model.BookingModel
 import com.nisr.sauservices.data.model.OrderModel
 import com.nisr.sauservices.data.model.SupplyOrder
 import io.github.jan.supabase.annotations.SupabaseExperimental
@@ -12,6 +13,8 @@ import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
@@ -51,16 +54,44 @@ class RealtimeDatabaseRepository {
 
     @OptIn(SupabaseExperimental::class)
     fun observeUserActivity(): Flow<List<OrderModel>> {
-        val userId = getCurrentUserId() ?: return kotlinx.coroutines.flow.flowOf(emptyList())
-        return postgrest["orders"]
+        val userId = getCurrentUserId() ?: return flowOf(emptyList())
+        val ordersFlow = postgrest["orders"]
             .selectAsFlow(
                 primaryKey = OrderModel::id,
                 filter = FilterOperation("customer_id", FilterOperator.EQ, userId)
             )
-            .catch { 
-                android.util.Log.e("REALTIME_ERROR", "Error in observeUserActivity: ${it.message}")
-                emit(emptyList()) 
+            .catch { emit(emptyList()) }
+
+        val bookingsFlow = postgrest["bookings"]
+            .selectAsFlow(
+                primaryKey = BookingModel::id,
+                filter = FilterOperation("user_id", FilterOperator.EQ, userId)
+            )
+            .catch { emit(emptyList()) }
+
+        return combine(ordersFlow, bookingsFlow) { orders, bookings ->
+            val mappedBookings = bookings.map { b ->
+                OrderModel(
+                    id = b.id ?: "",
+                    customerId = b.userId,
+                    vendorId = null,
+                    status = b.status,
+                    totalAmount = b.totalAmount,
+                    deliveryAddress = b.userAddress,
+                    paymentStatus = b.paymentStatus,
+                    paymentId = b.cashPaymentId,
+                    partnerId = b.providerId,
+                    orderType = "service",
+                    createdAt = b.createdAt,
+                    serviceName = b.serviceName,
+                    category = b.category,
+                    subcategory = b.subcategory,
+                    scheduleDate = b.scheduleDate,
+                    scheduleTime = b.scheduleTime,
+                    paymentMethod = b.paymentMethod
+                )
             }
-            .flowOn(Dispatchers.IO)
+            (orders + mappedBookings).sortedByDescending { it.createdAt ?: "" }
+        }.flowOn(Dispatchers.IO)
     }
 }
