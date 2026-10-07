@@ -32,6 +32,8 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.IntSize
+import android.view.HapticFeedbackConstants
+import androidx.compose.ui.platform.LocalView
 import com.nisr.sauservices.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -106,6 +108,7 @@ fun LuxuryButton(
     containerColor: Color = LuxuryGold,
     contentColor: Color = LuxuryBackground
 ) {
+    val view = LocalView.current
     val gradient = Brush.horizontalGradient(
         colors = listOf(LuxuryGold, LuxuryCream)
     )
@@ -115,7 +118,13 @@ fun LuxuryButton(
             .fillMaxWidth()
             .height(56.dp)
             .clip(RoundedCornerShape(14.dp))
-            .clickable(enabled = enabled && !isLoading, onClick = onClick),
+            .clickable(
+                enabled = enabled && !isLoading,
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                    onClick()
+                }
+            ),
         color = if (enabled) Color.Transparent else containerColor.copy(alpha = 0.5f),
         shape = RoundedCornerShape(14.dp)
     ) {

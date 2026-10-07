@@ -104,7 +104,8 @@ fun MyOrdersScreen(navController: NavController) {
             if (displayOrders.isEmpty()) {
                 EmptyActivityState(
                     icon = if (selectedTab == 0) Icons.Default.NotificationsActive else Icons.Default.History,
-                    message = if (selectedTab == 0) "Your schedule is currently clear." else "No past luxury experiences found."
+                    message = if (selectedTab == 0) "Your schedule is currently clear." else "No past luxury experiences found.",
+                    onExploreClick = { navController.navigate(Screen.ResidentialCategories) }
                 )
             } else {
                 LazyColumn(
@@ -277,7 +278,7 @@ fun LuxuryOrderCard(order: OrderModel, onClick: () -> Unit) {
 }
 
 @Composable
-private fun EmptyActivityState(icon: ImageVector, message: String) {
+private fun EmptyActivityState(icon: ImageVector, message: String, onExploreClick: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
             Surface(
@@ -292,6 +293,15 @@ private fun EmptyActivityState(icon: ImageVector, message: String) {
             }
             Spacer(Modifier.height(24.dp))
             Text(message, color = LuxeTextSecondary, fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(24.dp))
+            Button(
+                onClick = onExploreClick,
+                colors = ButtonDefaults.buttonColors(containerColor = LuxeAccentSage),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.height(48.dp)
+            ) {
+                Text("Explore Services", fontWeight = FontWeight.Bold, color = Color.White)
+            }
         }
     }
 }

@@ -28,30 +28,36 @@ data class PartnerLocation(
 
 @Serializable
 data class BookingModel(
-    @SerialName("id") val id: String = "",
+    @SerialName("id") val id: String? = null,
     @SerialName("user_id") val userId: String = "",
     @SerialName("user_name") val userName: String = "",
     @SerialName("user_phone") val userPhone: String = "",
     @SerialName("user_address") val userAddress: String = "",
     @SerialName("service_id") val serviceId: String = "",
-    @SerialName("service_name") val serviceName: String? = "",
     @SerialName("category") val category: String? = "",
     @SerialName("subcategory") val subcategory: String? = "",
     @SerialName("scheduled_date") val scheduleDate: String? = "",
     @SerialName("scheduled_time") val scheduleTime: String? = "",
     @SerialName("time_slot") val timeSlot: String? = "",
+    @SerialName("booking_date") val bookingDate: String? = null,
     @SerialName("status") var status: String = "pending",
-    @SerialName("provider_id") val providerId: String = "",
-    @SerialName("address") val address: String = "",
-    @SerialName("amount") val amount: Double = 0.0,
-    @SerialName("total_price") val totalPrice: Double = 0.0,
+    @SerialName("provider_id") val providerId: String? = null,
     @SerialName("payment_method") val paymentMethod: String = "Cash",
+    @SerialName("payment_status") val paymentStatus: String = "pending",
+    @SerialName("cash_payment_id") val cashPaymentId: String? = null,
+    @SerialName("total_amount") val totalAmount: Double = 0.0,
     @SerialName("created_at") val createdAt: String? = null,
-    @SerialName("timestamp") val timestamp: Long = System.currentTimeMillis()
+
+    // UI-only compatibility properties (NOT serialized to Supabase)
+    @Transient val serviceName: String? = "",
+    @Transient val address: String = userAddress,
+    @Transient val amount: Double = totalAmount,
+    @Transient val totalPrice: Double = totalAmount,
+    @Transient val timestamp: Long = System.currentTimeMillis()
 ) {
-    val bookingId: String get() = id
+    val bookingId: String get() = id ?: ""
     val orderStatus: String get() = status
-    val displayAddress: String get() = address.ifEmpty { userAddress }.ifEmpty { "No address provided" }
+    val displayAddress: String get() = userAddress.ifEmpty { address }.ifEmpty { "No address provided" }
     val displayDate: String get() = (scheduleDate ?: "").ifEmpty { "TBD" }
     val displayTime: String get() = (scheduleTime ?: timeSlot ?: "").ifEmpty { "" }
     val displayService: String get() = (serviceName ?: category ?: "").ifEmpty { "Service Request" }
@@ -59,13 +65,57 @@ data class BookingModel(
     // UI compatibility fields
     val customerName: String get() = userName
     val customerPhone: String get() = userPhone
-    val price: String get() = totalPrice.toString()
+    val price: String get() = totalAmount.toString()
+    val partnerId: String? get() = providerId
     
     // Snake case getters for legacy repository code if any
     val user_id: String get() = userId
     val service_name: String get() = serviceName ?: ""
     val scheduled_date: String get() = scheduleDate ?: ""
     val scheduled_time: String get() = scheduleTime ?: ""
+}
+
+@Serializable
+data class BookingInsertDto(
+    @SerialName("user_id") val userId: String,
+    @SerialName("service_id") val serviceId: String,
+    @SerialName("provider_id") val providerId: String? = null,
+    @SerialName("booking_date") val bookingDate: String? = null,
+    @SerialName("status") val status: String = "pending",
+    @SerialName("total_amount") val totalAmount: Double,
+    @SerialName("user_name") val userName: String,
+    @SerialName("user_phone") val userPhone: String,
+    @SerialName("user_address") val userAddress: String,
+    @SerialName("category") val category: String?,
+    @SerialName("subcategory") val subcategory: String?,
+    @SerialName("scheduled_date") val scheduledDate: String?,
+    @SerialName("scheduled_time") val scheduledTime: String?,
+    @SerialName("time_slot") val timeSlot: String?,
+    @SerialName("payment_method") val paymentMethod: String,
+    @SerialName("payment_status") val paymentStatus: String = "pending",
+    @SerialName("cash_payment_id") val cashPaymentId: String? = null
+)
+
+fun BookingModel.toInsertDto(): BookingInsertDto {
+    return BookingInsertDto(
+        userId = userId,
+        serviceId = serviceId,
+        providerId = providerId,
+        bookingDate = bookingDate,
+        status = status,
+        totalAmount = totalAmount,
+        userName = userName,
+        userPhone = userPhone,
+        userAddress = userAddress,
+        category = category,
+        subcategory = subcategory,
+        scheduledDate = scheduleDate,
+        scheduledTime = scheduleTime,
+        timeSlot = timeSlot,
+        paymentMethod = paymentMethod,
+        paymentStatus = paymentStatus,
+        cashPaymentId = cashPaymentId
+    )
 }
 
  @Serializable
@@ -138,11 +188,15 @@ data class Product(
 data class ServiceModel(
     @SerialName("id") val id: String = "",
     @SerialName("name") val name: String = "",
-    @SerialName("category_id") val categoryId: String = "",
-    @SerialName("description") val description: String = "",
+    @SerialName("category_id") val categoryId: String? = null,
+    @SerialName("subcategory_id") val subcategoryId: String? = null,
+    @SerialName("description") val description: String? = "",
     @SerialName("price") val price: Double = 0.0,
-    @SerialName("image_url") val imageUrl: String = ""
-)
+    @SerialName("image_url") val imageUrl: String? = ""
+) {
+    val displayDescription: String get() = description ?: ""
+    val displayImageUrl: String get() = imageUrl ?: ""
+}
 
 @Serializable
 data class Payment(

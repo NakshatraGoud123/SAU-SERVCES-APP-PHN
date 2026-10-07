@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonElement
+import java.util.UUID
 
 class SupabaseRepository {
 
@@ -123,22 +124,52 @@ class SupabaseRepository {
         }
     }
 
-    suspend fun getSubcategories(categoryId: String): Result<List<Map<String, String>>> = withContext(Dispatchers.IO) {
+    suspend fun getSubcategories(categoryId: String): Result<List<Map<String, String?>>> = withContext(Dispatchers.IO) {
         try {
             val response = postgrest["subcategories"].select {
                 filter { eq("category_id", categoryId) }
             }
-            Result.success(response.decodeList<Map<String, String>>())
+            val list = response.decodeList<Map<String, String?>>()
+            if (list.isNotEmpty()) {
+                Result.success(list)
+            } else {
+                Result.success(
+                    listOf(
+                        mapOf(
+                            "id" to categoryId,
+                            "category_id" to categoryId,
+                            "name" to "General Services",
+                            "image_url" to null
+                        )
+                    )
+                )
+            }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.success(
+                listOf(
+                    mapOf(
+                        "id" to categoryId,
+                        "category_id" to categoryId,
+                        "name" to "General Services",
+                        "image_url" to null
+                    )
+                )
+            )
         }
     }
 
     suspend fun getServices(subcategoryId: String): Result<List<ServiceModel>> = withContext(Dispatchers.IO) {
         try {
-            val list = postgrest["services"].select {
+            var list = postgrest["services"].select {
                 filter { eq("subcategory_id", subcategoryId) }
             }.decodeList<ServiceModel>()
+
+            if (list.isEmpty()) {
+                list = postgrest["services"].select {
+                    filter { eq("category_id", subcategoryId) }
+                }.decodeList<ServiceModel>()
+            }
+
             Result.success(list)
         } catch (e: Exception) {
             Result.failure(e)
@@ -281,11 +312,20 @@ class SupabaseRepository {
 
     suspend fun bookService(booking: BookingModel): Result<String> = withContext(Dispatchers.IO) {
         try {
-            val safeBooking = booking.copy(serviceId = booking.serviceId.toSafeUuid())
-            val inserted = postgrest["bookings"].insert(safeBooking) {
+            if (booking.serviceId.isBlank()) {
+                return@withContext Result.failure(Exception("Invalid service ID. Please select a valid service."))
+            }
+            try {
+                UUID.fromString(booking.serviceId)
+            } catch (e: Exception) {
+                return@withContext Result.failure(Exception("Invalid service ID. Please select a valid service."))
+            }
+
+            val insertDto = booking.toInsertDto()
+            val inserted = postgrest["bookings"].insert(insertDto) {
                 select()
             }.decodeSingle<BookingModel>()
-            Result.success(inserted.id)
+            Result.success(inserted.id ?: "")
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -295,6 +335,23 @@ class SupabaseRepository {
     fun observeMyBookings(userId: String): Flow<List<BookingModel>> {
         return postgrest["bookings"].selectAsFlow(BookingModel::id, filter = FilterOperation("user_id", FilterOperator.EQ, userId))
             .catch { emit(emptyList()) }
+    }
+
+    @OptIn(SupabaseExperimental::class)
+    fun listenToCustomerBooking(bookingId: String): Flow<List<BookingModel>> {
+        return postgrest["bookings"].selectAsFlow(BookingModel::id, filter = FilterOperation("id", FilterOperator.EQ, bookingId))
+            .catch { emit(emptyList()) }
+    }
+
+    suspend fun getBookingById(bookingId: String): Result<BookingModel> = withContext(Dispatchers.IO) {
+        try {
+            val booking = postgrest["bookings"].select {
+                filter { eq("id", bookingId) }
+            }.decodeSingle<BookingModel>()
+            Result.success(booking)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     // --- ORDERS ---
@@ -377,7 +434,8 @@ class SupabaseRepository {
 
     suspend fun sendMessage(message: ChatMessage): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            postgrest["messages"].insert(message)
+            val insertDto = message.toInsertDto()
+            postgrest["messages"].insert(insertDto)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

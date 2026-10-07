@@ -103,7 +103,7 @@ fun LuxeServiceDetailsScreen(
 
                     Button(
                         onClick = {
-                            navController.navigate(Screen.PartnerList(serviceId))
+                            navController.navigate(Screen.ResidentialBookingDetails("", serviceId))
                         },
                         modifier = Modifier
                             .height(52.dp)

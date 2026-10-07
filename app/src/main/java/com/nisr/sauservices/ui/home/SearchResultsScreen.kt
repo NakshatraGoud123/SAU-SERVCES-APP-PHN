@@ -246,7 +246,7 @@ private fun SearchContent(state: SearchUiState.Success, navController: NavContro
                     subtitle = "Professional Service",
                     price = "₹${service.price.toInt()}",
                     imageUrl = service.imageUrl,
-                    onClick = { navController.navigate(Screen.PartnerList(service.id)) }
+                    onClick = { navController.navigate(Screen.ResidentialBookingDetails("", service.id)) }
                 )
             }
         }
